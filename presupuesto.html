@@ -1,107 +1,137 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Fletes Javier – Presupuesto</title>
+  <meta charset="utf-8" />
+  <title>Calcular presupuesto — Fletes Javier</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
-    :root{--primary:#ffcc00;--text:#111;--bg:#fff}
-    *{box-sizing:border-box} body{margin:0;font-family:system-ui,Segoe UI,Roboto,Arial;color:var(--text);background:var(--bg)}
-    header{display:flex;justify-content:space-between;align-items:center;padding:12px 20px;background:#000;color:#fff}
-    header a{color:#fff;text-decoration:none;margin:0 10px;opacity:.9}
-    header a:hover{opacity:1;border-bottom:2px solid var(--primary)}
-    .container{max-width:960px;margin:24px auto;padding:0 16px}
-    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
-    label{display:flex;flex-direction:column;font-size:14px;gap:6px}
-    input,select{padding:10px;border-radius:10px;border:1px solid #ddd}
-    button{padding:10px 16px;border-radius:12px;background:var(--primary);color:#000;font-weight:700;border:0;cursor:pointer}
-    .card{background:#fff;border:1px solid #eee;border-radius:16px;padding:16px;box-shadow:0 2px 8px rgba(0,0,0,.06);margin-top:16px}
+    :root{--dorado:#ffd000}
+    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",Arial;background:#fafafa}
+    .navbar{display:flex;align-items:center;justify-content:space-between;padding:14px 22px;background:#111;color:#fff}
+    .navbar a{color:#fff;text-decoration:none;margin-left:14px;padding:8px 12px;border-radius:10px}
+    .navbar a:hover{background:#222}
+    .wrap{max-width:1100px;margin:24px auto;padding:0 16px}
+    h1{margin:12px 0 20px}
+    .card{background:#fff;border:1px solid #eee;border-radius:14px;padding:16px 16px 6px;box-shadow:0 6px 20px rgba(0,0,0,.05)}
+    .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+    .grid .full{grid-column:1/-1}
+    label{display:block;font-weight:600;margin-bottom:6px}
+    input,select{width:100%;padding:12px;border-radius:10px;border:1px solid #ddd}
+    .row{display:flex;gap:10px;align-items:center}
+    .btn{background:var(--dorado);border:0;padding:12px 18px;border-radius:12px;font-weight:700;cursor:pointer}
+    .result{margin-top:18px;background:#fff;border:1px solid #eee;border-radius:14px;padding:16px}
+    .mono{font-variant-numeric:tabular-nums}
   </style>
 </head>
 <body>
-  <header>
-    <div><b>🚚 Fletes Javier</b></div>
-    <nav>
-      <a href="index.html">Inicio</a>
-      <a href="presupuesto.html">Presupuesto</a>
-      <a href="admin.html">Admin</a>
-    </nav>
-  </header>
+  <nav class="navbar">
+    <div>🚚 Fletes Javier</div>
+    <div>
+      <a href="./index.html">Inicio</a>
+      <a href="./presupuesto.html">Presupuesto</a>
+      <a href="./admin.html">Admin</a>
+    </div>
+  </nav>
 
-  <main class="container">
+  <div class="wrap">
     <h1>Calcular presupuesto</h1>
-    <form id="quoteForm" class="grid card">
-      <label>Nombre y apellido
-        <input name="nombre_cliente" required />
-      </label>
-      <label>Teléfono
-        <input name="telefono" required />
-      </label>
-      <label>Tipo de carga
-        <select name="tipo_carga">
-          <option value="mudanza">Mudanza</option>
-          <option value="puntual">Puntual</option>
-        </select>
-      </label>
-      <label>Origen
-        <input name="origen" placeholder="Dirección completa" required />
-      </label>
-      <label>Destino
-        <input name="destino" placeholder="Dirección completa" required />
-      </label>
-      <label>Fecha
-        <input type="date" name="fecha" required />
-      </label>
-      <label>Tiempo carga/descarga (min)
-        <input type="number" name="tiempo_carga_descarga_min" min="0" value="0"/>
-      </label>
-      <label>Config. camioncito (opcional)
-        <input name="configuracion_camion" placeholder="Config A / Config B"/>
-      </label>
-      <button type="submit">Calcular</button>
-    </form>
+    <div class="card">
+      <div class="grid">
+        <div>
+          <label>Nombre y apellido</label>
+          <input id="nombre" placeholder="Juan Pérez" />
+        </div>
+        <div>
+          <label>Teléfono</label>
+          <input id="tel" placeholder="351..." />
+        </div>
+        <div>
+          <label>Tipo de carga</label>
+          <select id="tipo">
+            <option value="mudanza">Mudanza</option>
+            <option value="puntual">Algo puntual</option>
+          </select>
+        </div>
 
-    <div id="quoteResult" class="card" style="display:none;"></div>
-  </main>
+        <div class="full">
+          <label>Origen (dirección completa)</label>
+          <input id="origen" placeholder="Calle y número, Ciudad, País" />
+        </div>
+        <div class="full">
+          <label>Destino (dirección completa)</label>
+          <input id="destino" placeholder="Calle y número, Ciudad, País" />
+        </div>
+
+        <div>
+          <label>Fecha</label>
+          <input id="fecha" type="date" />
+        </div>
+        <div class="row">
+          <input id="ayudante" type="checkbox" />
+          <label for="ayudante">¿Necesita ayudante?</label>
+        </div>
+      </div>
+
+      <div style="margin-top:12px">
+        <button class="btn" id="btnCalc">Calcular</button>
+      </div>
+    </div>
+
+    <div id="out" class="result" style="display:none"></div>
+  </div>
 
   <script>
-    const API_BASE = "http://127.0.0.1:8000";
+    const apiBase = "http://127.0.0.1:8000";
+    const $ = id => document.getElementById(id);
 
-    const quoteForm = document.getElementById("quoteForm");
-    const quoteResult = document.getElementById("quoteResult");
-
-    quoteForm.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const payload = Object.fromEntries(new FormData(quoteForm).entries());
-      if (!payload.tiempo_carga_descarga_min) payload.tiempo_carga_descarga_min = 0;
-      try {
-        const res = await fetch(API_BASE + "/api/quote", {
-          method: "POST",
-          headers: {"Content-Type": "application/json"},
+    $("btnCalc").onclick = async () => {
+      const payload = {
+        nombre_cliente: $("nombre").value.trim(),
+        telefono: $("tel").value.trim(),
+        tipo_carga: $("tipo").value,
+        origen: $("origen").value.trim(),
+        destino: $("destino").value.trim(),
+        fecha: $("fecha").value || null,
+        ayudante: $("ayudante").checked
+      };
+      if(!payload.nombre_cliente || !payload.telefono || !payload.origen || !payload.destino){
+        alert("Completá nombre, teléfono, origen y destino.");
+        return;
+      }
+      try{
+        const res = await fetch(`${apiBase}/api/quote`, {
+          method:"POST",
+          headers:{ "Content-Type":"application/json" },
           body: JSON.stringify(payload)
         });
         const data = await res.json();
-        if (data.ok) {
-          const q = data.quote;
-          quoteResult.style.display = "block";
-          quoteResult.innerHTML = `
-            <h3>Resultado</h3>
-            <p><b>Cliente:</b> ${q.nombre_cliente} (${q.telefono})</p>
-            <p><b>Tipo:</b> ${q.tipo_carga}</p>
-            <p><b>Origen → Destino:</b> ${q.origen} → ${q.destino}</p>
-            <p><b>Fecha:</b> ${q.fecha}</p>
-            <p><b>Distancia:</b> ${q.dist_km} km — <b>Tiempo:</b> ${q.tiempo_viaje_min} min</p>
-            <p style="font-size:20px;"><b>Monto estimado:</b> $ ${q.monto_estimado.toLocaleString("es-AR")}</p>
-          `;
-          quoteForm.reset();
-        } else {
-          alert("Error al calcular: " + (data.error || "desconocido"));
-        }
-      } catch (err) {
-        alert("Error de red");
-        console.error(err);
+        if(!res.ok){ throw new Error(data.detail || "Error"); }
+        const q = data.quote;
+        $("out").style.display="block";
+        $("out").innerHTML = `
+          <h3>Resultado</h3>
+          <p><b>Cliente:</b> ${q.nombre_cliente} (${q.telefono})</p>
+          <p><b>Tipo:</b> ${q.tipo_carga}</p>
+          <p><b>Origen → Destino:</b> ${q.origen} → ${q.destino}</p>
+          <p><b>Fecha:</b> ${q.fecha || "-"}</p>
+          <p><b>Distancia circuito:</b> <span class="mono">${q.dist_km} km</span> —
+             <b>Manejo:</b> <span class="mono">${q.tiempo_viaje_min} min</span> —
+             <b>Servicio (ponderado):</b> <span class="mono">${q.tiempo_servicio_min} min</span>
+          </p>
+          <p>
+            <b>Costos:</b>
+            tiempo $${q.costo_tiempo?.toLocaleString("es-AR") || 0} +
+            combustible $${q.costo_combustible?.toLocaleString("es-AR") || 0}
+            ${q.costo_ayudante ? `+ ayudante $${q.costo_ayudante.toLocaleString("es-AR")}` : ``}
+          </p>
+          <h2>Total estimado: $ ${q.monto_estimado?.toLocaleString("es-AR")}</h2>
+          <p><i>Estado:</i> ${q.estado}</p>
+          <small>ID: ${q.id}</small>
+        `;
+      }catch(e){
+        alert("No se pudo calcular: "+e.message);
       }
-    });
+    };
   </script>
 </body>
 </html>

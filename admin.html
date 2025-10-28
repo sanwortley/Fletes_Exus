@@ -1,264 +1,221 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Fletes Javier – Admin</title>
+  <meta charset="utf-8" />
+  <title>Admin — Fletes Javier</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
-    :root{
-      --primary:#ffcc00; --text:#111; --bg:#f6f7f9;
-      --ok:#e9f9ed; --bad:#fde3e3; --pend:#fff7c5;
-      --border:#e6e8ec; --card:#fff;
-      /* Cliente | Tipo | Fecha | Estado | Acciones */
-      --cols: 220px 160px 150px 160px 220px;
-    }
-    *{box-sizing:border-box}
-    body{margin:0;font-family:"Segoe UI",Roboto,Arial;color:var(--text);background:var(--bg)}
-    header{display:flex;justify-content:space-between;align-items:center;padding:12px 24px;background:#000;color:#fff}
-    header a{color:#fff;text-decoration:none;margin:0 10px;opacity:.9}
-    header a:hover{opacity:1;border-bottom:2px solid var(--primary)}
-    .wrap{max-width:1100px;margin:28px auto;padding:0 16px}
-    h1{margin:0 0 18px;font-size:34px}
-    .topbar{display:flex;justify-content:flex-end;margin-bottom:12px}
-    .btn{display:inline-flex;align-items:center;gap:8px;border:0;border-radius:10px;padding:10px 16px;font-weight:700;cursor:pointer}
-    .btn-yellow{background:var(--primary);color:#000}
-
-    .card{background:var(--card);border:1px solid var(--border);border-radius:14px;box-shadow:0 6px 18px rgba(0,0,0,.04);overflow:hidden}
-    .table-grid{display:grid;grid-template-columns:var(--cols);align-items:center}
-    .thead{background:#0f1115;color:#fff;padding:12px 16px}
-    .thead>div{text-align:center;font-weight:700}
-    .row{padding:10px 16px;border-top:1px solid var(--border);background:#fff;min-height:56px}
-    .row:nth-child(even){background:#fcfdff}
-    .row:hover{background:#fafbfd}
-
-    .center{justify-self:center;text-align:center}
-    .actions{display:flex;justify-content:center;gap:8px}
-    .pill{border:0;border-radius:9px;padding:8px 12px;font-weight:700;cursor:pointer}
-    .pill-detail{background:#e8ecf3;color:#111}
-    .pill-detail:hover{background:#d9dde6}
-    .pill-confirm{background:var(--primary);color:#000}
-    .pill-confirm:hover{filter:brightness(1.05)}
-    .pill-reject{background:#d9dde3;color:#111}
-    .pill-reject:hover{background:#c9ced6}
-
-    .badge{display:inline-block;padding:4px 10px;border-radius:999px;font-size:12px;font-weight:700}
-    .b-ok{background:var(--ok);color:#1b5e20}
-    .b-bad{background:var(--bad);color:#7a1d1d}
-    .b-pend{background:var(--pend);color:#7d6b00}
-
+    :root{--dorado:#ffd000;--ok:#b7f7c0;--warn:#ffe29d;--bad:#f8c0c0}
+    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",Arial;background:#0f1115;color:#eaeaea}
+    .navbar{display:flex;align-items:center;justify-content:space-between;padding:14px 22px;background:#111;color:#fff}
+    .navbar a{color:#fff;text-decoration:none;margin-left:14px;padding:8px 12px;border-radius:10px}
+    .navbar a:hover{background:#222}
+    .wrap{max-width:1100px;margin:22px auto;padding:0 16px}
+    .card{background:#151821;border:1px solid #232634;border-radius:14px;padding:16px;box-shadow:0 8px 30px rgba(0,0,0,.2)}
+    h1{margin:6px 0 18px}
+    .login{display:flex;gap:10px;align-items:center;margin-bottom:10px}
+    input{background:#0f1218;border:1px solid #2a2e35;color:#eaeaea;padding:10px;border-radius:10px}
+    .btn{background:var(--dorado);border:0;padding:10px 14px;border-radius:10px;font-weight:700;cursor:pointer;color:#121212}
+    table{width:100%;border-collapse:separate;border-spacing:0 10px}
+    th,td{text-align:left;padding:10px 12px}
+    th{opacity:.8}
+    tr.row{background:#131621;border:1px solid #232634}
+    .pill{padding:6px 10px;border-radius:999px;font-weight:700}
+    .pend{background:var(--warn);color:#222}
+    .conf{background:var(--ok);color:#124012}
+    .rech{background:var(--bad);color:#5a1111}
+    .actions{display:flex;gap:8px}
+    .btn-sec{background:#303544;color:#eaeaea;border:1px solid #3a3f50}
     /* Modal */
-    .modal-backdrop{
-      position:fixed; inset:0; background:rgba(0,0,0,.35);
-      display:none; align-items:center; justify-content:center; padding:20px; z-index:50;
-    }
-    .modal{
-      width:min(720px, 100%); background:#fff; border-radius:16px;
-      box-shadow:0 18px 40px rgba(0,0,0,.25); overflow:hidden;
-      border:1px solid var(--border);
-    }
-    .modal-header{display:flex;justify-content:space-between;align-items:center;background:#0f1115;color:#fff;padding:14px 18px}
-    .modal-title{font-size:18px;font-weight:700}
-    .modal-close{background:transparent;border:0;color:#fff;font-size:22px;cursor:pointer}
-    .modal-body{padding:18px}
-    .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-    .field{background:#fbfcfe;border:1px solid var(--border);border-radius:10px;padding:10px}
-    .field b{display:block;font-size:12px;color:#555;margin-bottom:6px}
-    .field div{font-size:15px}
-    .modal-footer{display:flex;justify-content:flex-end;gap:10px;padding:14px 18px;border-top:1px solid var(--border);background:#fff}
-    .mono{font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace}
-    @media (max-width:680px){ .grid2{grid-template-columns:1fr} }
+    .modal{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;padding:16px}
+    .modal .box{background:#141820;color:#eaeaea;border:1px solid #232634;border-radius:14px;max-width:720px;width:100%;padding:18px}
+    .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .row2 .full{grid-column:1/-1}
+    .btn-danger{background:#ff6b6b;color:#111}
   </style>
 </head>
 <body>
-  <header>
-    <div><b>🚚 Fletes Javier</b></div>
-    <nav>
-      <a href="index.html">Inicio</a>
-      <a href="presupuesto.html">Presupuesto</a>
-      <a href="admin.html">Admin</a>
-    </nav>
-  </header>
-
-  <main class="wrap">
-    <h1>Solicitudes</h1>
-    <div class="topbar">
-      <button id="logoutBtn" class="btn btn-yellow">Cerrar sesión</button>
+  <nav class="navbar">
+    <div>🚚 Fletes Javier — Admin</div>
+    <div>
+      <a href="./index.html">Inicio</a>
+      <a href="./presupuesto.html">Presupuesto</a>
+      <a href="./admin.html">Admin</a>
     </div>
+  </nav>
 
-    <section class="card">
-      <div class="thead table-grid">
-        <div class="center">Cliente</div>
-        <div class="center">Tipo</div>
-        <div class="center">Fecha</div>
-        <div class="center">Estado</div>
-        <div class="center">Acciones</div>
+  <div class="wrap">
+    <h1>Panel de Administración</h1>
+
+    <div class="card">
+      <div class="login">
+        <input id="u" placeholder="Usuario" autocomplete="username" />
+        <input id="p" type="password" placeholder="Contraseña" autocomplete="current-password" />
+        <button class="btn" id="doLogin">Iniciar sesión</button>
+        <span id="authState" style="margin-left:10px;opacity:.8">No autenticado</span>
       </div>
-      <div id="adminList"></div>
-    </section>
-  </main>
+
+      <div id="list"></div>
+    </div>
+  </div>
 
   <!-- Modal Detalles -->
-  <div id="modalWrap" class="modal-backdrop">
-    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
-      <div class="modal-header">
-        <div class="modal-title" id="modalTitle">Detalles de solicitud</div>
-        <button class="modal-close" id="modalClose" title="Cerrar">×</button>
+  <div class="modal" id="modal">
+    <div class="box">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <h3>Detalles de solicitud</h3>
+        <button class="btn-sec" onclick="hideModal()">Cerrar</button>
       </div>
-      <div class="modal-body">
-        <div class="grid2">
-          <div class="field"><b>Cliente</b><div id="mCliente"></div></div>
-          <div class="field"><b>Teléfono</b><div id="mTelefono"></div></div>
-
-          <div class="field"><b>Tipo de carga</b><div id="mTipo"></div></div>
-          <div class="field"><b>Fecha</b><div id="mFecha"></div></div>
-
-          <div class="field" style="grid-column:1/-1"><b>Origen</b><div id="mOrigen"></div></div>
-          <div class="field" style="grid-column:1/-1"><b>Destino</b><div id="mDestino"></div></div>
-
-          <div class="field"><b>Distancia (KM)</b><div id="mDist"></div></div>
-          <div class="field"><b>Tiempo de viaje (min)</b><div id="mTiempo"></div></div>
-
-          <div class="field"><b>Tiempo carga/descarga (min)</b><div id="mCarga"></div></div>
-          <div class="field"><b>Config. camión</b><div id="mConfig"></div></div>
-
-          <div class="field" style="grid-column:1/-1"><b>Monto estimado</b><div id="mMonto" class="mono" style="font-size:18px"></div></div>
-          <div class="field"><b>Estado</b><div id="mEstado"></div></div>
-          <div class="field"><b>ID</b><div id="mId" class="mono"></div></div>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button id="btnReject" class="pill pill-reject">Rechazar</button>
-        <button id="btnConfirm" class="pill pill-confirm">Confirmar</button>
+      <div id="md-body"></div>
+      <div style="display:flex;gap:8px;margin-top:12px">
+        <button class="btn" id="md-confirm">Confirmar</button>
+        <button class="btn-sec" id="md-reject">Rechazar</button>
+        <button class="btn-danger" id="md-delete" title="Solo si está rechazado">Eliminar</button>
       </div>
     </div>
   </div>
 
   <script>
-    const API_BASE = "http://127.0.0.1:8000";
-    const adminList = document.getElementById("adminList");
-    const logoutBtn = document.getElementById("logoutBtn");
+    const apiBase = "http://127.0.0.1:8000";
+    let token = null;
+    let items = [];
+    let selected = null;
 
-    // Modal refs
-    const modalWrap = document.getElementById("modalWrap");
-    const modalClose = document.getElementById("modalClose");
-    const mCliente = document.getElementById("mCliente");
-    const mTelefono = document.getElementById("mTelefono");
-    const mTipo     = document.getElementById("mTipo");
-    const mFecha    = document.getElementById("mFecha");
-    const mOrigen   = document.getElementById("mOrigen");
-    const mDestino  = document.getElementById("mDestino");
-    const mDist     = document.getElementById("mDist");
-    const mTiempo   = document.getElementById("mTiempo");
-    const mCarga    = document.getElementById("mCarga");
-    const mConfig   = document.getElementById("mConfig");
-    const mMonto    = document.getElementById("mMonto");
-    const mEstado   = document.getElementById("mEstado");
-    const mId       = document.getElementById("mId");
-    const btnConfirm= document.getElementById("btnConfirm");
-    const btnReject = document.getElementById("btnReject");
+    const $ = s => document.querySelector(s);
+    const list = $("#list");
+    const authState = $("#authState");
 
-    // Cache en memoria para abrir detalles sin pedir al backend
-    let cacheById = {};
-    let currentId = null;
-
-    function token(){ return localStorage.getItem("token"); }
-    function setToken(t){ localStorage.setItem("token", t); }
-    function clearToken(){ localStorage.removeItem("token"); location.href="admin.html"; }
-
-    async function ensureLogin(){
-      if(token()) return true;
-      const u = prompt("Usuario admin:"); const p = prompt("Contraseña:");
-      if(!u || !p) return false;
-      const r = await fetch(API_BASE+"/api/login",{
-        method:"POST", headers:{"Content-Type":"application/json"},
-        body: JSON.stringify({username:u, password:p})
+    $("#doLogin").onclick = async () => {
+      const username = $("#u").value.trim();
+      const password = $("#p").value.trim();
+      if(!username || !password){ alert("Completá usuario y contraseña"); return; }
+      const res = await fetch(`${apiBase}/api/login`, {
+        method:"POST",
+        headers:{ "Content-Type":"application/json" },
+        body: JSON.stringify({username,password})
       });
-      if(!r.ok){ alert("Login inválido"); return false; }
-      const j = await r.json(); setToken(j.token); return true;
-    }
-
-    function badge(estado){
-      const e=(estado||"").toLowerCase();
-      if(e==="confirmado") return `<span class="badge b-ok">CONFIRMADO</span>`;
-      if(e==="rechazado")  return `<span class="badge b-bad">RECHAZADO</span>`;
-      return `<span class="badge b-pend">PENDIENTE</span>`;
-    }
-
-    async function loadAdmin(){
-      const ok = await ensureLogin(); if(!ok) return;
-      const res = await fetch(API_BASE+"/api/requests",{
-        headers:{ Authorization:"Bearer "+token() }
-      });
-      if(!res.ok){
-        if(res.status===401){ clearToken(); return; }
-        alert("Error al cargar solicitudes"); return;
-      }
       const data = await res.json();
-      cacheById = {};
-      adminList.innerHTML = "";
-      (data.items||[]).forEach(it=>{
-        cacheById[it.id] = it; // guardo para el modal
+      if(!res.ok){ alert(data.detail || "Error"); return; }
+      token = data.token;
+      authState.textContent = "Autenticado";
+      load();
+    };
 
-        const row = document.createElement("div");
-        row.className = "row table-grid";
-        row.innerHTML = `
-          <div class="center">${it.nombre_cliente}</div>
-          <div class="center">${it.tipo_carga}</div>
-          <div class="center">${it.fecha}</div>
-          <div class="center">${badge(it.estado)}</div>
-          <div class="actions">
-            <button class="pill pill-detail"  data-act="detail"  data-id="${it.id}">Detalles</button>
-            <button class="pill pill-confirm" data-act="confirm" data-id="${it.id}">Confirmar</button>
-            <button class="pill pill-reject"  data-act="reject"  data-id="${it.id}">Rechazar</button>
-          </div>
-        `;
-        adminList.appendChild(row);
+    async function load(){
+      list.innerHTML = "<p>Cargando...</p>";
+      const res = await fetch(`${apiBase}/api/requests`, {
+        headers:{ Authorization: `Bearer ${token}` }
       });
+      const data = await res.json();
+      if(!res.ok){ list.innerHTML = `<p>Error: ${data.detail||"?"}</p>`; return; }
+      items = data.items || [];
+      renderTable();
     }
 
-    function openModal(it){
-      currentId = it.id;
-      mCliente.textContent = it.nombre_cliente || "-";
-      mTelefono.textContent = it.telefono || "-";
-      mTipo.textContent = it.tipo_carga || "-";
-      mFecha.textContent = it.fecha || "-";
-      mOrigen.textContent = it.origen || "-";
-      mDestino.textContent = it.destino || "-";
-      mDist.textContent = (it.dist_km ?? "-");
-      mTiempo.textContent = (it.tiempo_viaje_min ?? "-");
-      mCarga.textContent = (it.tiempo_carga_descarga_min ?? "-");
-      mConfig.textContent = (it.configuracion_camion || "-");
-      mMonto.textContent = it.monto_estimado != null ? `$ ${Number(it.monto_estimado).toLocaleString("es-AR")}` : "-";
-      mEstado.innerHTML = badge(it.estado);
-      mId.textContent = it.id || "-";
-      modalWrap.style.display = "flex";
-    }
-    function closeModal(){ modalWrap.style.display = "none"; currentId = null; }
-
-    async function doAction(id, act){
-      const url = `${API_BASE}/api/requests/${id}/${act}`;
-      const r = await fetch(url,{method:"POST", headers:{Authorization:"Bearer "+token()}});
-      if(r.status===401){ clearToken(); return; }
-      if(!r.ok){ alert("No se pudo " + (act==="confirm"?"confirmar":"rechazar")); return; }
-      closeModal();
-      loadAdmin();
+    function pill(est){
+      if(est === "confirmado") return `<span class="pill conf">CONFIRMADO</span>`;
+      if(est === "rechazado") return `<span class="pill rech">RECHAZADO</span>`;
+      return `<span class="pill pend">PENDIENTE</span>`;
     }
 
-    adminList.addEventListener("click", e=>{
-      const b = e.target.closest("button"); if(!b) return;
-      const id=b.dataset.id, act=b.dataset.act;
-      if(act==="detail"){ openModal(cacheById[id]); return; }
-      if(act==="confirm"){ doAction(id,"confirm"); return; }
-      if(act==="reject"){ doAction(id,"reject"); return; }
-    });
+    function renderTable(){
+      if(!items.length){ list.innerHTML = "<p>Sin solicitudes aún.</p>"; return; }
+      list.innerHTML = `
+        <table>
+          <thead>
+            <tr>
+              <th>Cliente</th>
+              <th>Tipo</th>
+              <th>Fecha</th>
+              <th>Estado</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${items.map(x=>`
+              <tr class="row">
+                <td><div><b>${x.nombre_cliente}</b><br><small>${x.telefono||""}</small></div></td>
+                <td>${x.tipo_carga}</td>
+                <td>${x.fecha||"-"}</td>
+                <td>${pill(x.estado)}</td>
+                <td class="actions">
+                  <button class="btn-sec" onclick='openDetails("${x.id}")'>Detalles</button>
+                </td>
+              </tr>
+            `).join("")}
+          </tbody>
+        </table>
+      `;
+    }
 
-    modalClose.addEventListener("click", closeModal);
-    modalWrap.addEventListener("click", e=>{ if(e.target===modalWrap) closeModal(); });
-    btnConfirm.addEventListener("click", ()=>{ if(currentId) doAction(currentId,"confirm"); });
-    btnReject.addEventListener("click", ()=>{ if(currentId) doAction(currentId,"reject"); });
+    function fmt(n){ return (n??0).toLocaleString("es-AR"); }
 
-    logoutBtn.onclick = clearToken;
-    loadAdmin();
+    function openDetails(id){
+      selected = items.find(x=>x.id===id);
+      if(!selected) return;
+      $("#md-delete").disabled = selected.estado !== "rechazado";
+
+      $("#md-body").innerHTML = `
+        <div class="row2">
+          <div><b>Cliente</b><br>${selected.nombre_cliente}</div>
+          <div><b>Teléfono</b><br>${selected.telefono||"-"}</div>
+          <div><b>Tipo</b><br>${selected.tipo_carga}</div>
+          <div><b>Fecha</b><br>${selected.fecha||"-"}</div>
+          <div class="full"><b>Origen</b><br>${selected.origen}</div>
+          <div class="full"><b>Destino</b><br>${selected.destino}</div>
+          <div><b>Distancia (km)</b><br>${selected.dist_km}</div>
+          <div><b>Manejo (min)</b><br>${selected.tiempo_viaje_min}</div>
+          <div><b>Servicio (min)</b><br>${selected.tiempo_servicio_min}</div>
+          <div><b>Ayudante</b><br>${selected.ayudante ? "Sí" : "No"}</div>
+          <div><b>Costo tiempo</b><br>$ ${fmt(selected.costo_tiempo)}</div>
+          <div><b>Combustible</b><br>$ ${fmt(selected.costo_combustible)}</div>
+          <div><b>Ayudante</b><br>$ ${fmt(selected.costo_ayudante)}</div>
+          <div class="full"><b>Total</b><br><b>$ ${fmt(selected.monto_estimado)}</b></div>
+          <div><b>Estado</b><br>${selected.estado}</div>
+          <div><b>ID</b><br>${selected.id}</div>
+        </div>
+      `;
+      showModal();
+    }
+
+    $("#md-confirm").onclick = async () => {
+      if(!selected) return;
+      const res = await fetch(`${apiBase}/api/requests/${selected.id}/confirm`, {
+        method:"POST",
+        headers:{ Authorization:`Bearer ${token}` }
+      });
+      if(res.ok){ hideModal(); await load(); } else { alert("No se pudo confirmar"); }
+    };
+
+    $("#md-reject").onclick = async () => {
+      if(!selected) return;
+      const res = await fetch(`${apiBase}/api/requests/${selected.id}/reject`, {
+        method:"POST",
+        headers:{ Authorization:`Bearer ${token}` }
+      });
+      if(res.ok){ hideModal(); await load(); } else { alert("No se pudo rechazar"); }
+    };
+
+    $("#md-delete").onclick = async () => {
+      if(!selected) return;
+      if(selected.estado !== "rechazado"){ alert("Solo puede eliminarse si está rechazado."); return; }
+      if(!confirm("¿Eliminar esta solicitud?")) return;
+      const res = await fetch(`${apiBase}/api/requests/${selected.id}`, {
+        method:"DELETE",
+        headers:{ Authorization:`Bearer ${token}` }
+      });
+      if(res.ok){ hideModal(); await load(); } else { alert("No se pudo eliminar"); }
+    };
+
+    function showModal(){ $("#modal").style.display="flex"; }
+    function hideModal(){ $("#modal").style.display="none"; }
+
+    // Si querés, auto-login en dev:
+    // (descomentar y setear valores, o usar el botón)
+    // (async () => {
+    //   const r = await fetch(`${apiBase}/api/login`, {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({username:"admin",password:"admin123"})});
+    //   const j = await r.json(); if(r.ok){ token=j.token; authState.textContent="Autenticado"; load(); }
+    // })();
   </script>
 </body>
 </html>
