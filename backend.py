@@ -6,21 +6,22 @@ import uuid
 from fastapi import FastAPI, HTTPException, Request, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from pymongo import MongoClient, DESCENDING
-from bson.objectid import ObjectId
+from bson import ObjectId
 from dotenv import load_dotenv
-load_dotenv()
-# --- OpenRouteService (distancia real) ---
+
 import openrouteservice
+
+load_dotenv()
 
 # ========================
 # Config general
 # ========================
 app = FastAPI(title="Fletes Javier API")
 
-# CORS (para poder abrir los .html directo en el navegador)
+# CORS (abrir HTML directamente en navegador)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],          # en prod: poné tu dominio
+    allow_origins=["*"],  # en prod: poner dominio
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -38,38 +39,17 @@ quotes.create_index([("creado_en", DESCENDING)])
 # ========================
 # ORS (OpenRouteService)
 # ========================
-ORS_API_KEY = os.getenv("ORS_API_KEY", "TU_API_KEY_AQUI")  # definilo en .env o entorno
-ors_client = openrouteservice.Client(key=ORS_API_KEY)
+ORS_API_KEY = os.getenv("ORS_API_KEY")
+if not ORS_API_KEY:
+    print("⚠️ ORS_API_KEY no definido: /api/quote usará circuito si está presente.")
+ors_client = openrouteservice.Client(key=ORS_API_KEY) if ORS_API_KEY else None
 
-def calcular_distancia_real(origen: str, destino: str):
-    """
-    Geocodifica ambas direcciones y obtiene distancia/tiempo reales por ruta (driving-car).
-    Devuelve: {"dist_km": float, "tiempo_min": float}
-    """
-    # Geocodificación (Pelias)
-    geo_origen = ors_client.pelias_search(text=origen)
-    geo_destino = ors_client.pelias_search(text=destino)
-
-    if not geo_origen.get("features") or not geo_destino.get("features"):
-        raise HTTPException(status_code=422, detail="No se pudieron geocodificar las direcciones")
-
-    coords_origen = geo_origen["features"][0]["geometry"]["coordinates"]  # [lon, lat]
-    coords_destino = geo_destino["features"][0]["geometry"]["coordinates"]
-
-    # Ruta
-    route = ors_client.directions(
-        coordinates=[coords_origen, coords_destino],
-        profile="driving-car",
-        format="geojson"
-    )
-    props = route["features"][0]["properties"]["summary"]
-    distancia_m = props["distance"]
-    duracion_s = props["duration"]
-
-    return {
-        "dist_km": round(distancia_m / 1000, 2),
-        "tiempo_min": round(duracion_s / 60, 1)
-    }
+BASE_DIRECCION = os.getenv("BASE_DIRECCION", "Pasaje Liñán 1941, Córdoba, Argentina")
+KM_POR_LITRO = float(os.getenv("KM_POR_LITRO", 8))
+COSTO_LITRO = float(os.getenv("COSTO_LITRO", 1600))
+COSTO_HORA = float(os.getenv("COSTO_HORA", 25000))
+COSTO_HORA_AYUDANTE = float(os.getenv("COSTO_HORA_AYUDANTE", 10000))
+FACTOR_PONDERACION = float(os.getenv("FACTOR_PONDERACION", 1.5))
 
 # ========================
 # Sesiones/Login simple
@@ -97,21 +77,13 @@ def login(payload: dict):
     raise HTTPException(status_code=401, detail="Invalid credentials")
 
 # ========================
-# Auxiliares
+# Utilidades
 # ========================
-def calcular_presupuesto_placeholder(data: dict):
-    """
-    MVP TEMPORAL (placeholder) hasta que Javi pase las fórmulas.
-    Mantiene compatibilidad con el frontend actual.
-    """
-    tipo_carga = (data.get("tipo_carga") or "mudanza").lower()
-    tiempo_carga = float(data.get("tiempo_carga_descarga_min") or 0)
-
-    base_km = 12 if tipo_carga == "mudanza" else 8
-    dist_km = base_km + (uuid.uuid4().int % 8)
-    tiempo_viaje_min = int(dist_km * 3.2 + tiempo_carga)
-    monto_estimado = int(dist_km * 2200 + tiempo_viaje_min * 25)
-    return dist_km, tiempo_viaje_min, monto_estimado
+def oid(qid: str) -> ObjectId:
+    try:
+        return ObjectId(qid)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid id")
 
 def to_public(x: dict):
     return {
@@ -122,53 +94,155 @@ def to_public(x: dict):
         "origen": x.get("origen"),
         "destino": x.get("destino"),
         "fecha": x.get("fecha"),
+        "ayudante": x.get("ayudante", False),
+
         "tiempo_carga_descarga_min": x.get("tiempo_carga_descarga_min"),
-        "configuracion_camion": x.get("configuracion_camion"),
         "dist_km": x.get("dist_km"),
         "tiempo_viaje_min": x.get("tiempo_viaje_min"),
+        "tiempo_servicio_min": x.get("tiempo_servicio_min"),
+
+        "costo_tiempo": x.get("costo_tiempo"),
+        "costo_combustible": x.get("costo_combustible"),
+        "costo_ayudante": x.get("costo_ayudante"),
         "monto_estimado": x.get("monto_estimado"),
+
         "estado": x.get("estado"),
         "creado_en": x.get("creado_en"),
     }
 
-def oid(qid: str) -> ObjectId:
+def geocode_ors(texto: str):
+    if not ors_client:
+        raise HTTPException(status_code=500, detail="ORS_API_KEY no configurada")
+    res = ors_client.pelias_search(text=texto)
+    if not res.get("features"):
+        raise HTTPException(status_code=400, detail=f"No se pudo geocodificar: {texto}")
+    return res["features"][0]["geometry"]["coordinates"]  # [lon, lat]
+
+def calcular_circuito_dist_y_tiempo(origen: str, destino: str):
+    """
+    Ruta real: base → origen → destino → base
+    """
+    if not ors_client:
+        raise HTTPException(status_code=500, detail="ORS_API_KEY no configurada")
     try:
-        return ObjectId(qid)
-    except Exception:
-        raise HTTPException(status_code=400, detail="Invalid id")
+        base = geocode_ors(BASE_DIRECCION)
+        a = geocode_ors(origen)
+        b = geocode_ors(destino)
+        route = ors_client.directions(
+            coordinates=[base, a, b, base],
+            profile="driving-car",
+            format="geojson",
+        )
+        props = route["features"][0]["properties"]["summary"]
+        distancia_km = round(props["distance"] / 1000, 2)
+        tiempo_min = round(props["duration"] / 60, 1)  # manejo puro
+        return distancia_km, tiempo_min
+    except HTTPException:
+        raise
+    except Exception as e:
+        print("Error calcular_circuito_dist_y_tiempo:", e)
+        raise HTTPException(status_code=500, detail="Error calculando circuito")
+
+def calcular_costo_total(tipo_carga: str, dist_km: float, tiempo_manejo_min: float, ayudante: bool):
+    tiempo_h = tiempo_manejo_min / 60.0
+    extra_h = 1.0 if (tipo_carga or "").lower() == "mudanza" else 0.5
+    tiempo_servicio_h = tiempo_h * FACTOR_PONDERACION + extra_h
+
+    costo_tiempo = tiempo_servicio_h * COSTO_HORA
+    costo_combustible = (dist_km / KM_POR_LITRO) * COSTO_LITRO
+    costo_ayudante = tiempo_servicio_h * COSTO_HORA_AYUDANTE if ayudante else 0.0
+    total = costo_tiempo + costo_combustible + costo_ayudante
+
+    return {
+        "tiempo_servicio_min": round(tiempo_servicio_h * 60, 0),
+        "costo_tiempo": round(costo_tiempo),
+        "costo_combustible": round(costo_combustible),
+        "costo_ayudante": round(costo_ayudante),
+        "total": round(total),
+    }
 
 # ========================
-# Endpoints públicos
+# Endpoints
 # ========================
 @app.get("/")
 def root():
-    return {"status": "ok", "db": "MongoDB", "service": "Fletes Javier API"}
+    return {"status": "ok", "service": "Fletes Javier API"}
+
+@app.post("/api/distancia")
+def obtener_distancia(payload: dict):
+    """
+    Devuelve distancia/tiempo manejo entre origen y destino directos (sin circuito).
+    """
+    if not ors_client:
+        raise HTTPException(status_code=500, detail="ORS_API_KEY no configurada")
+    origen = (payload.get("origen") or "").strip()
+    destino = (payload.get("destino") or "").strip()
+    if not origen or not destino:
+        raise HTTPException(status_code=400, detail="Faltan direcciones")
+
+    try:
+        a = geocode_ors(origen)
+        b = geocode_ors(destino)
+        route = ors_client.directions(
+            coordinates=[a, b],
+            profile="driving-car",
+            format="geojson",
+        )
+        props = route["features"][0]["properties"]["summary"]
+        return {
+            "dist_km": round(props["distance"] / 1000, 2),
+            "tiempo_min": round(props["duration"] / 60, 1),
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        print("Error /api/distancia:", e)
+        raise HTTPException(status_code=500, detail="No se pudo calcular la distancia")
 
 @app.post("/api/quote")
 def crear_presupuesto(payload: dict):
     """
-    Crea una solicitud de presupuesto con cálculo placeholder.
-    (Luego reemplazamos por distancia real + fórmulas del cliente)
+    Calcula:
+    - Circuito base→origen→destino→base (ORS)
+    - Tiempo servicio = manejo*1.5 + (1h mudanza / 0.5h no mudanza)
+    - Combustible, tiempo y ayudante (si aplica)
     """
     nombre = (payload.get("nombre_cliente") or "").strip()
     telefono = (payload.get("telefono") or "").strip()
     if not nombre or not telefono:
         raise HTTPException(status_code=400, detail="Faltan datos obligatorios")
 
-    dist_km, tiempo_viaje_min, monto_estimado = calcular_presupuesto_placeholder(payload)
+    tipo_carga = (payload.get("tipo_carga") or "mudanza").lower()
+    origen = (payload.get("origen") or "").strip()
+    destino = (payload.get("destino") or "").strip()
+    fecha = payload.get("fecha")  # string opcional
+    ayudante = bool(payload.get("ayudante", False))
+
+    if not origen or not destino:
+        raise HTTPException(status_code=400, detail="Falta origen/destino")
+
+    dist_km, tiempo_manejo_min = calcular_circuito_dist_y_tiempo(origen, destino)
+    costos = calcular_costo_total(tipo_carga, dist_km, tiempo_manejo_min, ayudante)
 
     doc = {
         "nombre_cliente": nombre,
         "telefono": telefono,
-        "tipo_carga": payload.get("tipo_carga"),
-        "origen": payload.get("origen"),
-        "destino": payload.get("destino"),
-        "fecha": payload.get("fecha"),
-        "tiempo_carga_descarga_min": payload.get("tiempo_carga_descarga_min"),
-        "configuracion_camion": payload.get("configuracion_camion", ""),
+        "tipo_carga": tipo_carga,
+        "origen": origen,
+        "destino": destino,
+        "fecha": fecha,
+        "ayudante": ayudante,
+        "tiempo_carga_descarga_min": 60 if tipo_carga == "mudanza" else 30,
+
         "dist_km": dist_km,
-        "tiempo_viaje_min": tiempo_viaje_min,
-        "monto_estimado": monto_estimado,
+        "tiempo_viaje_min": tiempo_manejo_min,
+        "tiempo_servicio_min": costos["tiempo_servicio_min"],
+
+        "costo_tiempo": costos["costo_tiempo"],
+        "costo_combustible": costos["costo_combustible"],
+        "costo_ayudante": costos["costo_ayudante"],
+        "monto_estimado": costos["total"],
+
         "estado": "pendiente",
         "creado_en": datetime.utcnow(),
     }
@@ -176,30 +250,7 @@ def crear_presupuesto(payload: dict):
     doc["_id"] = res.inserted_id
     return {"ok": True, "quote": to_public(doc)}
 
-@app.post("/api/distancia")
-def obtener_distancia(data: dict):
-    """
-    Devuelve distancia y tiempo reales por ruta usando OpenRouteService.
-    Body: {"origen":"...", "destino":"..."}
-    """
-    origen = (data.get("origen") or "").strip()
-    destino = (data.get("destino") or "").strip()
-    if not origen or not destino:
-        raise HTTPException(status_code=400, detail="Faltan direcciones")
-
-    try:
-        info = calcular_distancia_real(origen, destino)
-        return info
-    except HTTPException:
-        raise
-    except Exception as e:
-        # Log minimal al stdout
-        print("Error /api/distancia:", e)
-        raise HTTPException(status_code=500, detail="No se pudo calcular la distancia")
-
-# ========================
-# Endpoints Admin (protegidos)
-# ========================
+# --------- ADMIN (protegidos) ----------
 @app.get("/api/requests", dependencies=[Depends(require_auth)])
 def listar_solicitudes():
     cursor = quotes.find({}).sort("creado_en", DESCENDING)
@@ -219,18 +270,15 @@ def rechazar(qid: str):
         raise HTTPException(status_code=404, detail="Request not found")
     return {"ok": True}
 
-# ========================
-# Debug
-# ========================
-@app.get("/debug/dbinfo")
-def dbinfo():
-    total = quotes.count_documents({})
-    one = quotes.find_one()
-    return {
-        "mongo_uri": MONGO_URI,
-        "db": db.name,
-        "collection": quotes.name,
-        "count": total,
-        "sample": (str(one["_id"]) if one else None),
-        "ors_key_set": bool(ORS_API_KEY and ORS_API_KEY != "TU_API_KEY_AQUI")
-    }
+@app.delete("/api/requests/{qid}", dependencies=[Depends(require_auth)])
+def eliminar(qid: str):
+    """
+    Eliminar SOLO si está 'rechazado'
+    """
+    doc = quotes.find_one({"_id": oid(qid)})
+    if not doc:
+        raise HTTPException(status_code=404, detail="Request not found")
+    if doc.get("estado") != "rechazado":
+        raise HTTPException(status_code=400, detail="Solo se puede eliminar si está rechazado")
+    quotes.delete_one({"_id": doc["_id"]})
+    return {"ok": True}
