@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Fletes Javier – Admin</title>
+  <style>
+    :root{
+      --primary:#ffcc00; --text:#111; --bg:#f6f7f9;
+      --ok:#e9f9ed; --bad:#fde3e3; --pend:#fff7c5;
+      --border:#e6e8ec; --card:#fff;
+      /* Cliente | Tipo | Fecha | Estado | Acciones */
+      --cols: 220px 160px 150px 160px 220px;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:"Segoe UI",Roboto,Arial;color:var(--text);background:var(--bg)}
+    header{display:flex;justify-content:space-between;align-items:center;padding:12px 24px;background:#000;color:#fff}
+    header a{color:#fff;text-decoration:none;margin:0 10px;opacity:.9}
+    header a:hover{opacity:1;border-bottom:2px solid var(--primary)}
+    .wrap{max-width:1100px;margin:28px auto;padding:0 16px}
+    h1{margin:0 0 18px;font-size:34px}
+    .topbar{display:flex;justify-content:flex-end;margin-bottom:12px}
+    .btn{display:inline-flex;align-items:center;gap:8px;border:0;border-radius:10px;padding:10px 16px;font-weight:700;cursor:pointer}
+    .btn-yellow{background:var(--primary);color:#000}
+
+    .card{background:var(--card);border:1px solid var(--border);border-radius:14px;box-shadow:0 6px 18px rgba(0,0,0,.04);overflow:hidden}
+    .table-grid{display:grid;grid-template-columns:var(--cols);align-items:center}
+    .thead{background:#0f1115;color:#fff;padding:12px 16px}
+    .thead>div{text-align:center;font-weight:700}
+    .row{padding:10px 16px;border-top:1px solid var(--border);background:#fff;min-height:56px}
+    .row:nth-child(even){background:#fcfdff}
+    .row:hover{background:#fafbfd}
+
+    .center{justify-self:center;text-align:center}
+    .actions{display:flex;justify-content:center;gap:8px}
+    .pill{border:0;border-radius:9px;padding:8px 12px;font-weight:700;cursor:pointer}
+    .pill-detail{background:#e8ecf3;color:#111}
+    .pill-detail:hover{background:#d9dde6}
+    .pill-confirm{background:var(--primary);color:#000}
+    .pill-confirm:hover{filter:brightness(1.05)}
+    .pill-reject{background:#d9dde3;color:#111}
+    .pill-reject:hover{background:#c9ced6}
+
+    .badge{display:inline-block;padding:4px 10px;border-radius:999px;font-size:12px;font-weight:700}
+    .b-ok{background:var(--ok);color:#1b5e20}
+    .b-bad{background:var(--bad);color:#7a1d1d}
+    .b-pend{background:var(--pend);color:#7d6b00}
+
+    /* Modal */
+    .modal-backdrop{
+      position:fixed; inset:0; background:rgba(0,0,0,.35);
+      display:none; align-items:center; justify-content:center; padding:20px; z-index:50;
+    }
+    .modal{
+      width:min(720px, 100%); background:#fff; border-radius:16px;
+      box-shadow:0 18px 40px rgba(0,0,0,.25); overflow:hidden;
+      border:1px solid var(--border);
+    }
+    .modal-header{display:flex;justify-content:space-between;align-items:center;background:#0f1115;color:#fff;padding:14px 18px}
+    .modal-title{font-size:18px;font-weight:700}
+    .modal-close{background:transparent;border:0;color:#fff;font-size:22px;cursor:pointer}
+    .modal-body{padding:18px}
+    .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    .field{background:#fbfcfe;border:1px solid var(--border);border-radius:10px;padding:10px}
+    .field b{display:block;font-size:12px;color:#555;margin-bottom:6px}
+    .field div{font-size:15px}
+    .modal-footer{display:flex;justify-content:flex-end;gap:10px;padding:14px 18px;border-top:1px solid var(--border);background:#fff}
+    .mono{font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace}
+    @media (max-width:680px){ .grid2{grid-template-columns:1fr} }
+  </style>
+</head>
+<body>
+  <header>
+    <div><b>🚚 Fletes Javier</b></div>
+    <nav>
+      <a href="index.html">Inicio</a>
+      <a href="presupuesto.html">Presupuesto</a>
+      <a href="admin.html">Admin</a>
+    </nav>
+  </header>
+
+  <main class="wrap">
+    <h1>Solicitudes</h1>
+    <div class="topbar">
+      <button id="logoutBtn" class="btn btn-yellow">Cerrar sesión</button>
+    </div>
+
+    <section class="card">
+      <div class="thead table-grid">
+        <div class="center">Cliente</div>
+        <div class="center">Tipo</div>
+        <div class="center">Fecha</div>
+        <div class="center">Estado</div>
+        <div class="center">Acciones</div>
+      </div>
+      <div id="adminList"></div>
+    </section>
+  </main>
+
+  <!-- Modal Detalles -->
+  <div id="modalWrap" class="modal-backdrop">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <div class="modal-header">
+        <div class="modal-title" id="modalTitle">Detalles de solicitud</div>
+        <button class="modal-close" id="modalClose" title="Cerrar">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="grid2">
+          <div class="field"><b>Cliente</b><div id="mCliente"></div></div>
+          <div class="field"><b>Teléfono</b><div id="mTelefono"></div></div>
+
+          <div class="field"><b>Tipo de carga</b><div id="mTipo"></div></div>
+          <div class="field"><b>Fecha</b><div id="mFecha"></div></div>
+
+          <div class="field" style="grid-column:1/-1"><b>Origen</b><div id="mOrigen"></div></div>
+          <div class="field" style="grid-column:1/-1"><b>Destino</b><div id="mDestino"></div></div>
+
+          <div class="field"><b>Distancia (KM)</b><div id="mDist"></div></div>
+          <div class="field"><b>Tiempo de viaje (min)</b><div id="mTiempo"></div></div>
+
+          <div class="field"><b>Tiempo carga/descarga (min)</b><div id="mCarga"></div></div>
+          <div class="field"><b>Config. camión</b><div id="mConfig"></div></div>
+
+          <div class="field" style="grid-column:1/-1"><b>Monto estimado</b><div id="mMonto" class="mono" style="font-size:18px"></div></div>
+          <div class="field"><b>Estado</b><div id="mEstado"></div></div>
+          <div class="field"><b>ID</b><div id="mId" class="mono"></div></div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button id="btnReject" class="pill pill-reject">Rechazar</button>
+        <button id="btnConfirm" class="pill pill-confirm">Confirmar</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE = "http://127.0.0.1:8000";
+    const adminList = document.getElementById("adminList");
+    const logoutBtn = document.getElementById("logoutBtn");
+
+    // Modal refs
+    const modalWrap = document.getElementById("modalWrap");
+    const modalClose = document.getElementById("modalClose");
+    const mCliente = document.getElementById("mCliente");
+    const mTelefono = document.getElementById("mTelefono");
+    const mTipo     = document.getElementById("mTipo");
+    const mFecha    = document.getElementById("mFecha");
+    const mOrigen   = document.getElementById("mOrigen");
+    const mDestino  = document.getElementById("mDestino");
+    const mDist     = document.getElementById("mDist");
+    const mTiempo   = document.getElementById("mTiempo");
+    const mCarga    = document.getElementById("mCarga");
+    const mConfig   = document.getElementById("mConfig");
+    const mMonto    = document.getElementById("mMonto");
+    const mEstado   = document.getElementById("mEstado");
+    const mId       = document.getElementById("mId");
+    const btnConfirm= document.getElementById("btnConfirm");
+    const btnReject = document.getElementById("btnReject");
+
+    // Cache en memoria para abrir detalles sin pedir al backend
+    let cacheById = {};
+    let currentId = null;
+
+    function token(){ return localStorage.getItem("token"); }
+    function setToken(t){ localStorage.setItem("token", t); }
+    function clearToken(){ localStorage.removeItem("token"); location.href="admin.html"; }
+
+    async function ensureLogin(){
+      if(token()) return true;
+      const u = prompt("Usuario admin:"); const p = prompt("Contraseña:");
+      if(!u || !p) return false;
+      const r = await fetch(API_BASE+"/api/login",{
+        method:"POST", headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({username:u, password:p})
+      });
+      if(!r.ok){ alert("Login inválido"); return false; }
+      const j = await r.json(); setToken(j.token); return true;
+    }
+
+    function badge(estado){
+      const e=(estado||"").toLowerCase();
+      if(e==="confirmado") return `<span class="badge b-ok">CONFIRMADO</span>`;
+      if(e==="rechazado")  return `<span class="badge b-bad">RECHAZADO</span>`;
+      return `<span class="badge b-pend">PENDIENTE</span>`;
+    }
+
+    async function loadAdmin(){
+      const ok = await ensureLogin(); if(!ok) return;
+      const res = await fetch(API_BASE+"/api/requests",{
+        headers:{ Authorization:"Bearer "+token() }
+      });
+      if(!res.ok){
+        if(res.status===401){ clearToken(); return; }
+        alert("Error al cargar solicitudes"); return;
+      }
+      const data = await res.json();
+      cacheById = {};
+      adminList.innerHTML = "";
+      (data.items||[]).forEach(it=>{
+        cacheById[it.id] = it; // guardo para el modal
+
+        const row = document.createElement("div");
+        row.className = "row table-grid";
+        row.innerHTML = `
+          <div class="center">${it.nombre_cliente}</div>
+          <div class="center">${it.tipo_carga}</div>
+          <div class="center">${it.fecha}</div>
+          <div class="center">${badge(it.estado)}</div>
+          <div class="actions">
+            <button class="pill pill-detail"  data-act="detail"  data-id="${it.id}">Detalles</button>
+            <button class="pill pill-confirm" data-act="confirm" data-id="${it.id}">Confirmar</button>
+            <button class="pill pill-reject"  data-act="reject"  data-id="${it.id}">Rechazar</button>
+          </div>
+        `;
+        adminList.appendChild(row);
+      });
+    }
+
+    function openModal(it){
+      currentId = it.id;
+      mCliente.textContent = it.nombre_cliente || "-";
+      mTelefono.textContent = it.telefono || "-";
+      mTipo.textContent = it.tipo_carga || "-";
+      mFecha.textContent = it.fecha || "-";
+      mOrigen.textContent = it.origen || "-";
+      mDestino.textContent = it.destino || "-";
+      mDist.textContent = (it.dist_km ?? "-");
+      mTiempo.textContent = (it.tiempo_viaje_min ?? "-");
+      mCarga.textContent = (it.tiempo_carga_descarga_min ?? "-");
+      mConfig.textContent = (it.configuracion_camion || "-");
+      mMonto.textContent = it.monto_estimado != null ? `$ ${Number(it.monto_estimado).toLocaleString("es-AR")}` : "-";
+      mEstado.innerHTML = badge(it.estado);
+      mId.textContent = it.id || "-";
+      modalWrap.style.display = "flex";
+    }
+    function closeModal(){ modalWrap.style.display = "none"; currentId = null; }
+
+    async function doAction(id, act){
+      const url = `${API_BASE}/api/requests/${id}/${act}`;
+      const r = await fetch(url,{method:"POST", headers:{Authorization:"Bearer "+token()}});
+      if(r.status===401){ clearToken(); return; }
+      if(!r.ok){ alert("No se pudo " + (act==="confirm"?"confirmar":"rechazar")); return; }
+      closeModal();
+      loadAdmin();
+    }
+
+    adminList.addEventListener("click", e=>{
+      const b = e.target.closest("button"); if(!b) return;
+      const id=b.dataset.id, act=b.dataset.act;
+      if(act==="detail"){ openModal(cacheById[id]); return; }
+      if(act==="confirm"){ doAction(id,"confirm"); return; }
+      if(act==="reject"){ doAction(id,"reject"); return; }
+    });
+
+    modalClose.addEventListener("click", closeModal);
+    modalWrap.addEventListener("click", e=>{ if(e.target===modalWrap) closeModal(); });
+    btnConfirm.addEventListener("click", ()=>{ if(currentId) doAction(currentId,"confirm"); });
+    btnReject.addEventListener("click", ()=>{ if(currentId) doAction(currentId,"reject"); });
+
+    logoutBtn.onclick = clearToken;
+    loadAdmin();
+  </script>
+</body>
+</html>

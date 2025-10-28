@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Fletes Javier – Presupuesto</title>
+  <style>
+    :root{--primary:#ffcc00;--text:#111;--bg:#fff}
+    *{box-sizing:border-box} body{margin:0;font-family:system-ui,Segoe UI,Roboto,Arial;color:var(--text);background:var(--bg)}
+    header{display:flex;justify-content:space-between;align-items:center;padding:12px 20px;background:#000;color:#fff}
+    header a{color:#fff;text-decoration:none;margin:0 10px;opacity:.9}
+    header a:hover{opacity:1;border-bottom:2px solid var(--primary)}
+    .container{max-width:960px;margin:24px auto;padding:0 16px}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+    label{display:flex;flex-direction:column;font-size:14px;gap:6px}
+    input,select{padding:10px;border-radius:10px;border:1px solid #ddd}
+    button{padding:10px 16px;border-radius:12px;background:var(--primary);color:#000;font-weight:700;border:0;cursor:pointer}
+    .card{background:#fff;border:1px solid #eee;border-radius:16px;padding:16px;box-shadow:0 2px 8px rgba(0,0,0,.06);margin-top:16px}
+  </style>
+</head>
+<body>
+  <header>
+    <div><b>🚚 Fletes Javier</b></div>
+    <nav>
+      <a href="index.html">Inicio</a>
+      <a href="presupuesto.html">Presupuesto</a>
+      <a href="admin.html">Admin</a>
+    </nav>
+  </header>
+
+  <main class="container">
+    <h1>Calcular presupuesto</h1>
+    <form id="quoteForm" class="grid card">
+      <label>Nombre y apellido
+        <input name="nombre_cliente" required />
+      </label>
+      <label>Teléfono
+        <input name="telefono" required />
+      </label>
+      <label>Tipo de carga
+        <select name="tipo_carga">
+          <option value="mudanza">Mudanza</option>
+          <option value="puntual">Puntual</option>
+        </select>
+      </label>
+      <label>Origen
+        <input name="origen" placeholder="Dirección completa" required />
+      </label>
+      <label>Destino
+        <input name="destino" placeholder="Dirección completa" required />
+      </label>
+      <label>Fecha
+        <input type="date" name="fecha" required />
+      </label>
+      <label>Tiempo carga/descarga (min)
+        <input type="number" name="tiempo_carga_descarga_min" min="0" value="0"/>
+      </label>
+      <label>Config. camioncito (opcional)
+        <input name="configuracion_camion" placeholder="Config A / Config B"/>
+      </label>
+      <button type="submit">Calcular</button>
+    </form>
+
+    <div id="quoteResult" class="card" style="display:none;"></div>
+  </main>
+
+  <script>
+    const API_BASE = "http://127.0.0.1:8000";
+
+    const quoteForm = document.getElementById("quoteForm");
+    const quoteResult = document.getElementById("quoteResult");
+
+    quoteForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const payload = Object.fromEntries(new FormData(quoteForm).entries());
+      if (!payload.tiempo_carga_descarga_min) payload.tiempo_carga_descarga_min = 0;
+      try {
+        const res = await fetch(API_BASE + "/api/quote", {
+          method: "POST",
+          headers: {"Content-Type": "application/json"},
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (data.ok) {
+          const q = data.quote;
+          quoteResult.style.display = "block";
+          quoteResult.innerHTML = `
+            <h3>Resultado</h3>
+            <p><b>Cliente:</b> ${q.nombre_cliente} (${q.telefono})</p>
+            <p><b>Tipo:</b> ${q.tipo_carga}</p>
+            <p><b>Origen → Destino:</b> ${q.origen} → ${q.destino}</p>
+            <p><b>Fecha:</b> ${q.fecha}</p>
+            <p><b>Distancia:</b> ${q.dist_km} km — <b>Tiempo:</b> ${q.tiempo_viaje_min} min</p>
+            <p style="font-size:20px;"><b>Monto estimado:</b> $ ${q.monto_estimado.toLocaleString("es-AR")}</p>
+          `;
+          quoteForm.reset();
+        } else {
+          alert("Error al calcular: " + (data.error || "desconocido"));
+        }
+      } catch (err) {
+        alert("Error de red");
+        console.error(err);
+      }
+    });
+  </script>
+</body>
+</html>
