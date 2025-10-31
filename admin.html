@@ -2,220 +2,372 @@
 <html lang="es">
 <head>
   <meta charset="utf-8" />
-  <title>Admin — Fletes Javier</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Fletes Larga Distancia — Admin</title>
+
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+
   <style>
-    :root{--dorado:#ffd000;--ok:#b7f7c0;--warn:#ffe29d;--bad:#f8c0c0}
-    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",Arial;background:#0f1115;color:#eaeaea}
-    .navbar{display:flex;align-items:center;justify-content:space-between;padding:14px 22px;background:#111;color:#fff}
-    .navbar a{color:#fff;text-decoration:none;margin-left:14px;padding:8px 12px;border-radius:10px}
-    .navbar a:hover{background:#222}
-    .wrap{max-width:1100px;margin:22px auto;padding:0 16px}
-    .card{background:#151821;border:1px solid #232634;border-radius:14px;padding:16px;box-shadow:0 8px 30px rgba(0,0,0,.2)}
-    h1{margin:6px 0 18px}
-    .login{display:flex;gap:10px;align-items:center;margin-bottom:10px}
-    input{background:#0f1218;border:1px solid #2a2e35;color:#eaeaea;padding:10px;border-radius:10px}
-    .btn{background:var(--dorado);border:0;padding:10px 14px;border-radius:10px;font-weight:700;cursor:pointer;color:#121212}
-    table{width:100%;border-collapse:separate;border-spacing:0 10px}
-    th,td{text-align:left;padding:10px 12px}
-    th{opacity:.8}
-    tr.row{background:#131621;border:1px solid #232634}
-    .pill{padding:6px 10px;border-radius:999px;font-weight:700}
-    .pend{background:var(--warn);color:#222}
-    .conf{background:var(--ok);color:#124012}
-    .rech{background:var(--bad);color:#5a1111}
-    .actions{display:flex;gap:8px}
-    .btn-sec{background:#303544;color:#eaeaea;border:1px solid #3a3f50}
-    /* Modal */
-    .modal{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;padding:16px}
-    .modal .box{background:#141820;color:#eaeaea;border:1px solid #232634;border-radius:14px;max-width:720px;width:100%;padding:18px}
-    .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-    .row2 .full{grid-column:1/-1}
-    .btn-danger{background:#ff6b6b;color:#111}
+    :root{
+      --brand:#ffcc00; --brand-2:#ffb700;
+      --bg:#0b0b0b; --card:#131313; --ink:#f5f7fb; --muted:#a9b1bd; --stroke:#232323;
+      --ok:#36d399; --warn:#ffd95a; --bad:#ff6b6b;
+      --radius:16px; --shadow:0 10px 30px rgba(0,0,0,.45);
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,Arial;
+      background:
+        radial-gradient(900px 600px at 90% -20%, #191919 0%, transparent 55%),
+        radial-gradient(900px 600px at 10% -20%, #151515 0%, transparent 55%),
+        var(--bg);
+      color:var(--ink);
+    }
+
+    /* Topbar */
+    .nav{position:sticky;top:0;z-index:10;background:rgba(0,0,0,.6);backdrop-filter:blur(8px);border-bottom:1px solid var(--stroke)}
+    .nav-inner{max-width:1100px;margin:0 auto;display:flex;align-items:center;gap:16px;padding:12px 18px}
+    .brand{display:flex;align-items:center;gap:10px;font-weight:700}
+    .dot{width:10px;height:10px;border-radius:50%;background:linear-gradient(180deg,var(--brand),var(--brand-2));box-shadow:0 0 18px var(--brand)}
+    .nav-links{margin-left:auto;display:flex;gap:12px;align-items:center}
+    .nav-links a{opacity:.9;color:var(--ink);text-decoration:none;padding:6px 10px;border-radius:10px}
+    .nav-links a:hover{opacity:1;background:#171717}
+    .nav-links .active{background:#171717}
+    .btn-out{background:#171717;border:1px solid var(--stroke);color:var(--ink);padding:8px 12px;border-radius:10px;font-weight:700;cursor:pointer}
+    .btn-out:hover{filter:brightness(1.1)}
+
+    .container{max-width:1100px;margin:28px auto;padding:0 18px}
+    h1{margin:10px 0 18px;font-size:38px}
+    .accent{background:linear-gradient(180deg,var(--brand),var(--brand-2));-webkit-background-clip:text;background-clip:text;color:transparent;text-shadow:0 0 24px rgba(255,204,0,.18)}
+    .panel{background:linear-gradient(180deg,#131313,#101010);border:1px solid var(--stroke);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px}
+
+    /* Login */
+    .login-row{display:grid;grid-template-columns:1fr 1fr auto auto;gap:12px;align-items:center;background:#0e0e0e;border:1px solid var(--stroke);border-radius:14px;padding:12px;margin-bottom:18px}
+    .input{background:#0c0c0c;border:1px solid var(--stroke);color:var(--ink);border-radius:12px;padding:12px;outline:none}
+    .input::placeholder{color:#7f8893}
+    .btn{border:none;border-radius:12px;padding:12px 16px;font-weight:700;cursor:pointer;transition:transform .08s ease,filter .15s ease}
+    .btn-primary{background:linear-gradient(180deg,var(--brand),var(--brand-2));color:#111;box-shadow:0 8px 20px rgba(255,204,0,.28)}
+    .btn-primary:active{transform:translateY(1px)}
+    .tag{font-size:12px;font-weight:700}
+    .tag.ok{color:var(--ok)} .tag.bad{color:var(--bad)} .tag.muted{color:var(--muted)}
+
+    /* Tabla */
+    .table{width:100%;border-collapse:separate;border-spacing:0 10px}
+    .thead th{color:var(--muted);text-align:left;padding:0 12px 8px;font-size:14px}
+    .row{background:#101010;border:1px solid var(--stroke);border-radius:14px;box-shadow:var(--shadow)}
+    .row td{padding:14px 12px;vertical-align:middle}
+    .client{display:flex;flex-direction:column;gap:4px}
+    .client .name{font-weight:700}
+    .client .sub{color:var(--muted);font-size:13px}
+    .badge{display:inline-flex;align-items:center;padding:8px 12px;font-weight:800;letter-spacing:.4px;border-radius:999px;border:1px solid transparent;font-size:12px}
+    .aprobado{color:#0f3;background:rgba(0,255,120,.08);border-color:rgba(0,255,120,.25)}
+    .pendiente{color:#ffd95a;background:rgba(255,217,90,.08);border-color:rgba(255,217,90,.25)}
+    .rechazado{color:#ff8b8b;background:rgba(255,107,107,.12);border-color:rgba(255,107,107,.25)}
+    .btn-ghost{background:transparent;color:var(--ink);border:1px solid #2a2a2a;padding:8px 12px;border-radius:10px;font-weight:700}
+    .btn-ghost:hover{filter:brightness(1.15)}
+    .actions{display:flex;gap:8px;justify-content:flex-end}
+    .empty{color:var(--muted);text-align:center;padding:16px 8px}
+
+    /* Overlay + Modal */
+    .overlay{position:fixed;inset:0;background:rgba(0,0,0,0.65);display:none;justify-content:center;align-items:center;z-index:999}
+    .overlay.open{display:flex}
+
+    .modal{
+      background:#111;color:#fff;border-radius:12px;box-shadow:0 0 20px rgba(255,204,0,.3);
+      width:90%;max-width:700px;max-height:90vh;overflow-y:auto;padding:20px 25px;display:flex;flex-direction:column;gap:16px;
+      animation:fadeIn .25s ease-out;
+    }
+    .modal-head{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #333;padding-bottom:8px}
+    .modal-title{font-size:1.4em;font-weight:700;color:var(--brand)}
+    .modal-close{background:transparent;color:#aaa;border:none;font-size:1.4em;cursor:pointer;transition:color .2s}
+    .modal-close:hover{color:var(--brand)}
+    .modal-body{display:flex;flex-direction:column;gap:12px}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:10px}
+    .kv{background:#181818;padding:10px 14px;border-radius:8px}
+    .kv small{display:block;font-size:.8em;color:#aaa}
+    .kv strong{font-size:1em;color:#fff}
+    .kv.total{grid-column:1 / -1;text-align:right}
+    #overlay .modal-foot{display:flex;justify-content:space-between;align-items:center;border-top:1px solid #333;padding-top:12px}
+    #m_total{font-size:1.6em;color:var(--brand);font-weight:900}
+
+    .btn-danger{background:#2b0b0b;border:1px solid #3a1616;color:#ffb3b3;padding:10px 12px;border-radius:10px;font-weight:800}
+    .btn-reject{background:#2b160b;border:1px solid #3a2316;color:#ffc9a1;padding:10px 12px;border-radius:10px;font-weight:800}
+    .btn-ok{background:linear-gradient(180deg,var(--brand),var(--brand-2));color:#111;padding:11px 16px;border-radius:12px;font-weight:900;border:none}
+
+    .toast{position:fixed;bottom:18px;right:18px;background:#111;border:1px solid var(--stroke);padding:12px 14px;border-radius:12px;box-shadow:var(--shadow);display:none}
+    .toast.show{display:block}
+
+    @media (max-width:760px){
+      .login-row{grid-template-columns:1fr;gap:10px}
+      .thead{display:none}
+      .row{display:grid}
+    }
+    @keyframes fadeIn{from{opacity:0;transform:scale(.95)}to{opacity:1;transform:scale(1)}}
   </style>
 </head>
 <body>
-  <nav class="navbar">
-    <div>🚚 Fletes Javier — Admin</div>
-    <div>
-      <a href="./index.html">Inicio</a>
-      <a href="./presupuesto.html">Presupuesto</a>
-      <a href="./admin.html">Admin</a>
+  <header class="nav">
+    <div class="nav-inner">
+      <div class="brand"><span class="dot"></span> Fletes Larga Distancia — Admin</div>
+      <nav class="nav-links">
+        <!-- 🔧 rutas relativas (funcionan en file:// y Live Server) -->
+        <a href="index.html">Inicio</a>
+        <a href="presupuesto.html">Presupuesto</a>
+        <strong class="active">Admin</strong>
+        <button id="btnLogout" class="btn-out" style="display:none" onclick="logout()">Cerrar sesión</button>
+      </nav>
     </div>
-  </nav>
+  </header>
 
-  <div class="wrap">
-    <h1>Panel de Administración</h1>
+  <main class="container">
+    <h1>Panel de <span class="accent">Administración</span></h1>
 
-    <div class="card">
-      <div class="login">
-        <input id="u" placeholder="Usuario" autocomplete="username" />
-        <input id="p" type="password" placeholder="Contraseña" autocomplete="current-password" />
-        <button class="btn" id="doLogin">Iniciar sesión</button>
-        <span id="authState" style="margin-left:10px;opacity:.8">No autenticado</span>
-      </div>
+    <section class="panel">
+      <form class="login-row" onsubmit="event.preventDefault(); login()">
+        <input class="input" id="usr" type="text" placeholder="Usuario" />
+        <input class="input" id="pwd" type="password" placeholder="Contraseña" />
+        <button class="btn btn-primary" type="submit">Iniciar sesión</button>
+        <div id="authFlag" class="tag muted">No autenticado</div>
+      </form>
 
-      <div id="list"></div>
-    </div>
-  </div>
+      <table class="table" id="tabla">
+        <thead class="thead">
+          <tr>
+            <th>Cliente</th><th>Tipo</th><th>Fecha</th><th>Estado</th><th style="text-align:right">Acciones</th>
+          </tr>
+        </thead>
+        <tbody id="tbody">
+          <tr><td colspan="5" class="empty">Iniciá sesión para ver las solicitudes de presupuesto.</td></tr>
+        </tbody>
+      </table>
+    </section>
+  </main>
 
   <!-- Modal Detalles -->
-  <div class="modal" id="modal">
-    <div class="box">
-      <div style="display:flex;justify-content:space-between;align-items:center">
-        <h3>Detalles de solicitud</h3>
-        <button class="btn-sec" onclick="hideModal()">Cerrar</button>
+  <div class="overlay" id="overlay" onclick="if(event.target===this) closeModal()">
+    <div class="modal" role="dialog" aria-modal="true">
+      <div class="modal-head">
+        <h2 class="modal-title">Detalles del presupuesto</h2>
+        <button class="modal-close" onclick="closeModal()">✕</button>
       </div>
-      <div id="md-body"></div>
-      <div style="display:flex;gap:8px;margin-top:12px">
-        <button class="btn" id="md-confirm">Confirmar</button>
-        <button class="btn-sec" id="md-reject">Rechazar</button>
-        <button class="btn-danger" id="md-delete" title="Solo si está rechazado">Eliminar</button>
+
+      <div class="modal-body">
+        <div class="grid">
+          <div class="kv"><small>Cliente</small><strong id="m_cliente">-</strong></div>
+          <div class="kv"><small>Teléfono</small><strong id="m_tel">-</strong></div>
+          <div class="kv"><small>Tipo de carga</small><strong id="m_tipo">-</strong></div>
+          <div class="kv"><small>Fecha</small><strong id="m_fecha">-</strong></div>
+          <div class="kv"><small>Ayudante</small><strong id="m_ayudante">-</strong></div>
+          <div class="kv"><small>Estado</small><strong id="m_estado">-</strong></div>
+          <div class="kv"><small>Origen</small><strong id="m_origen">-</strong></div>
+          <div class="kv"><small>Destino</small><strong id="m_destino">-</strong></div>
+          <div class="kv"><small>Distancia (km)</small><strong id="m_dist_km">-</strong></div>
+          <div class="kv"><small>Tiempo de manejo (min)</small><strong id="m_tiempo_viaje">-</strong></div>
+          <div class="kv"><small>Tiempo total de servicio (min)</small><strong id="m_tiempo_servicio">-</strong></div>
+          <div class="kv"><small>Tiempo carga/descarga (min)</small><strong id="m_tiempo_carga_desc">-</strong></div>
+          <div class="kv"><small>Costo tiempo</small><strong id="m_costo_tiempo">-</strong></div>
+          <div class="kv"><small>Costo combustible</small><strong id="m_costo_combustible">-</strong></div>
+          <div class="kv"><small>Costo ayudante</small><strong id="m_costo_ayudante">-</strong></div>
+          <div class="kv total">
+            <small><b>Total estimado</b></small>
+            <strong id="m_total">$ -</strong>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-foot">
+        <button class="btn-danger" onclick="eliminar()">Eliminar</button>
+        <div style="display:flex; gap:8px">
+          <button class="btn-reject" onclick="rechazar()">Rechazar</button>
+          <button class="btn-ok" onclick="aprobar()">Confirmar</button>
+        </div>
       </div>
     </div>
   </div>
 
+  <div class="toast" id="toast"></div>
+
   <script>
-    const apiBase = "http://127.0.0.1:8000";
-    let token = null;
-    let items = [];
+    // Backend FastAPI
+    const API_BASE = 'http://127.0.0.1:8000';
+
+    let token = localStorage.getItem('admin_token') || null;
+    let solicitudes = [];
     let selected = null;
 
-    const $ = s => document.querySelector(s);
-    const list = $("#list");
-    const authState = $("#authState");
+    const q = (s)=>document.querySelector(s);
+    const toast = (msg)=>{const t=q('#toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200)};
 
-    $("#doLogin").onclick = async () => {
-      const username = $("#u").value.trim();
-      const password = $("#p").value.trim();
-      if(!username || !password){ alert("Completá usuario y contraseña"); return; }
-      const res = await fetch(`${apiBase}/api/login`, {
-        method:"POST",
-        headers:{ "Content-Type":"application/json" },
-        body: JSON.stringify({username,password})
-      });
-      const data = await res.json();
-      if(!res.ok){ alert(data.detail || "Error"); return; }
-      token = data.token;
-      authState.textContent = "Autenticado";
-      load();
-    };
-
-    async function load(){
-      list.innerHTML = "<p>Cargando...</p>";
-      const res = await fetch(`${apiBase}/api/requests`, {
-        headers:{ Authorization: `Bearer ${token}` }
-      });
-      const data = await res.json();
-      if(!res.ok){ list.innerHTML = `<p>Error: ${data.detail||"?"}</p>`; return; }
-      items = data.items || [];
-      renderTable();
+    function badge(estadoRaw){
+      const e = (estadoRaw || 'pendiente').toLowerCase();
+      const texto = e.charAt(0).toUpperCase() + e.slice(1);
+      const cls = e==='confirmado' ? 'aprobado' : (e==='rechazado' ? 'rechazado' : 'pendiente');
+      return `<span class="badge ${cls}">${texto}</span>`;
     }
 
-    function pill(est){
-      if(est === "confirmado") return `<span class="pill conf">CONFIRMADO</span>`;
-      if(est === "rechazado") return `<span class="pill rech">RECHAZADO</span>`;
-      return `<span class="pill pend">PENDIENTE</span>`;
+    // ---------- Auth ----------
+    function setAuthUI(isOn){
+      q('#authFlag').textContent = isOn ? 'Autenticado' : 'No autenticado';
+      q('#authFlag').className = 'tag ' + (isOn ? 'ok' : 'muted');
+      q('#btnLogout').style.display = isOn ? 'inline-flex' : 'none';
     }
 
-    function renderTable(){
-      if(!items.length){ list.innerHTML = "<p>Sin solicitudes aún.</p>"; return; }
-      list.innerHTML = `
-        <table>
-          <thead>
-            <tr>
-              <th>Cliente</th>
-              <th>Tipo</th>
-              <th>Fecha</th>
-              <th>Estado</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${items.map(x=>`
-              <tr class="row">
-                <td><div><b>${x.nombre_cliente}</b><br><small>${x.telefono||""}</small></div></td>
-                <td>${x.tipo_carga}</td>
-                <td>${x.fecha||"-"}</td>
-                <td>${pill(x.estado)}</td>
-                <td class="actions">
-                  <button class="btn-sec" onclick='openDetails("${x.id}")'>Detalles</button>
-                </td>
-              </tr>
-            `).join("")}
-          </tbody>
-        </table>
-      `;
+    async function login(){
+      const username = q('#usr').value.trim();
+      const password = q('#pwd').value.trim();
+      if(!username || !password){toast('Ingresá usuario y contraseña');return;}
+      try{
+        const res = await fetch(`${API_BASE}/api/login`, {
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({username, password})
+        });
+        const data = await res.json();
+        if(!res.ok) throw new Error(data.detail || 'Credenciales inválidas');
+        token = data.token;
+        localStorage.setItem('admin_token', token);
+        setAuthUI(true);
+        toast('Sesión iniciada');
+        await loadSolicitudes();
+      }catch(e){toast(e.message || 'Error de login')}
     }
 
-    function fmt(n){ return (n??0).toLocaleString("es-AR"); }
-
-    function openDetails(id){
-      selected = items.find(x=>x.id===id);
-      if(!selected) return;
-      $("#md-delete").disabled = selected.estado !== "rechazado";
-
-      $("#md-body").innerHTML = `
-        <div class="row2">
-          <div><b>Cliente</b><br>${selected.nombre_cliente}</div>
-          <div><b>Teléfono</b><br>${selected.telefono||"-"}</div>
-          <div><b>Tipo</b><br>${selected.tipo_carga}</div>
-          <div><b>Fecha</b><br>${selected.fecha||"-"}</div>
-          <div class="full"><b>Origen</b><br>${selected.origen}</div>
-          <div class="full"><b>Destino</b><br>${selected.destino}</div>
-          <div><b>Distancia (km)</b><br>${selected.dist_km}</div>
-          <div><b>Manejo (min)</b><br>${selected.tiempo_viaje_min}</div>
-          <div><b>Servicio (min)</b><br>${selected.tiempo_servicio_min}</div>
-          <div><b>Ayudante</b><br>${selected.ayudante ? "Sí" : "No"}</div>
-          <div><b>Costo tiempo</b><br>$ ${fmt(selected.costo_tiempo)}</div>
-          <div><b>Combustible</b><br>$ ${fmt(selected.costo_combustible)}</div>
-          <div><b>Ayudante</b><br>$ ${fmt(selected.costo_ayudante)}</div>
-          <div class="full"><b>Total</b><br><b>$ ${fmt(selected.monto_estimado)}</b></div>
-          <div><b>Estado</b><br>${selected.estado}</div>
-          <div><b>ID</b><br>${selected.id}</div>
-        </div>
-      `;
-      showModal();
+    function logout(){
+      token = null; localStorage.removeItem('admin_token');
+      setAuthUI(false);
+      solicitudes = []; renderEmpty('Cerraste sesión.');
     }
 
-    $("#md-confirm").onclick = async () => {
+    // ---------- Data ----------
+    async function loadSolicitudes(){
+      if(!token){renderEmpty('Iniciá sesión para ver las solicitudes de presupuesto.');return;}
+      try{
+        const res = await fetch(`${API_BASE}/api/requests`, {
+          headers:{'Authorization':`Bearer ${token}`}
+        });
+        const data = await res.json();
+        if(!res.ok) throw new Error(data.detail || 'No se pudieron cargar las solicitudes');
+        solicitudes = Array.isArray(data.items) ? data.items : [];
+        render();
+        if(solicitudes.length===0) renderEmpty('No hay solicitudes aún.');
+      }catch(e){
+        renderEmpty(e.message || 'No se pudieron cargar las solicitudes.');
+      }
+    }
+
+    function render(){
+      const tb = q('#tbody');
+      tb.innerHTML = '';
+      for(const s of solicitudes){
+        const tr = document.createElement('tr');
+        tr.className = 'row';
+        tr.innerHTML = `
+          <td><div class="client"><span class="name">${s.nombre_cliente || '-'}</span><span class="sub">${s.telefono || '-'}</span></div></td>
+          <td>${s.tipo_carga || '-'}</td>
+          <td>${s.fecha || '-'}</td>
+          <td>${badge(s.estado)}</td>
+          <td><div class="actions"><button class="btn-ghost" onclick="openModal('${s.id}')">Detalles</button></div></td>
+        `;
+        tb.appendChild(tr);
+      }
+    }
+
+    function renderEmpty(msg){
+      q('#tbody').innerHTML = `<tr><td colspan="5" class="empty">${msg}</td></tr>`;
+    }
+
+    // ---------- Modal ----------
+    function openModal(id){
+      selected = solicitudes.find(s => String(s.id) === String(id));
       if(!selected) return;
-      const res = await fetch(`${apiBase}/api/requests/${selected.id}/confirm`, {
-        method:"POST",
-        headers:{ Authorization:`Bearer ${token}` }
-      });
-      if(res.ok){ hideModal(); await load(); } else { alert("No se pudo confirmar"); }
-    };
 
-    $("#md-reject").onclick = async () => {
-      if(!selected) return;
-      const res = await fetch(`${apiBase}/api/requests/${selected.id}/reject`, {
-        method:"POST",
-        headers:{ Authorization:`Bearer ${token}` }
-      });
-      if(res.ok){ hideModal(); await load(); } else { alert("No se pudo rechazar"); }
-    };
+      q('#m_cliente').textContent = selected.nombre_cliente || '-';
+      q('#m_tel').textContent = selected.telefono || '-';
+      q('#m_tipo').textContent = selected.tipo_carga || '-';
+      q('#m_fecha').textContent = selected.fecha || '-';
+      q('#m_ayudante').textContent = selected.ayudante ? 'Sí' : 'No';
+      q('#m_estado').textContent = selected.estado || '-';
+      q('#m_origen').textContent = selected.origen || '-';
+      q('#m_destino').textContent = selected.destino || '-';
 
-    $("#md-delete").onclick = async () => {
-      if(!selected) return;
-      if(selected.estado !== "rechazado"){ alert("Solo puede eliminarse si está rechazado."); return; }
-      if(!confirm("¿Eliminar esta solicitud?")) return;
-      const res = await fetch(`${apiBase}/api/requests/${selected.id}`, {
-        method:"DELETE",
-        headers:{ Authorization:`Bearer ${token}` }
-      });
-      if(res.ok){ hideModal(); await load(); } else { alert("No se pudo eliminar"); }
-    };
+      q('#m_dist_km').textContent = (selected.dist_km ?? '-') + (selected.dist_km != null ? ' km' : '');
+      q('#m_tiempo_viaje').textContent = (selected.tiempo_viaje_min ?? '-') + (selected.tiempo_viaje_min != null ? ' min' : '');
+      q('#m_tiempo_servicio').textContent = (selected.tiempo_servicio_min ?? '-') + (selected.tiempo_servicio_min != null ? ' min' : '');
+      q('#m_tiempo_carga_desc').textContent = (selected.tiempo_carga_descarga_min ?? '-') + (selected.tiempo_carga_descarga_min != null ? ' min' : '');
 
-    function showModal(){ $("#modal").style.display="flex"; }
-    function hideModal(){ $("#modal").style.display="none"; }
+      q('#m_costo_tiempo').textContent = selected.costo_tiempo != null ? ('$ ' + selected.costo_tiempo.toLocaleString('es-AR')) : '-';
+      q('#m_costo_combustible').textContent = selected.costo_combustible != null ? ('$ ' + selected.costo_combustible.toLocaleString('es-AR')) : '-';
+      q('#m_costo_ayudante').textContent = selected.costo_ayudante != null ? ('$ ' + selected.costo_ayudante.toLocaleString('es-AR')) : '-';
+      q('#m_total').textContent = selected.monto_estimado != null ? ('$ ' + selected.monto_estimado.toLocaleString('es-AR')) : '$ -';
 
-    // Si querés, auto-login en dev:
-    // (descomentar y setear valores, o usar el botón)
-    // (async () => {
-    //   const r = await fetch(`${apiBase}/api/login`, {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({username:"admin",password:"admin123"})});
-    //   const j = await r.json(); if(r.ok){ token=j.token; authState.textContent="Autenticado"; load(); }
-    // })();
+      q('#overlay').classList.add('open');
+    }
+
+    function closeModal(){
+      q('#overlay').classList.remove('open');
+      selected = null;
+    }
+
+    // Cerrar con tecla ESC
+    document.addEventListener('keydown', (e)=>{ if(e.key === 'Escape') closeModal(); });
+
+    // ---------- Actions ----------
+    async function aprobar(){
+      if(!selected || !token) return;
+      try{
+        const res = await fetch(`${API_BASE}/api/requests/${selected.id}/confirm`, {
+          method:'POST',
+          headers:{'Authorization':`Bearer ${token}`}
+        });
+        const data = await res.json();
+        if(!res.ok) throw new Error(data.detail || 'No se pudo confirmar');
+        toast('Solicitud confirmada ✅');
+        closeModal();
+        await loadSolicitudes();
+      }catch(e){toast(e.message || 'Error al confirmar')}
+    }
+
+    async function rechazar(){
+  
+      try{
+        const res = await fetch(`${API_BASE}/api/requests/${selected.id}/reject`, {
+          method:'POST',
+          headers:{'Authorization':`Bearer ${token}`,'Content-Type':'application/json'}
+        });
+        const data = await res.json();
+        if(!res.ok) throw new Error(data.detail || 'No se pudo rechazar');
+        toast('Solicitud rechazada');
+        closeModal();
+        await loadSolicitudes();
+      }catch(e){toast(e.message || 'Error al rechazar')}
+    }
+
+    async function eliminar(){
+      if(!selected || !token) return;
+      if((selected.estado||'').toLowerCase() !== 'rechazado'){
+        toast('Solo se puede eliminar si está Rechazado'); return;
+      }
+      if(!confirm(`¿Eliminar la solicitud de "${selected.nombre_cliente}"? Esta acción no se puede deshacer.`)) return;
+      try{
+        const res = await fetch(`${API_BASE}/api/requests/${selected.id}`, {
+          method:'DELETE',
+          headers:{'Authorization':`Bearer ${token}`}
+        });
+        const data = await res.json();
+        if(!res.ok) throw new Error(data.detail || 'No se pudo eliminar');
+        toast('Solicitud eliminada 🗑️');
+        closeModal();
+        await loadSolicitudes();
+      }catch(e){toast(e.message || 'Error al eliminar')}
+    }
+
+    // ---------- Init ----------
+    (async function init(){
+      setAuthUI(!!token);
+      if(token) await loadSolicitudes();
+    })();
   </script>
 </body>
 </html>
