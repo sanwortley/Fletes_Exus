@@ -112,7 +112,6 @@
     <div class="nav-inner">
       <div class="brand"><span class="dot"></span> Fletes Larga Distancia — Admin</div>
       <nav class="nav-links">
-        <!-- 🔧 rutas relativas (funcionan en file:// y Live Server) -->
         <a href="index.html">Inicio</a>
         <a href="presupuesto.html">Presupuesto</a>
         <strong class="active">Admin</strong>
@@ -190,15 +189,17 @@
   <div class="toast" id="toast"></div>
 
   <script>
-    // Backend FastAPI
+    // ===== Config API =====
     const API_BASE = 'http://127.0.0.1:8000';
 
     let token = localStorage.getItem('admin_token') || null;
     let solicitudes = [];
     let selected = null;
 
+    // ===== Utils =====
     const q = (s)=>document.querySelector(s);
     const toast = (msg)=>{const t=q('#toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200)};
+    const peso = (n)=> (n!=null ? ('$ ' + Number(n).toLocaleString('es-AR')) : '-');
 
     function badge(estadoRaw){
       const e = (estadoRaw || 'pendiente').toLowerCase();
@@ -207,7 +208,7 @@
       return `<span class="badge ${cls}">${texto}</span>`;
     }
 
-    // ---------- Auth ----------
+    // ===== Auth =====
     function setAuthUI(isOn){
       q('#authFlag').textContent = isOn ? 'Autenticado' : 'No autenticado';
       q('#authFlag').className = 'tag ' + (isOn ? 'ok' : 'muted');
@@ -240,7 +241,7 @@
       solicitudes = []; renderEmpty('Cerraste sesión.');
     }
 
-    // ---------- Data ----------
+    // ===== Data =====
     async function loadSolicitudes(){
       if(!token){renderEmpty('Iniciá sesión para ver las solicitudes de presupuesto.');return;}
       try{
@@ -278,10 +279,22 @@
       q('#tbody').innerHTML = `<tr><td colspan="5" class="empty">${msg}</td></tr>`;
     }
 
-    // ---------- Modal ----------
+    // ===== Modal =====
     function openModal(id){
       selected = solicitudes.find(s => String(s.id) === String(id));
       if(!selected) return;
+
+      // Alias/compat para no ver “-” si el backend usa otros nombres o no los incluye en /api/requests
+      const tiempo_viaje_min = coalesce(selected.tiempo_viaje_min, selected.tramo_base_origen_min && selected.tramo_origen_destino_min
+        ? Number(selected.tramo_base_origen_min) + Number(selected.tramo_origen_destino_min) + Number(selected.tramo_destino_base_min || 0)
+        : null);
+      const tiempo_servicio_min = coalesce(selected.tiempo_servicio_min, null);
+      const tiempo_carga_desc_min = coalesce(selected.tiempo_carga_descarga_min, selected.tiempo_servicio_min);
+      const costo_tiempo = coalesce(selected.costo_tiempo,
+        (selected.costo_tiempo_base!=null && selected.mantenimiento!=null)
+          ? (Number(selected.costo_tiempo_base) + Number(selected.mantenimiento))
+          : null
+      );
 
       q('#m_cliente').textContent = selected.nombre_cliente || '-';
       q('#m_tel').textContent = selected.telefono || '-';
@@ -292,28 +305,28 @@
       q('#m_origen').textContent = selected.origen || '-';
       q('#m_destino').textContent = selected.destino || '-';
 
-      q('#m_dist_km').textContent = (selected.dist_km ?? '-') + (selected.dist_km != null ? ' km' : '');
-      q('#m_tiempo_viaje').textContent = (selected.tiempo_viaje_min ?? '-') + (selected.tiempo_viaje_min != null ? ' min' : '');
-      q('#m_tiempo_servicio').textContent = (selected.tiempo_servicio_min ?? '-') + (selected.tiempo_servicio_min != null ? ' min' : '');
-      q('#m_tiempo_carga_desc').textContent = (selected.tiempo_carga_descarga_min ?? '-') + (selected.tiempo_carga_descarga_min != null ? ' min' : '');
+      q('#m_dist_km').textContent = (selected.dist_km!=null ? Number(selected.dist_km).toFixed(3).replace('.', ',') : '-');
+      q('#m_tiempo_viaje').textContent = (tiempo_viaje_min!=null ? `${tiempo_viaje_min} min` : '-');
+      q('#m_tiempo_servicio').textContent = (tiempo_servicio_min!=null ? `${tiempo_servicio_min} min` : '-');
+      q('#m_tiempo_carga_desc').textContent = (tiempo_carga_desc_min!=null ? `${tiempo_carga_desc_min} min` : '-');
 
-      q('#m_costo_tiempo').textContent = selected.costo_tiempo != null ? ('$ ' + selected.costo_tiempo.toLocaleString('es-AR')) : '-';
-      q('#m_costo_combustible').textContent = selected.costo_combustible != null ? ('$ ' + selected.costo_combustible.toLocaleString('es-AR')) : '-';
-      q('#m_costo_ayudante').textContent = selected.costo_ayudante != null ? ('$ ' + selected.costo_ayudante.toLocaleString('es-AR')) : '-';
-      q('#m_total').textContent = selected.monto_estimado != null ? ('$ ' + selected.monto_estimado.toLocaleString('es-AR')) : '$ -';
+      q('#m_costo_tiempo').textContent = peso(costo_tiempo);
+      q('#m_costo_combustible').textContent = peso(selected.costo_combustible);
+      q('#m_costo_ayudante').textContent = peso(selected.costo_ayudante);
+      q('#m_total').textContent = peso(selected.monto_estimado);
 
       q('#overlay').classList.add('open');
     }
 
-    function closeModal(){
-      q('#overlay').classList.remove('open');
-      selected = null;
-    }
+    const coalesce = (...vals)=> {
+      for(const v of vals){ if(v!==undefined && v!==null) return v; }
+      return null;
+    };
 
-    // Cerrar con tecla ESC
+    function closeModal(){ q('#overlay').classList.remove('open'); selected = null; }
     document.addEventListener('keydown', (e)=>{ if(e.key === 'Escape') closeModal(); });
 
-    // ---------- Actions ----------
+    // ===== Actions =====
     async function aprobar(){
       if(!selected || !token) return;
       try{
@@ -324,13 +337,12 @@
         const data = await res.json();
         if(!res.ok) throw new Error(data.detail || 'No se pudo confirmar');
         toast('Solicitud confirmada ✅');
-        closeModal();
-        await loadSolicitudes();
+        closeModal(); await loadSolicitudes();
       }catch(e){toast(e.message || 'Error al confirmar')}
     }
 
     async function rechazar(){
-  
+      if(!selected || !token) return;
       try{
         const res = await fetch(`${API_BASE}/api/requests/${selected.id}/reject`, {
           method:'POST',
@@ -339,8 +351,7 @@
         const data = await res.json();
         if(!res.ok) throw new Error(data.detail || 'No se pudo rechazar');
         toast('Solicitud rechazada');
-        closeModal();
-        await loadSolicitudes();
+        closeModal(); await loadSolicitudes();
       }catch(e){toast(e.message || 'Error al rechazar')}
     }
 
@@ -358,12 +369,11 @@
         const data = await res.json();
         if(!res.ok) throw new Error(data.detail || 'No se pudo eliminar');
         toast('Solicitud eliminada 🗑️');
-        closeModal();
-        await loadSolicitudes();
+        closeModal(); await loadSolicitudes();
       }catch(e){toast(e.message || 'Error al eliminar')}
     }
 
-    // ---------- Init ----------
+    // ===== Init =====
     (async function init(){
       setAuthUI(!!token);
       if(token) await loadSolicitudes();
