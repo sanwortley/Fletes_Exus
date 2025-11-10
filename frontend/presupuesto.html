@@ -281,7 +281,7 @@
     cleanupInterval = setInterval(() => {
       left -= 1;
       if (left <= 0) clearInterval(cleanupInterval);
-      span.textContent = `La página se reinicia en ${Math.max(left,0)}s�?�`;
+      span.textContent = `La página se reinicia en ${Math.max(left,0)}s`;
     }, 1000);
 
     cleanupTimer = setTimeout(resetForm, seconds * 1000);
