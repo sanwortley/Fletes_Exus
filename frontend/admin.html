@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Fletes Larga Distancia — Admin</title>
+  <title>Fletes Larga Distancia - Admin</title>
 
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
@@ -110,10 +110,10 @@
 <body>
   <header class="nav">
     <div class="nav-inner">
-      <div class="brand"><span class="dot"></span> Fletes Larga Distancia — Admin</div>
+      <div class="brand"><span class="dot"></span> Fletes Larga Distancia Admin</div>
       <nav class="nav-links">
-        <a href="index.html">Inicio</a>
-        <a href="presupuesto.html">Presupuesto</a>
+        <a href="/index">Inicio</a>
+        <a href="/presupuesto">Presupuesto</a>
         <strong class="active">Admin</strong>
         <button id="btnLogout" class="btn-out" style="display:none" onclick="logout()">Cerrar sesión</button>
       </nav>
@@ -124,7 +124,7 @@
     <h1>Panel de <span class="accent">Administración</span></h1>
 
     <section class="panel">
-      <form class="login-row" onsubmit="event.preventDefault(); login()">
+      <form id="loginForm" class="login-row">
         <input class="input" id="usr" type="text" placeholder="Usuario" />
         <input class="input" id="pwd" type="password" placeholder="Contraseña" />
         <button class="btn btn-primary" type="submit">Iniciar sesión</button>
@@ -198,7 +198,7 @@
 
     // ===== Utils =====
     const q = (s)=>document.querySelector(s);
-    const toast = (msg)=>{const t=q('#toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200)};
+    const toast = (msg)=>{const t=q('#toast'); if(!t) return; t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2200)};
     const peso = (n)=> (n!=null ? ('$ ' + Number(n).toLocaleString('es-AR')) : '-');
 
     function badge(estadoRaw){
@@ -218,21 +218,23 @@
     async function login(){
       const username = q('#usr').value.trim();
       const password = q('#pwd').value.trim();
-      if(!username || !password){toast('Ingresá usuario y contraseña');return;}
+      if(!username || !password){ toast('Ingresá usuario y contraseña'); return; }
       try{
         const res = await fetch(`${API_BASE}/api/login`, {
           method:'POST',
           headers:{'Content-Type':'application/json'},
-          body:JSON.stringify({username, password})
+          body: JSON.stringify({ username, password })   // 👈 FIX: el backend espera username/password
         });
         const data = await res.json();
         if(!res.ok) throw new Error(data.detail || 'Credenciales inválidas');
+
         token = data.token;
         localStorage.setItem('admin_token', token);
         setAuthUI(true);
         toast('Sesión iniciada');
-        await loadSolicitudes();
-      }catch(e){toast(e.message || 'Error de login')}
+
+        await loadSolicitudes();       // carga sin refrescar
+      }catch(e){ toast(e.message || 'Error de login'); }
     }
 
     function logout(){
@@ -243,7 +245,7 @@
 
     // ===== Data =====
     async function loadSolicitudes(){
-      if(!token){renderEmpty('Iniciá sesión para ver las solicitudes de presupuesto.');return;}
+      if(!token){ renderEmpty('Iniciá sesión para ver las solicitudes de presupuesto.'); return; }
       try{
         const res = await fetch(`${API_BASE}/api/requests`, {
           headers:{'Authorization':`Bearer ${token}`}
@@ -252,7 +254,7 @@
         if(!res.ok) throw new Error(data.detail || 'No se pudieron cargar las solicitudes');
         solicitudes = Array.isArray(data.items) ? data.items : [];
         render();
-        if(solicitudes.length===0) renderEmpty('No hay solicitudes aún.');
+        if(solicitudes.length===0) renderEmpty('No hay solicitudes.');
       }catch(e){
         renderEmpty(e.message || 'No se pudieron cargar las solicitudes.');
       }
@@ -284,13 +286,16 @@
       selected = solicitudes.find(s => String(s.id) === String(id));
       if(!selected) return;
 
-      // Alias/compat para no ver “-” si el backend usa otros nombres o no los incluye en /api/requests
-      const tiempo_viaje_min = coalesce(selected.tiempo_viaje_min, selected.tramo_base_origen_min && selected.tramo_origen_destino_min
-        ? Number(selected.tramo_base_origen_min) + Number(selected.tramo_origen_destino_min) + Number(selected.tramo_destino_base_min || 0)
-        : null);
+      const tiempo_viaje_min = coalesce(
+        selected.tiempo_viaje_min,
+        selected.tramo_base_origen_min && selected.tramo_origen_destino_min
+          ? Number(selected.tramo_base_origen_min) + Number(selected.tramo_origen_destino_min) + Number(selected.tramo_destino_base_min || 0)
+          : null
+      );
       const tiempo_servicio_min = coalesce(selected.tiempo_servicio_min, null);
       const tiempo_carga_desc_min = coalesce(selected.tiempo_carga_descarga_min, selected.tiempo_servicio_min);
-      const costo_tiempo = coalesce(selected.costo_tiempo,
+      const costo_tiempo = coalesce(
+        selected.costo_tiempo,
         (selected.costo_tiempo_base!=null && selected.mantenimiento!=null)
           ? (Number(selected.costo_tiempo_base) + Number(selected.mantenimiento))
           : null
@@ -368,16 +373,22 @@
         });
         const data = await res.json();
         if(!res.ok) throw new Error(data.detail || 'No se pudo eliminar');
-        toast('Solicitud eliminada 🗑️');
+        toast('Solicitud eliminada');
         closeModal(); await loadSolicitudes();
       }catch(e){toast(e.message || 'Error al eliminar')}
     }
 
     // ===== Init =====
-    (async function init(){
+    document.addEventListener('DOMContentLoaded', () => {
+      // Previene refresh en el submit
+      q('#loginForm').addEventListener('submit', (e) => {
+        e.preventDefault();
+        login();
+      });
+
       setAuthUI(!!token);
-      if(token) await loadSolicitudes();
-    })();
+      if(token) loadSolicitudes();
+    });
   </script>
 </body>
 </html>
