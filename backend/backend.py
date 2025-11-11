@@ -9,12 +9,12 @@ from typing import Optional, Dict, Any, List
 
 # SEGURIDAD
 from .security.security_bootstrap import harden_app
-from backend.security.auth_dep import require_api_key
-from backend.security.rate_limit import install_rate_limit, limiter  # ✅ paquete correcto
-from backend.security.security_auth import hash_password, verify_password, check_lock, register_fail, reset_fail
+from .security.auth_dep import require_api_key
+from .security.rate_limit import install_rate_limit, limiter
+from .security.security_auth import hash_password, verify_password, check_lock, register_fail, reset_fail
 
 import requests
-from fastapi import FastAPI, HTTPException, Depends, Body, BackgroundTasks, Request, Response
+from fastapi import FastAPI, HTTPException, Depends, Body, BackgroundTasks, Request, Response, APIRouter, Query
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from pymongo import MongoClient
@@ -28,11 +28,8 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 
 # Notificaciones (tu módulo existente)
-from backend.notifications import (
-    send_whatsapp_to_javier,
-    send_email_smtp,         # usa .env SMTP_*
-    # send_email_sendgrid,   # si lo querés usar, descomentar e invocar abajo
-)
+from .notifications import send_whatsapp_to_javier
+
 from urllib.parse import quote_plus
 
 
@@ -40,6 +37,7 @@ from urllib.parse import quote_plus
 # App & CORS
 # =========================
 app = FastAPI(title="Fletes Javier API")
+
 harden_app(app)
 install_rate_limit(app)
 
@@ -117,11 +115,23 @@ if ALLOWED_ORIGINS:
 # =========================
 # MongoDB
 # =========================
-MONGO_URI = os.getenv("MONGO_URI", "mongodb://localhost:27017")
-client = MongoClient(MONGO_URI)
+MONGO_URI = os.getenv("MONGO_URI")
+if not MONGO_URI:
+    raise RuntimeError("Falta MONGO_URI en variables de entorno")
+client = MongoClient(MONGO_URI, serverSelectionTimeoutMS=5000)
+client.admin.command("ping")
 db = client["fletes_db"]
 quotes = db["quotes"]
-users = db["users"]        # 👈 usuarios admins para login/lock
+users = db["users"]   
+
+# 👉 Log limpio en evento de arranque
+@app.on_event("startup")
+def _on_startup():
+    try:
+        client.admin.command("ping")
+        print("[Mongo] Atlas OK 🚀")
+    except Exception as e:
+        print("[Mongo] ERROR:", e)
 
 # =========================
 # Config de cálculo (.env)
@@ -464,20 +474,23 @@ def _notify_new_quote(doc: dict):
       <li><b>ID:</b> {str(doc.get('_id'))}</li>
     </ul>
     """
-    try:
-        send_email_smtp(subject, html)
-        # send_email_sendgrid(subject, html)
-    except Exception:
-        pass
 
     # WhatsApp opcional (si Twilio está configurado)
+    def _notify_new_quote(doc: dict):
+        subject = f"🧾 Nuevo presupuesto: {doc.get('tipo_carga','')} – {doc.get('nombre_cliente','')}"
+        html = "... (tu HTML igual) ..."
+
+
+    wa_res = None
     try:
         text = format_whatsapp_quote(doc)
-        send_whatsapp_to_javier(text)
+        wa_res = send_whatsapp_to_javier(text)  # <- tu función ya loguea status/code
     except Exception as e:
-    # log opcional
-        print("[WA format] error:", e)
-    pass
+        wa_res = {"ok": "false", "error": str(e)}
+
+    # ⬅️ devolvemos para que /send?debug=true lo muestre
+    return {"whatsapp": wa_res}
+
 
 def _yn(v): 
     return "Sí" if bool(v) else "No"
@@ -649,7 +662,8 @@ def crear_quote(body: QuoteIn):
 @app.post("/api/quote/{quote_id}/send")
 def send_quote(
     quote_id: str,
-    background: BackgroundTasks
+    background: BackgroundTasks,
+    debug: bool = Query(default=False)  # ?debug=true para correr síncrono
 ):
     try:
         _id = ObjectId(quote_id)
@@ -668,7 +682,17 @@ def send_quote(
             {"$set": {"estado": "sent", "sent_at": datetime.now(timezone.utc)}},
         )
         doc = quotes.find_one({"_id": _id})
-        background.add_task(_notify_new_quote, doc)
+
+    # 🔎 Si debug=true, envío síncrono y devuelvo resultado de WhatsApp/Email
+    if debug:
+        res = _notify_new_quote(doc)  # devolvemos lo que pase adentro
+        pub = _quote_public(doc)
+        pub["estado"] = "sent"
+        pub["contact_urls"] = _contact_urls(quote_id)
+        return {"ok": True, "quote": pub, "notify": res}
+
+    # Normal: background (silencioso)
+    background.add_task(_notify_new_quote, doc)
 
     pub = _quote_public(doc)
     pub["estado"] = "sent"
@@ -716,6 +740,16 @@ def confirmar_quote(quote_id: str, body: ConfirmPayload = Body(default=None), ba
         _notify_new_quote(doc)
 
     return {"ok": True, "quote": _quote_public(doc)}
+
+from fastapi import APIRouter
+
+router_debug = APIRouter()
+
+@router_debug.post("/debug/whatsapp")
+def debug_whatsapp():
+    return send_whatsapp_to_javier("🔧 Prueba WhatsApp desde backend (Render).")
+
+app.include_router(router_debug, prefix="/api", tags=["debug"])
 
 # =========================
 # Login seguro (Argon2id + Rate limit 5/min + Lock por usuario)
@@ -837,3 +871,4 @@ def admin_eliminar(quote_id: str):
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("backend.backend:app", host="127.0.0.1", port=8000, reload=True)
+ 

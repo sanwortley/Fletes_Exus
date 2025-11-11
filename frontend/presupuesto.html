@@ -381,23 +381,44 @@
         return;
       }
 
-      // Enviar al profesional
-      btnEnviar?.addEventListener('click', async ()=>{
-        try{
-          btnEnviar.disabled = true;
-          const sentResp = await postJSON(`${API_BASE}/api/quote/${draftId}/send`, {});
-          const sent = sentResp.quote || sentResp;
-          const wa = sent?.contact_urls?.whatsapp;
-          const tel = sent?.contact_urls?.tel;
-          cw.innerHTML = `
-            <p class="help" style="margin:6px 0">¡Listo! Se envió tu presupuesto.</p>
-          `;
-          scheduleCleanup(30);
-        }catch(e){
-          alert('No se pudo enviar: '+ e.message);
-          btnEnviar.disabled = false;
-        }
-      });
+      // Enviar al profesional (mejorado)
+btnEnviar?.addEventListener('click', async () => {
+  if (btnEnviar.dataset.busy === "1") return; // anti doble clic
+  btnEnviar.dataset.busy = "1";
+  btnEnviar.disabled = true;
+
+  const oldText = btnEnviar.textContent;
+  btnEnviar.textContent = "Enviando…";
+
+  try {
+    const sentResp = await postJSON(`${API_BASE}/api/quote/${draftId}/send`, {});
+    const sent = sentResp.quote || sentResp;
+
+    // Mensaje + CTAs si vienen
+    const wa  = sent?.contact_urls?.whatsapp || null;
+    const tel = sent?.contact_urls?.tel || null;
+
+    cw.innerHTML = `
+      <p class="help" style="margin:6px 0">¡Listo! Se envió tu presupuesto.</p>
+    `;
+
+    // Reinicio automático del formulario
+    scheduleCleanup(30);
+
+  } catch (e) {
+    // Errores típicos: 404 (no existe), 409 (cancelado), 500 (server)
+    const msg = String(e.message || "Error desconocido");
+    alert(`No se pudo enviar: ${msg}`);
+    btnEnviar.disabled = false;
+    btnEnviar.dataset.busy = "0";
+    btnEnviar.textContent = oldText;
+    return;
+  }
+
+  // Deshabilitar definitivo tras éxito
+  btnEnviar.textContent = "Enviado";
+});
+
 
       // Cancelar borrador
       document.getElementById('btnCancelarDraft')?.addEventListener('click', async ()=>{
