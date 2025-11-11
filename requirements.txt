@@ -19,7 +19,7 @@ twilio==9.3.6
 sendgrid==6.11.0
 
 argon2-cffi==23.1.0
-
+itsdangerous==2.2.0
 
 # Agregá estos si corresponde a tu código:
 # python-multipart==0.0.9     # Para formularios / uploads
