@@ -2,13 +2,13 @@
 # 🚛 FLETES JAVIER – BACKEND COMPLETO
 # ===================================
 
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from math import radians, sin, cos, asin, sqrt
 import os
 from typing import Optional, Dict, Any, List
 
 # SEGURIDAD
-from backend.security.security_bootstrap import harden_app
+from .security.security_bootstrap import harden_app
 from backend.security.auth_dep import require_api_key
 from backend.security.rate_limit import install_rate_limit, limiter  # ✅ paquete correcto
 from backend.security.security_auth import hash_password, verify_password, check_lock, register_fail, reset_fail
@@ -33,6 +33,8 @@ from backend.notifications import (
     send_email_smtp,         # usa .env SMTP_*
     # send_email_sendgrid,   # si lo querés usar, descomentar e invocar abajo
 )
+from urllib.parse import quote_plus
+
 
 # =========================
 # App & CORS
@@ -470,13 +472,70 @@ def _notify_new_quote(doc: dict):
 
     # WhatsApp opcional (si Twilio está configurado)
     try:
-        text = (f"Nuevo presupuesto\n"
-                f"{doc.get('nombre_cliente')} ({doc.get('telefono')})\n"
-                f"{doc.get('origen')} → {doc.get('destino')}\n"
-                f"Total: ${doc.get('monto_estimado')} • ID: {str(doc.get('_id'))}")
+        text = format_whatsapp_quote(doc)
         send_whatsapp_to_javier(text)
+    except Exception as e:
+    # log opcional
+        print("[WA format] error:", e)
+    pass
+
+def _yn(v): 
+    return "Sí" if bool(v) else "No"
+
+def _money(n):
+    try:
+        return f"${float(n):,.0f}".replace(",", ".")
     except Exception:
-        pass
+        return f"${n}"
+
+def _maps(addr: str) -> str:
+    return f"https://www.google.com/maps/search/?api=1&query={quote_plus(addr)}" if addr else "-"
+
+def format_whatsapp_quote(doc: dict) -> str:
+    # Fallbacks
+    nombre  = doc.get("nombre_cliente", "-")
+    tel     = doc.get("telefono", "-")
+    tipo    = doc.get("tipo_carga", "-")
+    fecha   = doc.get("fecha", "-")
+    ayud    = _yn(doc.get("ayudante"))
+    origen  = doc.get("origen", "-")
+    destino = doc.get("destino", "-")
+    _id     = str(doc.get("_id") or doc.get("id") or "-")
+
+    dist_km   = doc.get("dist_km", 0) or 0
+    t_manejo  = doc.get("tiempo_viaje_min", 0) or 0
+    t_srv     = doc.get("tiempo_servicio_min", 0) or 0
+
+    costo_t   = doc.get("costo_tiempo", 0) or 0
+    costo_c   = doc.get("costo_combustible", 0) or 0
+    costo_a   = doc.get("costo_ayudante", 0) or 0
+    total     = doc.get("monto_estimado", 0) or 0
+
+    # Tramos (opcionales)
+    b_o_km  = doc.get("tramo_base_origen_km", 0) or 0
+    b_o_min = doc.get("tramo_base_origen_min", 0) or 0
+    o_d_km  = doc.get("tramo_origen_destino_km", 0) or 0
+    o_d_min = doc.get("tramo_origen_destino_min", 0) or 0
+
+    return (
+        "🧾 *Nuevo presupuesto enviado desde la web*\n"
+        f"• Cliente: *{nombre}*  ({tel})\n"
+        f"• Tipo: *{tipo}*   • Fecha: *{fecha}*\n"
+        f"• Ayudante: *{ayud}*   • *Incluye regreso a base*\n"
+        f"• Origen: {origen}\n"
+        f"  ↳ {_maps(origen)}\n"
+        f"• Destino: {destino}\n"
+        f"  ↳ {_maps(destino)}\n"
+        "—\n"
+        f"• Distancia total: *{dist_km:.2f} km*   • Manejo: *{t_manejo} min*\n"
+        f"• Servicio (total): *{t_srv} min*\n"
+        f"• Total estimado: *{_money(total)}*\n"
+        f"  - Tiempo: {_money(costo_t)}  - Combustible: {_money(costo_c)}  - Ayudante: {_money(costo_a)}\n"
+        "• Detalle tramos:\n"
+        f"  · Base→Origen: {b_o_km:.2f} km / {b_o_min} min\n"
+        f"  · Origen→Destino: {o_d_km:.2f} km / {o_d_min} min\n"
+        "—\nID: `{_id}`"
+    )
 
 # =========================
 # Rutas core
@@ -505,7 +564,8 @@ def crear_quote(body: QuoteIn):
     tiempo_total_min = int(t1["tiempo_viaje_min"] + t2["tiempo_viaje_min"])
 
     # 3) Vuelta a base (opcional)
-    regreso_flag = body.regreso_base if body.regreso_base is not None else RETURN_TO_BASE_DEFAULT
+    # 3) Vuelta a base (siempre incluida)
+    regreso_flag = True
     t3 = {"dist_km": 0.0, "tiempo_viaje_min": 0}
     if regreso_flag:
         t3 = calcular_ruta(destino_norm, base_norm)
@@ -661,7 +721,7 @@ def confirmar_quote(quote_id: str, body: ConfirmPayload = Body(default=None), ba
 # Login seguro (Argon2id + Rate limit 5/min + Lock por usuario)
 # =========================
 @app.post("/api/login", response_model=LoginOut)
-@limiter.limit("5/minute")  # ⏱️ evita fuerza bruta por IP
+@limiter.limit("5/minute")
 async def admin_login(request: Request, body: LoginIn):
     username = (body.username or "").strip().lower()
     password = (body.password or "").strip()
@@ -672,30 +732,29 @@ async def admin_login(request: Request, body: LoginIn):
     # Buscar por email o username
     user = users.find_one({"email": username}) or users.find_one({"username": username})
 
-    # Fallback temporal: usa las variables del .env si no hay usuarios
+    # Fallback temporal: .env (sin BD)
     if not user and username == ADMIN_USER.lower() and password == ADMIN_PASS:
-        return LoginOut(ok=True, message="Login exitoso (modo .env)", token="dummy-admin-token")
+        token = os.urandom(16).hex()
+        expira = datetime.now(timezone.utc) + timedelta(minutes=int(os.getenv("SESSION_DURATION_MIN", "120")))
+        return LoginOut(ok=True, message=f"Login exitoso (modo .env). Expira a las {expira.strftime('%H:%M')}", token=token)
 
     if not user:
         raise HTTPException(status_code=401, detail="Credenciales inválidas")
 
-    # Bloqueo por exceso de intentos
     try:
         check_lock(user)
     except PermissionError as e:
         raise HTTPException(status_code=429, detail=str(e))
 
-    # Verificación de contraseña (Argon2id)
     if not verify_password(user.get("password_hash", ""), password):
         register_fail(users, user)
         raise HTTPException(status_code=401, detail="Credenciales inválidas")
 
-    # Login exitoso → reset de contadores
     reset_fail(users, user["_id"])
 
-    # Si querés devolver token real, podés generar JWT o similar
-    return LoginOut(ok=True, message="Login exitoso", token="dummy-admin-token")
-
+    token = os.urandom(16).hex()
+    expira = datetime.now(timezone.utc) + timedelta(minutes=int(os.getenv("SESSION_DURATION_MIN", "120")))
+    return LoginOut(ok=True, message=f"Login exitoso. Expira a las {expira.strftime('%H:%M')}", token=token)
 # =========================
 # Rate-limit test
 # =========================

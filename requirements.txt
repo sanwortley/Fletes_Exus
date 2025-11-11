@@ -1,12 +1,13 @@
 fastapi==0.115.0
 starlette==0.38.6
 uvicorn[standard]==0.30.6
+
 pydantic==2.9.2
 pydantic-core==2.23.4
 typing-extensions==4.12.2
 
-requests==2.32.3
 python-dotenv==1.0.1
+requests==2.32.3
 
 pymongo==4.8.0
 dnspython==2.8.0
@@ -14,5 +15,10 @@ dnspython==2.8.0
 openrouteservice==2.3.3
 googlemaps==4.10.0
 
-twilio
-sendgrid
+twilio==9.3.6
+sendgrid==6.11.0
+
+# Agregá estos si corresponde a tu código:
+# python-multipart==0.0.9     # Para formularios / uploads
+# email-validator==2.2.0      # Para Pydantic EmailStr
+# passlib[bcrypt]==1.7.4      # Para hashing de contraseñas
