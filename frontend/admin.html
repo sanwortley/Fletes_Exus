@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Fletes Larga Distancia - Admin</title>
 
-  <!-- 🔒 Evitar cache y pistas -->
   <meta http-equiv="Cache-Control" content="no-store" />
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
@@ -31,8 +30,6 @@
         var(--bg);
       color:var(--ink);
     }
-
-    /* Topbar */
     .nav{position:sticky;top:0;z-index:10;background:rgba(0,0,0,.6);backdrop-filter:blur(8px);border-bottom:1px solid var(--stroke)}
     .nav-inner{max-width:1100px;margin:0 auto;display:flex;align-items:center;gap:16px;padding:12px 18px}
     .brand{display:flex;align-items:center;gap:10px;font-weight:700}
@@ -49,7 +46,6 @@
     .accent{background:linear-gradient(180deg,var(--brand),var(--brand-2));-webkit-background-clip:text;background-clip:text;color:transparent;text-shadow:0 0 24px rgba(255,204,0,.18)}
     .panel{background:linear-gradient(180deg,#131313,#101010);border:1px solid var(--stroke);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px}
 
-    /* Login */
     .login-row{display:grid;grid-template-columns:1fr 1fr auto auto;gap:12px;align-items:center;background:#0e0e0e;border:1px solid var(--stroke);border-radius:14px;padding:12px;margin-bottom:18px}
     .input{background:#0c0c0c;border:1px solid var(--stroke);color:var(--ink);border-radius:12px;padding:12px;outline:none}
     .input::placeholder{color:#7f8893}
@@ -59,7 +55,6 @@
     .tag{font-size:12px;font-weight:700}
     .tag.ok{color:var(--ok)} .tag.bad{color:var(--bad)} .tag.muted{color:var(--muted)}
 
-    /* Tabla */
     .table{width:100%;border-collapse:separate;border-spacing:0 10px}
     .thead th{color:var(--muted);text-align:left;padding:0 12px 8px;font-size:14px}
     .row{background:#101010;border:1px solid var(--stroke);border-radius:14px;box-shadow:var(--shadow)}
@@ -69,14 +64,13 @@
     .client .sub{color:var(--muted);font-size:13px}
     .badge{display:inline-flex;align-items:center;padding:8px 12px;font-weight:800;letter-spacing:.4px;border-radius:999px;border:1px solid transparent;font-size:12px}
     .aprobado{color:#0f3;background:rgba(0,255,120,.08);border-color:rgba(0,255,120,.25)}
-    .pendiente{color:#ffd95a;background:rgba(255,217,90,.08);border-color:rgba(255,217,90,.25)}
+    .pendiente{color:#ffd95a;background:rgba(255,217,90,.08);border-color:rgba(0,255,90,.25)}
     .rechazado{color:#ff8b8b;background:rgba(255,107,107,.12);border-color:rgba(255,107,107,.25)}
     .btn-ghost{background:transparent;color:var(--ink);border:1px solid #2a2a2a;padding:8px 12px;border-radius:10px;font-weight:700}
     .btn-ghost:hover{filter:brightness(1.15)}
     .actions{display:flex;gap:8px;justify-content:flex-end}
     .empty{color:var(--muted);text-align:center;padding:16px 8px}
 
-    /* Overlay + Modal */
     .overlay{position:fixed;inset:0;background:rgba(0,0,0,0.65);display:none;justify-content:center;align-items:center;z-index:999}
     .overlay.open{display:flex}
 
@@ -114,15 +108,15 @@
   </style>
 </head>
 <body>
-  
   <header class="nav">
     <div class="nav-inner">
       <div class="brand"><span class="dot"></span> Fletes Larga Distancia Admin</div>
       <nav class="nav-links">
-        <a href="/index">Inicio</a>
-        <a href="/presupuesto">Presupuesto</a>
+        <a href="/index" data-view="/index">Inicio</a>
+        <a href="/presupuesto" data-view="/presupuesto">Presupuesto</a>
         <strong class="active">Admin</strong>
-        <button id="btnLogout" class="btn-out" style="display:none" onclick="logout()">Cerrar sesión</button>
+        <!-- 👇 cambia logout genérico por Admin.logout -->
+        <button id="btnLogout" class="btn-out" style="display:none" onclick="Admin.logout()" data-action="admin-logout" type="button">Cerrar sesión</button>
       </nav>
     </div>
   </header>
@@ -134,7 +128,8 @@
       <form id="loginForm" class="login-row" autocomplete="off">
         <input class="input" id="usr" type="text" placeholder="Usuario" autocomplete="username" />
         <input class="input" id="pwd" type="password" placeholder="Contraseña" autocomplete="current-password" />
-        <button class="btn btn-primary" type="submit">Iniciar sesión</button>
+        <button class="btn btn-primary" type="button" onclick="Admin.login()">Iniciar sesión</button>
+
         <div id="authFlag" class="tag muted">No autenticado</div>
       </form>
 
@@ -149,16 +144,14 @@
         </tbody>
       </table>
     </section>
-  </main>
 
-  <!-- Modal Detalles -->
-  <div class="overlay" id="overlay" onclick="if(event.target===this) closeModal()">
+    <!-- Modal -->
+  <div class="overlay" id="overlay" onclick="if(event.target===this) Admin.closeModal()">
     <div class="modal" role="dialog" aria-modal="true">
       <div class="modal-head">
         <h2 class="modal-title">Detalles del presupuesto</h2>
-        <button class="modal-close" onclick="closeModal()">✕</button>
+        <button class="modal-close" onclick="Admin.closeModal()" type="button">✕</button>
       </div>
-
       <div class="modal-body">
         <div class="grid">
           <div class="kv"><small>Cliente</small><strong id="m_cliente">-</strong></div>
@@ -182,12 +175,11 @@
           </div>
         </div>
       </div>
-
       <div class="modal-foot">
-        <button class="btn-danger" onclick="eliminar()">Eliminar</button>
+        <button class="btn-danger" onclick="Admin.eliminar()" data-action="admin-delete" type="button">Eliminar</button>
         <div style="display:flex; gap:8px">
-          <button class="btn-reject" onclick="rechazar()">Rechazar</button>
-          <button class="btn-ok" onclick="aprobar()">Confirmar</button>
+          <button class="btn-reject" onclick="Admin.rechazar()" data-action="admin-reject" type="button">Rechazar</button>
+          <button class="btn-ok" onclick="Admin.aprobar()" data-action="admin-approve" type="button">Confirmar</button>
         </div>
       </div>
     </div>
@@ -195,250 +187,281 @@
 
   <div class="toast" id="toast"></div>
 
-  <script>
-    // ===== Config API =====
-    const API_BASE = (
-      location.hostname === 'localhost' || location.hostname === '127.0.0.1'
-    ) ? 'http://127.0.0.1:8000' : 'https://fletes-exus.onrender.com';
+  </main>
 
-    // 🔒 Token SOLO en memoria
-    let token = null;
-    let solicitudes = [];
-    let selected = null;
-    // Flag de sesión en memoria
-    let isAuth = false;
+  
+<script>
+(function(){
+  const byId = (id)=>document.getElementById(id);
 
-    // ===== Utils =====
-    const q = (s)=>document.querySelector(s);
-    const toast = (msg)=>{const t=q('#toast'); if(!t) return; t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2200)};
-    const peso = (n)=> (n!=null ? ('$ ' + Number(n).toLocaleString('es-AR')) : '-');
+  globalThis.API_BASE = globalThis.API_BASE || (
+    (location.hostname === 'localhost' || location.hostname === '127.0.0.1')
+      ? 'http://127.0.0.1:8000'
+      : 'https://fletes-exus.onrender.com'
+  );
 
-    function badge(estadoRaw){
-      const e = (estadoRaw || 'pendiente').toLowerCase();
-      const texto = e.charAt(0).toUpperCase() + e.slice(1);
-      const cls = e==='confirmado' ? 'aprobado' : (e==='rechazado' ? 'rechazado' : 'pendiente');
-      return `<span class="badge ${cls}">${texto}</span>`;
-    }
+  const isAdminView = ()=> !!(byId('loginForm') && byId('authFlag') && byId('tbody'));
+  const toast = (msg)=>{ const t=byId('toast'); if(!t) return; t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2200); };
+  const peso = (n)=> (n!=null ? ('$ ' + Number(n).toLocaleString('es-AR')) : '-');
+  const coalesce = (...vals)=>{ for (const v of vals){ if(v!==undefined && v!==null) return v; } return null; };
+  const getId = (s) => {
+  if (!s) return null;
+  if (typeof s.id === "string" || typeof s.id === "number") return String(s.id);
+  if (s._id && typeof s._id === "object" && typeof s._id.$oid === "string") return s._id.$oid;
+  if (typeof s._id === "string" || typeof s._id === "number") return String(s._id);
+  if (typeof s.ID === "string" || typeof s.ID === "number") return String(s.ID);
+  return null;
+};
+  window.Admin = window.Admin || {};  
+  let token=null, solicitudes=[], selected=null, isAuth=false;
 
-    // ✅ UI de sesión (faltaba en tu versión)
-    function setAuthUI(isOn){
-      isAuth = !!isOn;
-      q('#authFlag').textContent = isOn ? 'Autenticado' : 'No autenticado';
-      q('#authFlag').className = 'tag ' + (isOn ? 'ok' : 'muted');
-      q('#btnLogout').style.display = isOn ? 'inline-flex' : 'none';
-    }
+  function setAuthUI(isOn){
+    const flag = byId('authFlag');
+    if (flag){ flag.textContent = isOn ? 'Autenticado' : 'No autenticado'; flag.className = 'tag ' + (isOn ? 'ok' : 'muted'); }
+    const btn = byId('btnLogout');
+    if (btn){ btn.style.display = isOn ? 'inline-flex' : 'none'; }
+  }
 
-    // ===== Auth =====
-    async function login(){
-      const username = q('#usr').value.trim();
-      const password = q('#pwd').value.trim();
-      if(!username || !password){ toast('Ingresá usuario y contraseña'); return; }
-      try{
-        const res = await fetch(`${API_BASE}/api/login`, {
-          method:'POST',
-          headers:{'Content-Type':'application/json'},
-          body: JSON.stringify({ username, password })
-        });
-        const data = await res.json();
-        if(!res.ok) throw new Error(data.detail || 'Credenciales inválidas');
+  function renderEmpty(msg){
+    const tb = byId('tbody'); if(!tb) return;
+    tb.innerHTML = `<tr><td colspan="5" class="empty">${msg}</td></tr>`;
+  }
 
-        token = data.token;              // solo memoria
-        setAuthUI(true);
-        toast('Sesión iniciada');
-        await loadSolicitudes();
-      }catch(e){ toast(e.message || 'Error de login'); }
-    }
-
-    function logout(reason){
-      token = null;
+  function adminLogout(reason){
+    token=null; isAuth=false; selected=null;
+    if (isAdminView()){
       setAuthUI(false);
-      solicitudes = [];
       renderEmpty(reason || 'Iniciá sesión para ver las solicitudes de presupuesto.');
-      q('#usr').value = '';
-      q('#pwd').value = '';
-      q('#usr').focus();
+      const usr=byId('usr'), pwd=byId('pwd');
+      if (usr) usr.value=''; if (pwd) pwd.value='';
+      usr?.focus();
     }
+  }
 
-    // ===== Data =====
-    async function loadSolicitudes(){
-      if(!token){ renderEmpty('Iniciá sesión para ver las solicitudes de presupuesto.'); return; }
-      try{
-        const res = await fetch(`${API_BASE}/api/requests`, {
-          headers:{'Authorization':`Bearer ${token}`}
-        });
-        const data = await res.json();
-        if(!res.ok) throw new Error(data.detail || 'No se pudieron cargar las solicitudes');
-        solicitudes = Array.isArray(data.items) ? data.items : [];
-        render();
-        if(solicitudes.length===0) renderEmpty('No hay solicitudes.');
-      }catch(e){
-        renderEmpty(e.message || 'No se pudieron cargar las solicitudes.');
-      }
-    }
+  async function login(){
+    if (!isAdminView()) return;
+    const usr=byId('usr'), pwd=byId('pwd');
+    const username=usr?usr.value.trim():'', password=pwd?pwd.value.trim():'';
+    if(!username || !password){ toast('Ingresá usuario y contraseña'); return; }
+    try{
+      const res = await fetch(`${API_BASE}/api/login`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ username, password }) });
+      const data = await res.json();
+      if(!res.ok) throw new Error(data.detail || 'Credenciales inválidas');
+      token = data.token; isAuth=true;
+      setAuthUI(true); toast('Sesión iniciada');
+      await loadSolicitudes();
+    }catch(e){ toast(e.message || 'Error de login'); }
+  }
 
-    function render(){
-      const tb = q('#tbody');
-      tb.innerHTML = '';
-      for(const s of solicitudes){
-        const tr = document.createElement('tr');
-        tr.className = 'row';
-        tr.innerHTML = `
-          <td><div class="client"><span class="name">${s.nombre_cliente || '-'}</span><span class="sub">${s.telefono || '-'}</span></div></td>
-          <td>${s.tipo_carga || '-'}</td>
-          <td>${s.fecha || '-'}</td>
-          <td>${badge(s.estado)}</td>
-          <td><div class="actions"><button class="btn-ghost" onclick="openModal('${s.id}')">Detalles</button></div></td>
-        `;
-        tb.appendChild(tr);
-      }
-    }
+  async function loadSolicitudes(){
+    if (!isAdminView()) return;
+    if (!token){ renderEmpty('Iniciá sesión para ver las solicitudes de presupuesto.'); return; }
+    try{
+      const res = await fetch(`${API_BASE}/api/requests`, { headers:{'Authorization':`Bearer ${token}`} });
+      const data = await res.json();
+      if(!res.ok) throw new Error(data.detail || 'No se pudieron cargar las solicitudes');
+      solicitudes = Array.isArray(data.items) ? data.items : [];
+      render();
+      if (solicitudes.length===0) renderEmpty('No hay solicitudes.');
+    }catch(e){ renderEmpty(e.message || 'No se pudieron cargar las solicitudes.'); }
+  }
+function render(){
+  if (!isAdminView()) return;
+  const tb = byId('tbody');
+  if (!tb) return;
+  tb.innerHTML = '';
 
-    function renderEmpty(msg){
-      q('#tbody').innerHTML = `<tr><td colspan="5" class="empty">${msg}</td></tr>`;
-    }
+  solicitudes.forEach((s, i) => {
+    const estado = (s.estado || 'pendiente').toLowerCase();
+    const cls = estado === 'confirmado'
+      ? 'aprobado'
+      : (estado === 'rechazado' ? 'rechazado' : 'pendiente');
+    const texto = estado.charAt(0).toUpperCase() + estado.slice(1);
+    const rowId = getId(s);
 
-    // ===== Modal =====
-    function openModal(id){
-      if(!token){ logout(); return; }
-      selected = solicitudes.find(s => String(s.id) === String(id));
-      if(!selected) return;
+    const tr = document.createElement('tr');
+    tr.className = 'row';
+    tr.innerHTML = `
+      <td>
+        <div class="client">
+          <span class="name">${s.nombre_cliente || '-'}</span>
+          <span class="sub">${s.telefono || '-'}</span>
+        </div>
+      </td>
+      <td>${s.tipo_carga || '-'}</td>
+      <td>${s.fecha || '-'}</td>
+      <td><span class="badge ${cls}">${texto}</span></td>
+      <td>
+        <div class="actions">
+          <!-- 👇 Llamada directa, sin data-attrs ni delegado -->
+          <button class="btn-ghost" type="button"
+                  onclick="Admin.openModal('${rowId ?? ''}', ${i})">
+            Detalles
+          </button>
+        </div>
+      </td>`;
+    tb.appendChild(tr);
+  });
+}
 
-      const tiempo_viaje_min = coalesce(
-        selected.tiempo_viaje_min,
-        selected.tramo_base_origen_min && selected.tramo_origen_destino_min
-          ? Number(selected.tramo_base_origen_min) + Number(selected.tramo_origen_destino_min) + Number(selected.tramo_destino_base_min || 0)
-          : null
-      );
-      const tiempo_servicio_min = coalesce(selected.tiempo_servicio_min, null);
-      const tiempo_carga_desc_min = coalesce(selected.tiempo_carga_descarga_min, selected.tiempo_servicio_min);
-      const costo_tiempo = coalesce(
-        selected.costo_tiempo,
-        (selected.costo_tiempo_base!=null && selected.mantenimiento!=null)
-          ? (Number(selected.costo_tiempo_base) + Number(selected.mantenimiento))
-          : null
-      );
 
-      q('#m_cliente').textContent = selected.nombre_cliente || '-';
-      q('#m_tel').textContent = selected.telefono || '-';
-      q('#m_tipo').textContent = selected.tipo_carga || '-';
-      q('#m_fecha').textContent = selected.fecha || '-';
-      q('#m_ayudante').textContent = selected.ayudante ? 'Sí' : 'No';
-      q('#m_estado').textContent = selected.estado || '-';
-      q('#m_origen').textContent = selected.origen || '-';
-      q('#m_destino').textContent = selected.destino || '-';
 
-      q('#m_dist_km').textContent = (selected.dist_km!=null ? Number(selected.dist_km).toFixed(3).replace('.', ',') : '-');
-      q('#m_tiempo_viaje').textContent = (tiempo_viaje_min!=null ? `${tiempo_viaje_min} min` : '-');
-      q('#m_tiempo_servicio').textContent = (tiempo_servicio_min!=null ? `${tiempo_servicio_min} min` : '-');
-      q('#m_tiempo_carga_desc').textContent = (tiempo_carga_desc_min!=null ? `${tiempo_carga_desc_min} min` : '-');
+  function bindRowClicks(){
+  const tb = byId('tbody');
+  if (!tb || tb.dataset.bound) return;
+  tb.dataset.bound="1";
+  tb.addEventListener('click', (e)=>{
+    const btn = e.target.closest('button[data-action="open"]');
+    if (!btn) return;
+    const rawId = btn.dataset.id;
+    const id  = rawId && rawId !== "[object Object]" ? rawId : null;
+    const idx = btn.dataset.idx != null ? Number(btn.dataset.idx) : null;
+    openModal(id, idx);
+  });
+}
 
-      q('#m_costo_tiempo').textContent = peso(costo_tiempo);
-      q('#m_costo_combustible').textContent = peso(selected.costo_combustible);
-      q('#m_costo_ayudante').textContent = peso(selected.costo_ayudante);
-      q('#m_total').textContent = peso(selected.monto_estimado);
 
-      q('#overlay').classList.add('open');
-    }
+function openModal(id, idx){
+  if (!isAdminView()) return;
+  if (!token){ adminLogout(); return; }
 
-    const coalesce = (...vals)=> {
-      for(const v of vals){ if(v!==undefined && v!==null) return v; }
-      return null;
-    };
+  // 1) Buscamos por id “normalizado”
+  let s = null;
+  if (id != null) {
+    const sid = String(id);
+    s = solicitudes.find(x => String(getId(x)) === sid);
+  }
+  // 2) Fallback por índice si no encontró por id
+  if (!s && Number.isInteger(idx) && idx >= 0 && idx < solicitudes.length) {
+    s = solicitudes[idx];
+  }
+  if (!s) {
+    console.warn('⚠️ No se encontró la solicitud', { id, idx, items: solicitudes.map(getId) });
+    toast('No se encontró la solicitud');
+    return;
+  }
 
-    function closeModal(){ q('#overlay').classList.remove('open'); selected = null; }
-    document.addEventListener('keydown', (e)=>{ if(e.key === 'Escape') closeModal(); });
+  selected = s;
 
-    // ===== Actions =====
-    async function aprobar(){
-      if(!selected || !token) return;
-      try{
-        const res = await fetch(`${API_BASE}/api/requests/${selected.id}/confirm`, {
-          method:'POST',
-          headers:{'Authorization':`Bearer ${token}`}
-        });
-        const data = await res.json();
-        if(!res.ok) throw new Error(data.detail || 'No se pudo confirmar');
-        toast('Solicitud confirmada ✅');
-        closeModal(); await loadSolicitudes();
-      }catch(e){toast(e.message || 'Error al confirmar')}
-    }
+  const tiempo_viaje_min = coalesce(
+    s.tiempo_viaje_min,
+    (s.tramo_base_origen_min && s.tramo_origen_destino_min)
+      ? Number(s.tramo_base_origen_min)+Number(s.tramo_origen_destino_min)+Number(s.tramo_destino_base_min||0)
+      : null
+  );
+  const tiempo_servicio_min   = coalesce(s.tiempo_servicio_min, null);
+  const tiempo_carga_desc_min = coalesce(s.tiempo_carga_descarga_min, s.tiempo_servicio_min);
+  const costo_tiempo = coalesce(
+    s.costo_tiempo,
+    (s.costo_tiempo_base!=null && s.mantenimiento!=null)
+      ? (Number(s.costo_tiempo_base)+Number(s.mantenimiento))
+      : null
+  );
 
-    async function rechazar(){
-      if(!selected || !token) return;
-      try{
-        const res = await fetch(`${API_BASE}/api/requests/${selected.id}/reject`, {
-          method:'POST',
-          headers:{'Authorization':`Bearer ${token}`,'Content-Type':'application/json'}
-        });
-        const data = await res.json();
-        if(!res.ok) throw new Error(data.detail || 'No se pudo rechazar');
-        toast('Solicitud rechazada');
-        closeModal(); await loadSolicitudes();
-      }catch(e){toast(e.message || 'Error al rechazar')}
-    }
+  const set = (id,val)=>{ const el=byId(id); if(el) el.textContent=val; };
+  set('m_cliente', s.nombre_cliente || '-');
+  set('m_tel', s.telefono || '-');
+  set('m_tipo', s.tipo_carga || '-');
+  set('m_fecha', s.fecha || '-');
+  set('m_ayudante', s.ayudante ? 'Sí' : 'No');
+  set('m_estado', s.estado || '-');
+  set('m_origen', s.origen || '-');
+  set('m_destino', s.destino || '-');
 
-    async function eliminar(){
-      if(!selected || !token) return;
-      if((selected.estado||'').toLowerCase() !== 'rechazado'){
-        toast('Solo se puede eliminar si está Rechazado'); return;
-      }
-      if(!confirm(`¿Eliminar la solicitud de "${selected.nombre_cliente}"? Esta acción no se puede deshacer.`)) return;
-      try{
-        const res = await fetch(`${API_BASE}/api/requests/${selected.id}`, {
-          method:'DELETE',
-          headers:{'Authorization':`Bearer ${token}`}
-        });
-        const data = await res.json();
-        if(!res.ok) throw new Error(data.detail || 'No se pudo eliminar');
-        toast('Solicitud eliminada');
-        closeModal(); await loadSolicitudes();
-      }catch(e){toast(e.message || 'Error al eliminar')}
-    }
+  set('m_dist_km', (s.dist_km!=null ? Number(s.dist_km).toFixed(3).replace('.', ',') : '-'));
+  set('m_tiempo_viaje', (tiempo_viaje_min!=null ? `${tiempo_viaje_min} min` : '-'));
+  set('m_tiempo_servicio', (tiempo_servicio_min!=null ? `${tiempo_servicio_min} min` : '-'));
+  set('m_tiempo_carga_desc', (tiempo_carga_desc_min!=null ? `${tiempo_carga_desc_min} min` : '-'));
 
-    // ===== Requerir login SIEMPRE al entrar a la pestaña =====
-    function forceLoginOnTabEnter(){
-      // al volver visible la pestaña, cerrar sesión
-      document.addEventListener('visibilitychange', () => {
-        if (document.visibilityState === 'visible') {
-          logout('Por seguridad, iniciá sesión nuevamente.');
-        }
-      });
-      // por si vuelve desde el historial (bfcache)
-      window.addEventListener('pageshow', (ev) => {
-        if (ev.persisted) logout('Por seguridad, iniciá sesión nuevamente.');
-      });
+  set('m_costo_tiempo', peso(costo_tiempo));
+  set('m_costo_combustible', peso(s.costo_combustible));
+  set('m_costo_ayudante', peso(s.costo_ayudante));
+  set('m_total', peso(s.monto_estimado));
 
-      // 🔒 extra: si pierde/recupera foco
-      let armed = false;
-      window.addEventListener('blur', () => { armed = true; });
-      window.addEventListener('focus', () => {
-        if (isAuth && armed) logout('Por seguridad, iniciá sesión nuevamente.');
-        armed = false;
-      });
+  const ov = byId('overlay');
+  if (!ov) { console.warn('No existe #overlay'); toast('No se encontró el modal'); return; }
+  ov.classList.add('open');
 
-      // 🔒 extra: limpiar al salir/navegar
-      window.addEventListener('beforeunload', () => { token = null; isAuth = false; });
+  // 👇 Plan B por si algún estilo pisa el display
+  
 
-      // 🔒 extra: si hacen click en un link de la topbar
-      document.querySelectorAll('a[href]').forEach(a => {
-        a.addEventListener('click', () => { token = null; isAuth = false; });
-      });
-    }
+  //console.debug('[openModal] seleccionado=', getId(selected), selected);
+}
 
-    // ===== Init =====
-    document.addEventListener('DOMContentLoaded', () => {
-      // Siempre arrancar deslogueado
-      logout();
 
-      // Forzar login en cada ingreso a la pestaña
-      forceLoginOnTabEnter();
 
-      // Submit login
-      q('#loginForm').addEventListener('submit', (e) => {
-        e.preventDefault();
-        login();
-      });
-    });
-  </script>
+  function closeModal(){ byId('overlay')?.classList.remove('open'); selected=null; }
+
+  async function aprobar(){
+    if (!selected || !token || !isAdminView()) return;
+    try{
+      const sid=getId(selected);
+      const res=await fetch(`${API_BASE}/api/requests/${sid}/confirm`, { method:'POST', headers:{'Authorization':`Bearer ${token}`} });
+      const data=await res.json();
+      if(!res.ok) throw new Error(data.detail || 'No se pudo confirmar');
+      toast('Solicitud confirmada ✅'); closeModal(); await loadSolicitudes();
+    }catch(e){ toast(e.message || 'Error al confirmar'); }
+  }
+
+  async function rechazar(){
+    if (!selected || !token || !isAdminView()) return;
+    try{
+      const sid=getId(selected);
+      const res=await fetch(`${API_BASE}/api/requests/${sid}/reject`, { method:'POST', headers:{'Authorization':`Bearer ${token}`,'Content-Type':'application/json'} });
+      const data=await res.json();
+      if(!res.ok) throw new Error(data.detail || 'No se pudo rechazar');
+      toast('Solicitud rechazada'); closeModal(); await loadSolicitudes();
+    }catch(e){ toast(e.message || 'Error al rechazar'); }
+  }
+
+  async function eliminar(){
+    if (!selected || !token || !isAdminView()) return;
+    if ((selected.estado||'').toLowerCase()!=='rechazado'){ toast('Solo se puede eliminar si está Rechazado'); return; }
+    if (!confirm(`¿Eliminar la solicitud de "${selected.nombre_cliente}"? Esta acción no se puede deshacer.`)) return;
+    try{
+      const sid=getId(selected);
+      const res=await fetch(`${API_BASE}/api/requests/${sid}`, { method:'DELETE', headers:{'Authorization':`Bearer ${token}`} });
+      const data=await res.json();
+      if(!res.ok) throw new Error(data.detail || 'No se pudo eliminar');
+      toast('Solicitud eliminada'); closeModal(); await loadSolicitudes();
+    }catch(e){ toast(e.message || 'Error al eliminar'); }
+  }
+
+  // Init protegido (no contamina global y no pisa otras vistas)
+  window.Admin = window.Admin || {};
+Object.assign(window.Admin, {
+  login,
+  logout: adminLogout,
+  openModal,
+  closeModal,
+  aprobar,
+  rechazar,
+  eliminar
+});
+
+// Después sí, tu init que ata listeners y hace logout inicial
+(function initAdmin(){
+  const NEED=['authFlag','tbody','loginForm'];
+  const hasAdmin=()=>NEED.every(id=>document.getElementById(id));
+  let inited=false;
+  function safeInit(){
+    if(inited || !hasAdmin()) return;
+    inited=true;
+    adminLogout();
+    document.getElementById('loginForm')?.addEventListener('submit', (e)=>{ e.preventDefault(); login(); });
+    document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible') adminLogout('Por seguridad, iniciá sesión nuevamente.'); });
+    window.addEventListener('pageshow',(ev)=>{ if(ev.persisted) adminLogout('Por seguridad, iniciá sesión nuevamente.'); });
+    window.addEventListener('beforeunload',()=>{ window.token=null; });
+  }
+  safeInit();
+  requestAnimationFrame(safeInit);
+  const mo=new MutationObserver(()=>safeInit());
+  mo.observe(document,{childList:true,subtree:true});
+  const stop=setInterval(()=>{ if(inited){ mo.disconnect(); clearInterval(stop);} },300);
+})();
+})();
+</script>
+
+  <script defer src="/static/spa.js"></script>
 </body>
 </html>

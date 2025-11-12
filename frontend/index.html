@@ -1,3 +1,4 @@
+<!-- index.html --> 
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -161,7 +162,7 @@
       position:fixed; width:56px; height:56px; bottom:24px; right:24px;
       background-color:#25D366; color:#fff; border-radius:50%;
       display:flex; align-items:center; justify-content:center;
-      box-shadow:0 8px 24px rgba(37,211,102,.35); z-index:100; text-decoration:none; transition:transform .2s;
+      box-shadow:0 8px 24px rgba(37,211,102,.35); z-index:100; text-decoration:none; transition:.2s;
     }
     .whatsapp-float:hover{ transform:translateY(-1px) scale(1.08); }
     .whatsapp-float svg{ width:30px; height:30px; fill:#fff; }
@@ -172,9 +173,9 @@
 <header>
   <b>Fletes Larga Distancia</b>
   <nav>
-    <a href="/index">Inicio</a>
-    <a href="/presupuesto">Presupuesto</a>
-    <a href="/admin">Admin</a>
+    <a href="/index" data-view="/index">Inicio</a>
+    <a href="/presupuesto" data-view="/presupuesto">Presupuesto</a>
+    <a href="/admin" data-view="/admin">Admin</a>
   </nav>
 </header>
 
@@ -183,7 +184,8 @@
     <section class="hero">
       <h1>Fletes y Mudanzas en Córdoba</h1>
       <p>Pequeña empresa familiar con atención inmediata, confiabilidad y puntualidad. Presupuesto fijo por viaje, sin importar distancia ni horas.</p>
-      <a href="/presupuesto" class="btn">Calcular presupuesto</a>
+      <a href="/presupuesto" class="btn" data-view="/presupuesto">Calcular presupuesto</a>
+
     </section>
 
     <!-- Carrusel -->
@@ -301,41 +303,261 @@
 
   <!-- JS Carrusel -->
   <script>
-    const carousel = document.getElementById('carousel');
-    const slides = Array.from(carousel.querySelectorAll('.slide'));
-    const dotsWrap = document.getElementById('dots');
-
-    let idx = slides.findIndex(el => el.classList.contains('active'));
-    if (idx === -1) { idx = 0; slides[0]?.classList.add('active'); }
-
-    let timer = null;
-
-    function renderDots(){
-      dotsWrap.innerHTML = '';
-      slides.forEach((_, i) => {
-        const d = document.createElement('div');
-        d.className = 'dot' + (i===idx ? ' active' : '');
-        d.addEventListener('click', () => go(i));
-        dotsWrap.appendChild(d);
-      });
-    }
-
-    function go(next){
-      if (!slides.length) return;
-      slides[idx].classList.remove('active');
-      idx = (typeof next === 'number') ? next : (idx+1) % slides.length;
-      slides[idx].classList.add('active');
-      renderDots();
-      restart();
-    }
-
-    function restart(){
-      if (timer) clearInterval(timer);
-      timer = setInterval(go, 4000);
-    }
-
-    renderDots();
-    restart();
+  (function () {
+    try {
+      if (location.pathname !== "/") {
+        history.replaceState(null, "", "/");
+      }
+    } catch (e) {}
+  })();
   </script>
+
+  <script>
+  (function(){
+    // ✅ API_BASE sin redeclarar
+    globalThis.API_BASE = globalThis.API_BASE || (
+      (location.hostname === 'localhost' || location.hostname === '127.0.0.1')
+        ? 'http://127.0.0.1:8000'
+        : 'https://fletes-exus.onrender.com'
+    );
+
+    let token = null;
+    let solicitudes = [];
+    let selected = null;
+    let isAuth = false;
+
+    const q = (s)=>document.querySelector(s);
+    const toast = (msg)=>{const t=q('#toast'); if(!t) return; t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2200)};
+    const peso = (n)=> (n!=null ? ('$ ' + Number(n).toLocaleString('es-AR')) : '-');
+
+    // 👇 NUEVO: gateo para saber si estamos en la vista Admin
+    function isAdminView(){
+      return !!(document.getElementById('loginForm')
+             && document.getElementById('authFlag')
+             && document.getElementById('tbody'));
+    }
+
+    function badge(estadoRaw){
+      const e = (estadoRaw || 'pendiente').toLowerCase();
+      const texto = e.charAt(0).toUpperCase() + e.slice(1);
+      const cls = e==='confirmado' ? 'aprobado' : (e==='rechazado' ? 'rechazado' : 'pendiente');
+      return `<span class="badge ${cls}">${texto}</span>`;
+    }
+
+    // ⬇️ CAMBIADO: null-safe y gateado
+    function setAuthUI(isOn){
+      if (!isAdminView()) return;
+      isAuth = !!isOn;
+      const flag = document.getElementById('authFlag');
+      if (flag){
+        flag.textContent = isOn ? 'Autenticado' : 'No autenticado';
+        flag.className   = 'tag ' + (isOn ? 'ok' : 'muted');
+      }
+      const btn = document.getElementById('btnLogout');
+      if (btn){
+        btn.style.display = isOn ? 'inline-flex' : 'none';
+      }
+    }
+
+    async function login(){
+      if (!isAdminView()) return;
+      const username = document.getElementById('usr')?.value.trim();
+      const password = document.getElementById('pwd')?.value.trim();
+      if(!username || !password){ toast('Ingresá usuario y contraseña'); return; }
+      try{
+        const res = await fetch(`${API_BASE}/api/login`, {
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ username, password })
+        });
+        const data = await res.json();
+        if(!res.ok) throw new Error(data.detail || 'Credenciales inválidas');
+        token = data.token;
+        setAuthUI(true);
+        toast('Sesión iniciada');
+        await loadSolicitudes();
+      }catch(e){ toast(e.message || 'Error de login'); }
+    }
+
+    // ⬇️ CAMBIADO: limpia estado SIEMPRE y sólo toca DOM si es Admin
+    function logout(reason){
+      token = null; isAuth = false; selected = null; solicitudes = [];
+      if (!isAdminView()) return;
+      setAuthUI(false);
+      renderEmpty(reason || 'Iniciá sesión para ver las solicitudes de presupuesto.');
+      const usr = document.getElementById('usr');
+      const pwd = document.getElementById('pwd');
+      if (usr) usr.value = '';
+      if (pwd) pwd.value = '';
+      if (usr) usr.focus();
+    }
+
+    async function loadSolicitudes(){
+      if (!isAdminView()) return;
+      if(!token){ renderEmpty('Iniciá sesión para ver las solicitudes de presupuesto.'); return; }
+      try{
+        const res = await fetch(`${API_BASE}/api/requests`, { headers:{'Authorization':`Bearer ${token}`} });
+        const data = await res.json();
+        if(!res.ok) throw new Error(data.detail || 'No se pudieron cargar las solicitudes');
+        solicitudes = Array.isArray(data.items) ? data.items : [];
+        render();
+        if(solicitudes.length===0) renderEmpty('No hay solicitudes.');
+      }catch(e){ renderEmpty(e.message || 'No se pudieron cargar las solicitudes.'); }
+    }
+
+    function render(){
+      if (!isAdminView()) return;
+      const tb = document.getElementById('tbody');
+      if (!tb) return;
+      tb.innerHTML = '';
+      for(const s of solicitudes){
+        const tr = document.createElement('tr');
+        tr.className = 'row';
+        tr.innerHTML = `
+          <td><div class="client"><span class="name">${s.nombre_cliente || '-'}</span><span class="sub">${s.telefono || '-'}</span></div></td>
+          <td>${s.tipo_carga || '-'}</td>
+          <td>${s.fecha || '-'}</td>
+          <td>${badge(s.estado)}</td>
+          <td><div class="actions"><button class="btn-ghost" onclick="openModal('${s.id}')" type="button">Detalles</button></div></td>
+        `;
+        tb.appendChild(tr);
+      }
+    }
+
+    // ⬇️ CAMBIADO: gateado
+    function renderEmpty(msg){
+      if (!isAdminView()) return;
+      const tb = document.getElementById('tbody');
+      if (!tb) return;
+      tb.innerHTML = `<tr><td colspan="5" class="empty">${msg}</td></tr>`;
+    }
+
+    function coalesce(...vals){ for(const v of vals){ if(v!==undefined && v!==null) return v; } return null; }
+
+    // ⬇️ CAMBIADO: gateado
+    function openModal(id){
+      if (!isAdminView()) return;
+      if(!token){ logout(); return; }
+      selected = solicitudes.find(s => String(s.id) === String(id));
+      if(!selected) return;
+
+      const tiempo_viaje_min = coalesce(
+        selected.tiempo_viaje_min,
+        selected.tramo_base_origen_min && selected.tramo_origen_destino_min
+          ? Number(selected.tramo_base_origen_min) + Number(selected.tramo_origen_destino_min) + Number(selected.tramo_destino_base_min || 0)
+          : null
+      );
+      const tiempo_servicio_min = coalesce(selected.tiempo_servicio_min, null);
+      const tiempo_carga_desc_min = coalesce(selected.tiempo_carga_descarga_min, selected.tiempo_servicio_min);
+      const costo_tiempo = coalesce(
+        selected.costo_tiempo,
+        (selected.costo_tiempo_base!=null && selected.mantenimiento!=null)
+          ? (Number(selected.costo_tiempo_base) + Number(selected.mantenimiento))
+          : null
+      );
+
+      document.getElementById('#m_cliente')?.textContent;
+      (document.getElementById('m_cliente')||{}).textContent = selected.nombre_cliente || '-';
+      (document.getElementById('m_tel')||{}).textContent = selected.telefono || '-';
+      (document.getElementById('m_tipo')||{}).textContent = selected.tipo_carga || '-';
+      (document.getElementById('m_fecha')||{}).textContent = selected.fecha || '-';
+      (document.getElementById('m_ayudante')||{}).textContent = selected.ayudante ? 'Sí' : 'No';
+      (document.getElementById('m_estado')||{}).textContent = selected.estado || '-';
+      (document.getElementById('m_origen')||{}).textContent = selected.origen || '-';
+      (document.getElementById('m_destino')||{}).textContent = selected.destino || '-';
+
+      (document.getElementById('m_dist_km')||{}).textContent = (selected.dist_km!=null ? Number(selected.dist_km).toFixed(3).replace('.', ',') : '-');
+      (document.getElementById('m_tiempo_viaje')||{}).textContent = (tiempo_viaje_min!=null ? `${tiempo_viaje_min} min` : '-');
+      (document.getElementById('m_tiempo_servicio')||{}).textContent = (tiempo_servicio_min!=null ? `${tiempo_servicio_min} min` : '-');
+      (document.getElementById('m_tiempo_carga_desc')||{}).textContent = (tiempo_carga_desc_min!=null ? `${tiempo_carga_desc_min} min` : '-');
+
+      (document.getElementById('m_costo_tiempo')||{}).textContent = peso(costo_tiempo);
+      (document.getElementById('m_costo_combustible')||{}).textContent = peso(selected.costo_combustible);
+      (document.getElementById('m_costo_ayudante')||{}).textContent = peso(selected.costo_ayudante);
+      (document.getElementById('m_total')||{}).textContent = peso(selected.monto_estimado);
+
+      const ov = document.getElementById('overlay');
+      if (ov) ov.classList.add('open');
+    }
+
+    function closeModal(){ document.getElementById('overlay')?.classList.remove('open'); selected = null; }
+
+    async function aprobar(){
+      if(!selected || !token) return;
+      try{
+        const res = await fetch(`${API_BASE}/api/requests/${selected.id}/confirm`, {
+          method:'POST',
+          headers:{'Authorization':`Bearer ${token}`}
+        });
+        const data = await res.json();
+        if(!res.ok) throw new Error(data.detail || 'No se pudo confirmar');
+        toast('Solicitud confirmada ✅');
+        closeModal(); await loadSolicitudes();
+      }catch(e){toast(e.message || 'Error al confirmar')}
+    }
+
+    async function rechazar(){
+      if(!selected || !token) return;
+      try{
+        const res = await fetch(`${API_BASE}/api/requests/${selected.id}/reject`, {
+          method:'POST',
+          headers:{'Authorization':`Bearer ${token}`,'Content-Type':'application/json'}
+        });
+        const data = await res.json();
+        if(!res.ok) throw new Error(data.detail || 'No se pudo rechazar');
+        toast('Solicitud rechazada');
+        closeModal(); await loadSolicitudes();
+      }catch(e){toast(e.message || 'Error al rechazar')}
+    }
+
+    async function eliminar(){
+      if(!selected || !token) return;
+      if((selected.estado||'').toLowerCase() !== 'rechazado'){ toast('Solo se puede eliminar si está Rechazado'); return; }
+      if(!confirm(`¿Eliminar la solicitud de "${selected.nombre_cliente}"? Esta acción no se puede deshacer.`)) return;
+      try{
+        const res = await fetch(`${API_BASE}/api/requests/${selected.id}`, {
+          method:'DELETE',
+          headers:{'Authorization':`Bearer ${token}`}
+        });
+        const data = await res.json();
+        if(!res.ok) throw new Error(data.detail || 'No se pudo eliminar');
+        toast('Solicitud eliminada');
+        closeModal(); await loadSolicitudes();
+      }catch(e){toast(e.message || 'Error al eliminar')}
+    }
+
+    function forceLoginOnTabEnter(){
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') logout('Por seguridad, iniciá sesión nuevamente.');
+      });
+      window.addEventListener('pageshow', (ev) => { if (ev.persisted) logout('Por seguridad, iniciá sesión nuevamente.'); });
+      let armed = false;
+      window.addEventListener('blur', () => { armed = true; });
+      window.addEventListener('focus', () => { if (isAuth && armed) logout('Por seguridad, iniciá sesión nuevamente.'); armed = false; });
+      window.addEventListener('beforeunload', () => { token = null; isAuth = false; });
+      document.querySelectorAll('a[href]').forEach(a => { a.addEventListener('click', () => { token = null; isAuth = false; }); });
+    }
+
+    // ⬇️ CAMBIADO: sólo inicializa si la vista Admin existe
+    (function initAdmin(){
+      function ready(){
+        if (!isAdminView()) return;
+        logout();
+        forceLoginOnTabEnter();
+        document.getElementById('loginForm')?.addEventListener('submit', (e) => { e.preventDefault(); login(); });
+      }
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', ready, { once: true });
+      } else {
+        ready();
+      }
+    })();
+
+    // 👇 Exponer SOLO lo que usan los onclick del HTML
+    Object.assign(window, { openModal, closeModal, aprobar, rechazar, eliminar, logout });
+  })();
+  </script>
+
+  <script defer src="/static/spa.js"></script>
 </body>
 </html>

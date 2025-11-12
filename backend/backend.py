@@ -1,3 +1,5 @@
+# backend/backend.py
+
 # ===================================
 # 🚛 FLETES JAVIER – BACKEND COMPLETO
 # ===================================
@@ -25,7 +27,7 @@ load_dotenv(override=True)
 # FRONTEND
 from pathlib import Path
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, RedirectResponse
 
 # Notificaciones (tu módulo existente)
 from .notifications import send_whatsapp_to_javier
@@ -42,7 +44,6 @@ harden_app(app)
 install_rate_limit(app)
 
 # --- CSP relajado SOLO para HTML estático (dev) ---
-# Soluciona: bloqueos de Google Fonts, estilos inline y scripts inline.
 @app.middleware("http")
 async def relax_csp_for_static(request: Request, call_next):
     resp = await call_next(request)
@@ -65,43 +66,36 @@ async def relax_csp_for_static(request: Request, call_next):
 BASE_DIR = Path(__file__).resolve().parents[1]   # .../Exus
 FRONT_DIR = BASE_DIR / "frontend"
 
-# Sirve todos los assets en /static (css, js, images)
 app.mount("/static", StaticFiles(directory=FRONT_DIR), name="static")
-
-# Compat directa de /images/* (por si en HTML quedaron rutas antiguas)
 app.mount("/images", StaticFiles(directory=FRONT_DIR / "images"), name="images")
 
-# Rutas "lindas" para tus páginas
+# ======= FRONTEND ROUTES =======
+
+# Página principal
 @app.get("/", include_in_schema=False)
-def serve_index():
+def serve_home():
     return FileResponse(FRONT_DIR / "index.html")
-# ✅ Soporte para "/index"
+
+# Redirigir /index → /
 @app.get("/index", include_in_schema=False)
-def serve_index_alias():
-    return FileResponse(FRONT_DIR / "index.html")
+def redirect_index():
+    return RedirectResponse(url="/", status_code=308)
 
-@app.get("/admin", include_in_schema=False)
-def serve_admin():
-    return FileResponse(FRONT_DIR / "admin.html")
-
-@app.get("/presupuesto", include_in_schema=False)
-def serve_presupuesto():
-    return FileResponse(FRONT_DIR / "presupuesto.html")
-
-# Rutas legacy (por compatibilidad con enlaces antiguos)
 @app.get("/index.html", include_in_schema=False)
-def legacy_index():
-    return FileResponse(FRONT_DIR / "index.html")
+def redirect_index_html():
+    return RedirectResponse(url="/", status_code=308)
 
-@app.get("/admin.html", include_in_schema=False)
-def legacy_admin():
-    return FileResponse(FRONT_DIR / "admin.html")
+# Redirigir /presupuesto → /
+@app.get("/presupuesto", include_in_schema=False)
+def redirect_presupuesto():
+    return RedirectResponse(url="/", status_code=308)
 
-@app.get("/presupuesto.html", include_in_schema=False)
-def legacy_presupuesto():
-    return FileResponse(FRONT_DIR / "presupuesto.html")
+# Redirigir /admin → /
+@app.get("/admin", include_in_schema=False)
+def redirect_admin():
+    return RedirectResponse(url="/", status_code=308)
 
-# (Si usás CORS explícito, dejalo aquí; ejemplo básico)
+
 ALLOWED_ORIGINS = [o.strip() for o in (os.getenv("ALLOWED_ORIGINS") or "").split(",") if o.strip()]
 if ALLOWED_ORIGINS:
     app.add_middleware(
@@ -122,9 +116,8 @@ client = MongoClient(MONGO_URI, serverSelectionTimeoutMS=5000)
 client.admin.command("ping")
 db = client["fletes_db"]
 quotes = db["quotes"]
-users = db["users"]   
+users = db["users"]
 
-# 👉 Log limpio en evento de arranque
 @app.on_event("startup")
 def _on_startup():
     try:
@@ -166,21 +159,14 @@ MIN_TOTAL = float(os.getenv("MIN_TOTAL", "0"))
 INCLUIR_AYUDANTE_EN_TOTAL = (os.getenv("INCLUIR_AYUDANTE_EN_TOTAL", "1") == "1")
 RETURN_TO_BASE_DEFAULT = (os.getenv("RETURN_TO_BASE_DEFAULT", "0") == "1")
 
-# Contacto del profesional (para CTA al cliente)
+# Contacto del profesional
 PRO_PHONE = os.getenv("PRO_PHONE", "+5493516678989")
 PRO_NAME = os.getenv("PRO_NAME", "Fletes Javier")
-
-# =========================
-# Admin (env) – (opcional, ya no se usa para validar)
-# =========================
-ADMIN_USER = os.getenv("ADMIN_USER", "admin")
-ADMIN_PASS = os.getenv("ADMIN_PASS", "admin123")
 
 # =========================
 # Modelos
 # =========================
 class QuoteIn(BaseModel):
-    # Tu front envía "nombre_cliente" (ok), pero también aceptamos "nombre"
     nombre_cliente: str = Field(None, alias="nombre")
     telefono: str
     tipo_carga: str
@@ -188,39 +174,24 @@ class QuoteIn(BaseModel):
     destino: str
     fecha: Optional[str] = None
     ayudante: bool = False
-
-    # Trayecto
     regreso_base: Optional[bool] = None
-
-    # Horas reales (opcional)
     hora_inicio: Optional[str] = None
     hora_fin: Optional[str] = None
     horas_reales: Optional[float] = None
-
-    # Extras
     peajes: int = 0
     viaticos: float = 0.0
-
-    # consentimiento
     accepted_terms: bool = False
     accepted_terms_at: Optional[datetime] = None
-
     model_config = {"populate_by_name": True, "extra": "allow"}
-
 
 class ConfirmPayload(BaseModel):
     fecha_hora_preferida: Optional[str] = None
     notas: Optional[str] = None
 
-
-# Acepta "username" y también "email" del front (alias)
 class LoginIn(BaseModel):
-    # acepta "email" o "username" indistintamente
     username: str | None = Field(None, alias="email")
     password: str
     model_config = {"populate_by_name": True}
-
-
 
 class LoginOut(BaseModel):
     ok: bool
@@ -239,7 +210,6 @@ def _haversine_km(lat1, lon1, lat2, lon2) -> float:
     c = 2 * asin(min(1, sqrt(a)))
     return R * c
 
-
 def _parse_hora(h: str) -> datetime:
     h = h.strip()
     try:
@@ -251,7 +221,6 @@ def _parse_hora(h: str) -> datetime:
     except Exception:
         return datetime.now()
 
-
 def _normalize_addr(s: str) -> str:
     s = (s or "").strip()
     if not s:
@@ -259,7 +228,6 @@ def _normalize_addr(s: str) -> str:
     if DEFAULT_LOCALITY.lower() not in s.lower():
         return f"{s}, {DEFAULT_LOCALITY}"
     return s
-
 
 def _geocode_google(address: str) -> Optional[Dict[str, float]]:
     if not GOOGLE_MAPS_API_KEY:
@@ -274,7 +242,6 @@ def _geocode_google(address: str) -> Optional[Dict[str, float]]:
         return {"lat": loc["lat"], "lng": loc["lng"]}
     except Exception:
         return None
-
 
 def _distance_time_google(origen: str, destino: str) -> Optional[Dict[str, Any]]:
     if not GOOGLE_MAPS_API_KEY:
@@ -299,7 +266,6 @@ def _distance_time_google(origen: str, destino: str) -> Optional[Dict[str, Any]]
         return {"dist_km": dist_m/1000.0, "tiempo_viaje_min": int(round(dur_s/60))}
     except Exception:
         return None
-
 
 def _distance_time_ors(origen: str, destino: str) -> Optional[Dict[str, Any]]:
     if not ORS_API_KEY:
@@ -335,18 +301,15 @@ def _distance_time_ors(origen: str, destino: str) -> Optional[Dict[str, Any]]:
     except Exception:
         return None
 
-
 def _distance_time_fallback(origen: str, destino: str) -> Dict[str, Any]:
-    # heurística si no hay keys o falla la API
     o = _geocode_google(origen) if GOOGLE_MAPS_API_KEY else None
     d = _geocode_google(destino) if GOOGLE_MAPS_API_KEY else None
     if o and d:
         dist_km = _haversine_km(o["lat"], o["lng"], d["lat"], d["lng"]) * FACTOR_TRAZADO
     else:
-        dist_km = 10.0  # heurística
+        dist_km = 10.0
     tiempo_viaje_min = int(round((dist_km / max(VEL_KMH, 1)) * 60))
     return {"dist_km": round(dist_km, 2), "tiempo_viaje_min": int(tiempo_viaje_min)}
-
 
 def calcular_ruta(origen: str, destino: str) -> Dict[str, Any]:
     used = None
@@ -364,7 +327,6 @@ def calcular_ruta(origen: str, destino: str) -> Dict[str, Any]:
     print(f"[route] provider_used={used} origen='{origen}' destino='{destino}' -> {res}")
     return res
 
-
 # =========================
 # Cálculo de costos
 # =========================
@@ -375,7 +337,7 @@ def calcular_costos(
     horas_reales: Optional[float] = None,
     peajes: int = 0,
     viaticos: float = 0.0,
-    extra_servicio_min: int = 0,  # 60 si mudanza, 30 si puntual
+    extra_servicio_min: int = 0,
 ) -> Dict[str, float]:
     horas_manejo = tiempo_viaje_min / 60.0
     horas_servicio = horas_manejo * FACTOR_PONDERACION
@@ -423,9 +385,8 @@ def calcular_costos(
 # Serializaciones
 # =========================
 def _quote_public(doc: dict) -> dict:
-    """Resumen para front (usa los campos que mostrás en presupuesto.html)."""
     return {
-        "id": str(doc["_id"]),
+        "id": str(doc["_id"]) if doc.get("_id") else None,
         "nombre_cliente": doc.get("nombre_cliente"),
         "telefono": doc.get("telefono"),
         "tipo_carga": doc.get("tipo_carga"),
@@ -444,7 +405,6 @@ def _quote_public(doc: dict) -> dict:
     }
 
 def _contact_urls(quote_id: str) -> dict:
-    from urllib.parse import quote_plus
     msg = f"Hola {PRO_NAME}, te envié un presupuesto desde la web. ID: {quote_id}."
     wa = f"https://wa.me/{PRO_PHONE.replace('+','').replace(' ','')}?text={quote_plus(msg)}"
     tel = f"tel:{PRO_PHONE}"
@@ -454,43 +414,13 @@ def _contact_urls(quote_id: str) -> dict:
 # Notificación (background)
 # =========================
 def _notify_new_quote(doc: dict):
-    """Se usa en /send y /confirm; evita frenar la respuesta al cliente."""
-    subject = f"🧾 Nuevo presupuesto: {doc.get('tipo_carga','')} – {doc.get('nombre_cliente','')}"
-    html = f"""
-    <h2>Nuevo presupuesto</h2>
-    <ul>
-      <li><b>Cliente:</b> {doc.get('nombre_cliente','')} – {doc.get('telefono','')}</li>
-      <li><b>Tipo:</b> {doc.get('tipo_carga','')}</li>
-      <li><b>Fecha:</b> {doc.get('fecha') or '-'}</li>
-      <li><b>Origen:</b> {doc.get('origen','')}</li>
-      <li><b>Destino:</b> {doc.get('destino','')}</li>
-      <li><b>Distancia:</b> {doc.get('dist_km','?')} km</li>
-      <li><b>Manejo:</b> {doc.get('tiempo_viaje_min','?')} min</li>
-      <li><b>Servicio:</b> {doc.get('tiempo_servicio_min','?')} min</li>
-      <li><b>Costo tiempo:</b> ${doc.get('costo_tiempo','?')}</li>
-      <li><b>Combustible:</b> ${doc.get('costo_combustible','?')}</li>
-      <li><b>Total estimado:</b> <b>${doc.get('monto_estimado','?')}</b></li>
-      <li><b>Ayudante:</b> {"Sí" if doc.get('ayudante') else "No"}</li>
-      <li><b>ID:</b> {str(doc.get('_id'))}</li>
-    </ul>
-    """
-
-    # WhatsApp opcional (si Twilio está configurado)
-    def _notify_new_quote(doc: dict):
-        subject = f"🧾 Nuevo presupuesto: {doc.get('tipo_carga','')} – {doc.get('nombre_cliente','')}"
-        html = "... (tu HTML igual) ..."
-
-
     wa_res = None
     try:
         text = format_whatsapp_quote(doc)
-        wa_res = send_whatsapp_to_javier(text)  # <- tu función ya loguea status/code
+        wa_res = send_whatsapp_to_javier(text)
     except Exception as e:
         wa_res = {"ok": "false", "error": str(e)}
-
-    # ⬅️ devolvemos para que /send?debug=true lo muestre
     return {"whatsapp": wa_res}
-
 
 def _yn(v): 
     return "Sí" if bool(v) else "No"
@@ -501,11 +431,26 @@ def _money(n):
     except Exception:
         return f"${n}"
 
-def _maps(addr: str) -> str:
-    return f"https://www.google.com/maps/search/?api=1&query={quote_plus(addr)}" if addr else "-"
+# ==== NUEVO: helpers de Maps robustos ====
+def _ensure_locality(addr: str, locality: str = DEFAULT_LOCALITY) -> str:
+    s = (addr or "").strip()
+    if not s:
+        return locality
+    if locality and locality.lower() not in s.lower():
+        return f"{s}, {locality}"
+    return s
+
+def maps_link(addr: str = "", lat: float | None = None, lng: float | None = None) -> str:
+    """
+    - Si hay coords: usa lat,lng (evita ambigüedades).
+    - Si no: fuerza localidad y hace URL-encode del texto.
+    """
+    if lat is not None and lng is not None:
+        return f"https://www.google.com/maps/search/?api=1&query={lat:.6f}%2C{lng:.6f}"
+    q = quote_plus(_ensure_locality(addr))
+    return f"https://www.google.com/maps/search/?api=1&query={q}"
 
 def format_whatsapp_quote(doc: dict) -> str:
-    # Fallbacks
     nombre  = doc.get("nombre_cliente", "-")
     tel     = doc.get("telefono", "-")
     tipo    = doc.get("tipo_carga", "-")
@@ -514,6 +459,12 @@ def format_whatsapp_quote(doc: dict) -> str:
     origen  = doc.get("origen", "-")
     destino = doc.get("destino", "-")
     _id     = str(doc.get("_id") or doc.get("id") or "-")
+
+    # Si existen coordenadas en el doc, se usan; si no, se refuerza la localidad
+    o_lat = doc.get("origen_lat");  o_lng = doc.get("origen_lng")
+    d_lat = doc.get("destino_lat"); d_lng = doc.get("destino_lng")
+    link_origen  = maps_link(origen,  o_lat, o_lng)
+    link_destino = maps_link(destino, d_lat, d_lng)
 
     dist_km   = doc.get("dist_km", 0) or 0
     t_manejo  = doc.get("tiempo_viaje_min", 0) or 0
@@ -524,7 +475,6 @@ def format_whatsapp_quote(doc: dict) -> str:
     costo_a   = doc.get("costo_ayudante", 0) or 0
     total     = doc.get("monto_estimado", 0) or 0
 
-    # Tramos (opcionales)
     b_o_km  = doc.get("tramo_base_origen_km", 0) or 0
     b_o_min = doc.get("tramo_base_origen_min", 0) or 0
     o_d_km  = doc.get("tramo_origen_destino_km", 0) or 0
@@ -536,9 +486,9 @@ def format_whatsapp_quote(doc: dict) -> str:
         f"• Tipo: *{tipo}*   • Fecha: *{fecha}*\n"
         f"• Ayudante: *{ayud}*   • *Incluye regreso a base*\n"
         f"• Origen: {origen}\n"
-        f"  ↳ {_maps(origen)}\n"
+        f"  ↳ {link_origen}\n"
         f"• Destino: {destino}\n"
-        f"  ↳ {_maps(destino)}\n"
+        f"  ↳ {link_destino}\n"
         "—\n"
         f"• Distancia total: *{dist_km:.2f} km*   • Manejo: *{t_manejo} min*\n"
         f"• Servicio (total): *{t_srv} min*\n"
@@ -557,35 +507,30 @@ def format_whatsapp_quote(doc: dict) -> str:
 def health():
     return {"status": "ok", "service": "Fletes Javier API"}
 
-@app.post("/api/quote")
-def crear_quote(body: QuoteIn):
-    # Acepta 'nombre' o 'nombre_cliente'
+def _calcular_desde_body(body: QuoteIn) -> dict:
+    # Normalizar
     nombre = body.nombre_cliente or body.__dict__.get("nombre_cliente")
     if not nombre:
         raise HTTPException(status_code=400, detail="Falta nombre_cliente")
 
-    # 1) Normalizar direcciones
     origen_norm = _normalize_addr(body.origen)
     destino_norm = _normalize_addr(body.destino)
     base_norm = _normalize_addr(BASE_DIRECCION)
 
-    # 2) Tramos
+    # Tramos
     t1 = calcular_ruta(base_norm, origen_norm)
     t2 = calcular_ruta(origen_norm, destino_norm)
 
     dist_total = float(t1["dist_km"] + t2["dist_km"])
     tiempo_total_min = int(t1["tiempo_viaje_min"] + t2["tiempo_viaje_min"])
 
-    # 3) Vuelta a base (opcional)
-    # 3) Vuelta a base (siempre incluida)
+    # Regreso a base (incluido)
     regreso_flag = True
-    t3 = {"dist_km": 0.0, "tiempo_viaje_min": 0}
-    if regreso_flag:
-        t3 = calcular_ruta(destino_norm, base_norm)
-        dist_total += float(t3["dist_km"])
-        tiempo_total_min += int(t3["tiempo_viaje_min"])
+    t3 = calcular_ruta(destino_norm, base_norm)
+    dist_total += float(t3["dist_km"])
+    tiempo_total_min += int(t3["tiempo_viaje_min"])
 
-    # 4) Horas reales (si vinieran)
+    # Horas reales opcionales
     horas_reales = None
     if body.horas_reales is not None:
         horas_reales = float(body.horas_reales)
@@ -597,7 +542,7 @@ def crear_quote(body: QuoteIn):
         except Exception:
             horas_reales = None
 
-    # 5) Buffer por tipo
+    # Buffer por tipo
     is_mudanza = "mudanza" in (body.tipo_carga or "").lower()
     extra_servicio_min = 60 if is_mudanza else 30
 
@@ -607,7 +552,6 @@ def crear_quote(body: QuoteIn):
         extra_servicio_min=extra_servicio_min
     )
 
-    # 6) Persistir como PREVIEW (no notifica)
     doc = {
         "nombre_cliente": nombre,
         "telefono": body.telefono,
@@ -624,13 +568,11 @@ def crear_quote(body: QuoteIn):
         "viaticos": body.viaticos,
         "accepted_terms": body.accepted_terms,
         "accepted_terms_at": (body.accepted_terms_at or (datetime.now(timezone.utc) if body.accepted_terms else None)),
-
         # totales
         "dist_km": round(dist_total, 3),
         "tiempo_viaje_min": int(tiempo_total_min),
         "tiempo_servicio_min": int(costos["tiempo_servicio_min"]),
         "horas_base": float(costos["horas_base"]),
-
         # desgloses
         "costo_tiempo_base": float(costos["costo_tiempo_base"]),
         "mantenimiento": float(costos["mantenimiento"]),
@@ -641,7 +583,6 @@ def crear_quote(body: QuoteIn):
         "costo_chofer_parcial": float(costos["costo_chofer_parcial"]),
         "costo_admin_parcial": float(costos["costo_admin_parcial"]),
         "monto_estimado": float(costos["monto_estimado"]),
-
         # tramos
         "tramo_base_origen_km": round(t1["dist_km"], 3),
         "tramo_origen_destino_km": round(t2["dist_km"], 3),
@@ -649,22 +590,41 @@ def crear_quote(body: QuoteIn):
         "tramo_base_origen_min": int(t1["tiempo_viaje_min"]),
         "tramo_origen_destino_min": int(t2["tiempo_viaje_min"]),
         "tramo_destino_base_min": int(t3["tiempo_viaje_min"]),
-
         # metadata
         "extra_servicio_min": int(extra_servicio_min),
-        "estado": "preview",
-        "created_at": datetime.now(timezone.utc),
     }
-    doc["_id"] = quotes.insert_one(doc).inserted_id
+    return doc
 
+# ⛔ CAMBIO: /api/quote ahora NO persiste; solo devuelve preview
+@app.post("/api/quote")
+def preview_quote(body: QuoteIn):
+    doc = _calcular_desde_body(body)
+    doc["estado"] = "preview"
+    # ❌ sin insert en BD (antes se insertaba como preview) :contentReference[oaicite:0]{index=0}
     return {"ok": True, "quote": _quote_public(doc)}
 
+# ✅ Nuevo: enviar y guardar (sin ID previo)
+@app.post("/api/quote/send")
+def send_quote_nuevo(body: QuoteIn, background: BackgroundTasks, debug: bool = Query(default=False)):
+    doc = _calcular_desde_body(body)
+    doc["estado"] = "sent"
+    doc["created_at"] = datetime.now(timezone.utc)
+    _id = quotes.insert_one(doc).inserted_id
+    doc["_id"] = _id
+
+    if debug:
+        res = _notify_new_quote(doc)
+    else:
+        background.add_task(_notify_new_quote, doc)
+        res = None
+
+    pub = _quote_public(doc)
+    pub["contact_urls"] = _contact_urls(str(_id))
+    return {"ok": True, "quote": pub, "notify": res} if debug else {"ok": True, "quote": pub}
+
+# (Compat) Enviar por ID existente (sigue funcionando si lo usabas en admin)
 @app.post("/api/quote/{quote_id}/send")
-def send_quote(
-    quote_id: str,
-    background: BackgroundTasks,
-    debug: bool = Query(default=False)  # ?debug=true para correr síncrono
-):
+def send_quote(quote_id: str, background: BackgroundTasks, debug: bool = Query(default=False)):
     try:
         _id = ObjectId(quote_id)
     except Exception:
@@ -677,23 +637,17 @@ def send_quote(
         raise HTTPException(status_code=409, detail="El presupuesto fue cancelado")
 
     if doc.get("estado") != "sent":
-        quotes.update_one(
-            {"_id": _id},
-            {"$set": {"estado": "sent", "sent_at": datetime.now(timezone.utc)}},
-        )
+        quotes.update_one({"_id": _id}, {"$set": {"estado": "sent", "sent_at": datetime.now(timezone.utc)}})
         doc = quotes.find_one({"_id": _id})
 
-    # 🔎 Si debug=true, envío síncrono y devuelvo resultado de WhatsApp/Email
     if debug:
-        res = _notify_new_quote(doc)  # devolvemos lo que pase adentro
+        res = _notify_new_quote(doc)
         pub = _quote_public(doc)
         pub["estado"] = "sent"
         pub["contact_urls"] = _contact_urls(quote_id)
         return {"ok": True, "quote": pub, "notify": res}
 
-    # Normal: background (silencioso)
     background.add_task(_notify_new_quote, doc)
-
     pub = _quote_public(doc)
     pub["estado"] = "sent"
     pub["contact_urls"] = _contact_urls(quote_id)
@@ -742,7 +696,6 @@ def confirmar_quote(quote_id: str, body: ConfirmPayload = Body(default=None), ba
     return {"ok": True, "quote": _quote_public(doc)}
 
 from fastapi import APIRouter
-
 router_debug = APIRouter()
 
 @router_debug.post("/debug/whatsapp")
@@ -752,7 +705,7 @@ def debug_whatsapp():
 app.include_router(router_debug, prefix="/api", tags=["debug"])
 
 # =========================
-# Login seguro (Argon2id + Rate limit 5/min + Lock por usuario)
+# Login seguro + rate limit
 # =========================
 @app.post("/api/login", response_model=LoginOut)
 @limiter.limit("5/minute")
@@ -763,11 +716,9 @@ async def admin_login(request: Request, body: LoginIn):
     if not username or not password:
         raise HTTPException(status_code=422, detail="Faltan 'username/email' y/o 'password'")
 
-    # Buscar por email o username
     user = users.find_one({"email": username}) or users.find_one({"username": username})
 
-    # Fallback temporal: .env (sin BD)
-    if not user and username == ADMIN_USER.lower() and password == ADMIN_PASS:
+    if not user and username == (os.getenv("ADMIN_USER","admin")).lower() and password == os.getenv("ADMIN_PASS","admin123"):
         token = os.urandom(16).hex()
         expira = datetime.now(timezone.utc) + timedelta(minutes=int(os.getenv("SESSION_DURATION_MIN", "120")))
         return LoginOut(ok=True, message=f"Login exitoso (modo .env). Expira a las {expira.strftime('%H:%M')}", token=token)
@@ -789,11 +740,9 @@ async def admin_login(request: Request, body: LoginIn):
     token = os.urandom(16).hex()
     expira = datetime.now(timezone.utc) + timedelta(minutes=int(os.getenv("SESSION_DURATION_MIN", "120")))
     return LoginOut(ok=True, message=f"Login exitoso. Expira a las {expira.strftime('%H:%M')}", token=token)
-# =========================
-# Rate-limit test
-# =========================
+
 @app.get("/api/ratelimit-test")
-@limiter.limit("10/minute")  # endpoint de prueba
+@limiter.limit("10/minute")
 async def ratelimit_test(request: Request):
     return {"ok": True}
 
@@ -802,7 +751,6 @@ async def ratelimit_test(request: Request):
 # =========================
 def _serialize_quote(doc: dict) -> dict:
     d = _quote_public(doc)
-    # agrego algunos extras útiles en admin
     d.update({
         "tramo_base_origen_km": float(doc.get("tramo_base_origen_km", 0)),
         "tramo_origen_destino_km": float(doc.get("tramo_origen_destino_km", 0)),
@@ -871,4 +819,3 @@ def admin_eliminar(quote_id: str):
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("backend.backend:app", host="127.0.0.1", port=8000, reload=True)
- 
