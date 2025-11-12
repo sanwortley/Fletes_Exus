@@ -193,7 +193,7 @@
           <div class="full">
             <label for="origen">Origen (dirección completa)</label>
             <input id="origen" placeholder="Calle y número" required>
-            <div class="help">Ej: Colón 100, Córdoba, Argentina.</div>
+            <div class="help">Ej: Colón 100, Córdoba</div>
           </div>
 
           <div class="full">
@@ -407,7 +407,6 @@
       clearInterval(cleanupInterval);
       document.getElementById('cleanupTicker')?.remove();
 
-      const $ = (id)=>document.getElementById(id);
       const data = {
         nombre: $("nombre").value.trim(),
         telefono: $("tel").value.trim(),
@@ -427,7 +426,6 @@
         const resp = await postJSON(`${API_BASE}/api/quote`, data);
         const q = resp.quote || resp;
 
-        const draftId      = q?.id ?? q?._id ?? q?.inserted_id ?? null;
         const totalVal     = q?.monto_estimado ?? 0;
         const estadoVal    = (q?.estado ?? "preview").toString();
         const origenShow   = q?.origen ?? data.origen;
@@ -442,7 +440,7 @@
           <p><b>Origen:</b> ${origenShow} &nbsp;→&nbsp; <b>Destino:</b> ${destinoShow}</p>
           <div class="total">Total estimado: $ ${fmt(totalVal)}</div>
           <div class="pill">Estado: ${estadoVal.toUpperCase()}</div>
-          <p class="help" style="margin-top:8px">ID de consulta: <span class="mono">${draftId ?? "-"}</span></p>
+          <p class="help" style="margin-top:8px">Zona de prueba: esto <b>no se guarda</b> hasta que presiones "Enviar al profesional".</p>
 
           <div class="row" style="margin-top:12px; gap:10px; flex-wrap:wrap">
             <button class="btn" id="btnEnviar">Enviar al profesional</button>
@@ -460,13 +458,9 @@
         const btnEnviar = document.getElementById('btnEnviar');
         const cw = document.getElementById('contactWrap');
 
-        if (!draftId) {
-          btnEnviar.disabled = true;
-          cw.innerHTML = `<p class="help">No se pudo generar el ID de la consulta. Volvé a calcular.</p>`;
-          return;
-        }
-
-        btnEnviar?.addEventListener('click', async () => {
+        // Habilitar envío directo (sin draftId)
+        btnEnviar.disabled = false;
+        btnEnviar.addEventListener('click', async () => {
           if (btnEnviar.dataset.busy === "1") return;
           btnEnviar.dataset.busy = "1";
           btnEnviar.disabled = true;
@@ -475,12 +469,10 @@
           btnEnviar.textContent = "Enviando…";
 
           try {
-            const sentResp = await postJSON(`${API_BASE}/api/quote/${draftId}/send`, {});
+            const sentResp = await postJSON(`${API_BASE}/api/quote/send`, data);
             const sent = sentResp.quote || sentResp;
-
             cw.innerHTML = `<p class="help" style="margin:6px 0">¡Listo! Se envió tu presupuesto.</p>`;
             scheduleCleanup(30);
-
           } catch (e) {
             const m = String(e.message || "Error desconocido");
             alert(`No se pudo enviar: ${m}`);
@@ -493,18 +485,18 @@
           btnEnviar.textContent = "Enviado";
         });
 
-        // Cancelar borrador
+        // Cancelar (no hay nada guardado hasta enviar)
         document.getElementById('btnCancelarDraft')?.addEventListener('click', async ()=>{
-          try{
+          try {
             const btn = document.getElementById('btnCancelarDraft');
             btn.disabled = true;
-            await postJSON(`${API_BASE}/api/quote/${draftId}/cancel`, {});
+            const out = document.getElementById('out');
             out.style.display = 'none';
             resetForm();
             alert('Presupuesto cancelado.');
-          }catch(e){
-            alert('No se pudo cancelar: '+ e.message);
-          }finally{
+          } catch(e) {
+            alert('No se pudo cancelar: ' + e.message);
+          } finally {
             document.getElementById('btnCancelarDraft').disabled = false;
           }
         });
@@ -512,38 +504,39 @@
       }catch(e){
         const out = document.getElementById('out');
         out.style.display = 'block';
-        out.innerHTML = `<div class="pill" style="border-color:#ff7b7b;background:#1a0f10;color:#ffb3b3">Error</div><p class="help">${e.message}</p>`;
-        const msg = document.getElementById('msg'); msg.textContent = "";
+        out.innerHTML = `<div class="pill" style="border-color:#ffb7b3;background:#1a0f10;color:#ffb3b3">Error</div><p class="help">` + (e.message || 'No se pudo calcular') + `</p>`;
+        const msg = document.getElementById('msg'); msg.textContent = ""; msg.classList.add("error");
       }
-    }
+    } // <-- cierra runCalc
+
     // ===== Validaciones en vivo de nombre y teléfono =====
-const telInput = document.getElementById("tel");
-const nameInput = document.getElementById("nombre");
+    const telInput = document.getElementById("tel");
+    const nameInput = document.getElementById("nombre");
 
-// Solo números en teléfono
-telInput.addEventListener("input", (e) => {
-  const cleaned = e.target.value.replace(/\D/g, ""); // quita todo lo que no sea dígito
-  if (e.target.value !== cleaned) {
-    e.target.classList.add("invalid");
-    document.getElementById("msg").classList.add("error");
-  } else {
-    e.target.classList.remove("invalid");
-    clearMsg();
-  }
-  e.target.value = cleaned;
-});
+    // Solo números en teléfono
+    telInput.addEventListener("input", (e) => {
+      const cleaned = e.target.value.replace(/\D/g, ""); // quita todo lo que no sea dígito
+      if (e.target.value !== cleaned) {
+        e.target.classList.add("invalid");
+        document.getElementById("msg").classList.add("error");
+      } else {
+        e.target.classList.remove("invalid");
+        clearMsg();
+      }
+      e.target.value = cleaned;
+    });
 
-// Solo texto y espacios en nombre
-nameInput.addEventListener("input", (e) => {
-  const valid = /^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+$/.test(e.target.value.trim());
-  if (!valid && e.target.value !== "") {
-    e.target.classList.add("invalid");
-    document.getElementById("msg").classList.add("error");
-  } else {
-    e.target.classList.remove("invalid");
-    clearMsg();
-  }
-});
+    // Solo texto y espacios en nombre
+    nameInput.addEventListener("input", (e) => {
+      const valid = /^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+$/.test(e.target.value.trim());
+      if (!valid && e.target.value !== "") {
+        e.target.classList.add("invalid");
+        document.getElementById("msg").classList.add("error");
+      } else {
+        e.target.classList.remove("invalid");
+        clearMsg();
+      }
+    });
   </script>
 
 </body>
