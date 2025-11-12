@@ -5,6 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Fletes Larga Distancia - Admin</title>
 
+  <!-- 🔒 Evitar cache y pistas -->
+  <meta http-equiv="Cache-Control" content="no-store" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+  <meta name="referrer" content="no-referrer" />
+
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 
@@ -125,9 +131,9 @@
     <h1>Panel de <span class="accent">Administración</span></h1>
 
     <section class="panel">
-      <form id="loginForm" class="login-row">
-        <input class="input" id="usr" type="text" placeholder="Usuario" />
-        <input class="input" id="pwd" type="password" placeholder="Contraseña" />
+      <form id="loginForm" class="login-row" autocomplete="off">
+        <input class="input" id="usr" type="text" placeholder="Usuario" autocomplete="username" />
+        <input class="input" id="pwd" type="password" placeholder="Contraseña" autocomplete="current-password" />
         <button class="btn btn-primary" type="submit">Iniciar sesión</button>
         <div id="authFlag" class="tag muted">No autenticado</div>
       </form>
@@ -192,14 +198,15 @@
   <script>
     // ===== Config API =====
     const API_BASE = (
-  location.hostname === 'localhost' || location.hostname === '127.0.0.1'
-)
-  ? 'http://127.0.0.1:8000'
-  : 'https://fletes-exus.onrender.com';
+      location.hostname === 'localhost' || location.hostname === '127.0.0.1'
+    ) ? 'http://127.0.0.1:8000' : 'https://fletes-exus.onrender.com';
 
-    let token = localStorage.getItem('admin_token') || null;
+    // 🔒 Token SOLO en memoria
+    let token = null;
     let solicitudes = [];
     let selected = null;
+    // Flag de sesión en memoria
+    let isAuth = false;
 
     // ===== Utils =====
     const q = (s)=>document.querySelector(s);
@@ -213,13 +220,15 @@
       return `<span class="badge ${cls}">${texto}</span>`;
     }
 
-    // ===== Auth =====
+    // ✅ UI de sesión (faltaba en tu versión)
     function setAuthUI(isOn){
+      isAuth = !!isOn;
       q('#authFlag').textContent = isOn ? 'Autenticado' : 'No autenticado';
       q('#authFlag').className = 'tag ' + (isOn ? 'ok' : 'muted');
       q('#btnLogout').style.display = isOn ? 'inline-flex' : 'none';
     }
 
+    // ===== Auth =====
     async function login(){
       const username = q('#usr').value.trim();
       const password = q('#pwd').value.trim();
@@ -228,24 +237,26 @@
         const res = await fetch(`${API_BASE}/api/login`, {
           method:'POST',
           headers:{'Content-Type':'application/json'},
-          body: JSON.stringify({ username, password })   // 👈 FIX: el backend espera username/password
+          body: JSON.stringify({ username, password })
         });
         const data = await res.json();
         if(!res.ok) throw new Error(data.detail || 'Credenciales inválidas');
 
-        token = data.token;
-        localStorage.setItem('admin_token', token);
+        token = data.token;              // solo memoria
         setAuthUI(true);
         toast('Sesión iniciada');
-
-        await loadSolicitudes();       // carga sin refrescar
+        await loadSolicitudes();
       }catch(e){ toast(e.message || 'Error de login'); }
     }
 
-    function logout(){
-      token = null; localStorage.removeItem('admin_token');
+    function logout(reason){
+      token = null;
       setAuthUI(false);
-      solicitudes = []; renderEmpty('Cerraste sesión.');
+      solicitudes = [];
+      renderEmpty(reason || 'Iniciá sesión para ver las solicitudes de presupuesto.');
+      q('#usr').value = '';
+      q('#pwd').value = '';
+      q('#usr').focus();
     }
 
     // ===== Data =====
@@ -288,6 +299,7 @@
 
     // ===== Modal =====
     function openModal(id){
+      if(!token){ logout(); return; }
       selected = solicitudes.find(s => String(s.id) === String(id));
       if(!selected) return;
 
@@ -383,16 +395,49 @@
       }catch(e){toast(e.message || 'Error al eliminar')}
     }
 
+    // ===== Requerir login SIEMPRE al entrar a la pestaña =====
+    function forceLoginOnTabEnter(){
+      // al volver visible la pestaña, cerrar sesión
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') {
+          logout('Por seguridad, iniciá sesión nuevamente.');
+        }
+      });
+      // por si vuelve desde el historial (bfcache)
+      window.addEventListener('pageshow', (ev) => {
+        if (ev.persisted) logout('Por seguridad, iniciá sesión nuevamente.');
+      });
+
+      // 🔒 extra: si pierde/recupera foco
+      let armed = false;
+      window.addEventListener('blur', () => { armed = true; });
+      window.addEventListener('focus', () => {
+        if (isAuth && armed) logout('Por seguridad, iniciá sesión nuevamente.');
+        armed = false;
+      });
+
+      // 🔒 extra: limpiar al salir/navegar
+      window.addEventListener('beforeunload', () => { token = null; isAuth = false; });
+
+      // 🔒 extra: si hacen click en un link de la topbar
+      document.querySelectorAll('a[href]').forEach(a => {
+        a.addEventListener('click', () => { token = null; isAuth = false; });
+      });
+    }
+
     // ===== Init =====
     document.addEventListener('DOMContentLoaded', () => {
-      // Previene refresh en el submit
+      // Siempre arrancar deslogueado
+      logout();
+
+      // Forzar login en cada ingreso a la pestaña
+      forceLoginOnTabEnter();
+
+      // Submit login
       q('#loginForm').addEventListener('submit', (e) => {
         e.preventDefault();
         login();
       });
-
-      setAuthUI(!!token);
-      if(token) loadSolicitudes();
     });
   </script>
 </body>
