@@ -444,7 +444,8 @@
 
   /* ========= CALENDARIO ========= */
 const DOW = ["Lun","Mar","Mié","Jue","Vie","Sáb","Dom"];
-let calCursor = new Date();
+let selectedDayKey = null; // YYYY-MM-DD
+let calCursor = new Date();   
 calCursor.setDate(1);
 
 function iso(d){
@@ -520,6 +521,7 @@ byId("calNext")?.addEventListener("click", ()=>{
 
 
 function selectDay(date){
+  selectedDayKey = date; 
   const list = groupByDay()[date] || [];
   byId("calDetailTitle").textContent = date;
 
@@ -913,6 +915,7 @@ function selectDay(date){
   }
 
   async function eliminar(){
+    
     if (!selected || !token || !isAdminView()) return;
     if ((selected.estado||'').toLowerCase()!=='rechazado'){ toast('Solo se puede eliminar si está Rechazado'); return; }
     if (!confirm(`¿Eliminar la solicitud de "${selected.nombre_cliente}"? Esta acción no se puede deshacer.`)) return;
@@ -925,6 +928,8 @@ function selectDay(date){
       const data=await res.json();
       if(!res.ok) throw new Error(data.detail || 'No se pudo eliminar');
       toast('Solicitud eliminada'); closeModal(); await loadSolicitudes();
+      if (typeof renderCalendar === "function") renderCalendar();
+      if (selectedDayKey) selectDay(selectedDayKey);
     }catch(e){ toast(e.message || 'Error al eliminar'); }
   }
 

@@ -568,6 +568,42 @@ def format_whatsapp_quote(doc: dict) -> str:
         f"ID: `{_id}`"
     )
 
+def format_whatsapp_confirmed(doc: dict) -> str:
+    nombre = doc.get("nombre_cliente", "-")
+    tel = doc.get("telefono", "-")
+    _id = str(doc.get("_id") or doc.get("id") or "-")
+
+    # Turno (si existe)
+    ft = doc.get("fecha_turno") or doc.get("fecha") or "-"
+    ht = doc.get("hora_turno") or ""
+
+    # Link para hablarle al cliente por WhatsApp (AR). Limpia todo a dígitos.
+    tel_digits = "".join([c for c in str(tel) if c.isdigit()])
+    wa_cliente = f"https://wa.me/54{tel_digits}" if tel_digits else ""
+
+    return (
+        "✅ *Presupuesto confirmado*\n"
+        f"• Cliente: *{nombre}*\n"
+        f"• Tel: *{tel}*\n"
+        + (f"• WhatsApp cliente: {wa_cliente}\n" if wa_cliente else "")
+        + f"• Turno: *{ft}{(' ' + ht) if ht else ''}*\n"
+        "—\n"
+        f"ID: `{_id}`"
+    )
+
+
+def _notify_confirmed_quote(doc: dict):
+    wa_res = None
+    try:
+        text = format_whatsapp_confirmed(doc)
+        wa_res = send_whatsapp_to_javier(text)
+    except Exception as e:
+        wa_res = {"ok": "false", "error": str(e)}
+    return {"whatsapp": wa_res}
+
+
+
+
 # =========================
 # ✅ AGENDA (Disponibilidad)
 # =========================
@@ -865,9 +901,11 @@ def confirmar_quote(quote_id: str, body: ConfirmPayload = Body(default=None), ba
         pass
 
     if background:
-        background.add_task(_notify_new_quote, doc)
+        background.add_task(_notify_confirmed_quote, doc)
+
     else:
-        _notify_new_quote(doc)
+        _notify_confirmed_quote(doc)
+
 
     return {"ok": True, "quote": _quote_public(doc)}
 
@@ -982,7 +1020,8 @@ def admin_confirmar(quote_id: str, background: BackgroundTasks, user=Depends(req
     except Exception:
         pass
 
-    background.add_task(_notify_new_quote, doc)
+    background.add_task(_notify_confirmed_quote, doc)
+
     return {"message": "Presupuesto confirmado"}
 
 @app.post("/api/requests/{quote_id}/reject")
