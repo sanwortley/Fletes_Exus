@@ -218,10 +218,6 @@
       </figure>
 
       <figure class="slide">
-        <img loading="lazy" src="/static/images/camion6.jpeg" alt="Camión de mudanza 6">
-      </figure>
-
-      <figure class="slide">
         <img loading="lazy" src="/static/images/camion11.png" alt="Camión en servicio 11">
       </figure>
 
@@ -304,13 +300,51 @@
   <!-- JS Carrusel -->
   <script>
   (function () {
-    try {
-      if (location.pathname !== "/") {
-        history.replaceState(null, "", "/");
+    const root = document.getElementById('carousel');
+    if (!root) return;
+
+    const slides = Array.from(root.querySelectorAll('.slide'));
+    const dotsWrap = document.getElementById('dots');
+    if (!slides.length) return;
+
+    let i = 0;
+    let timer = null;
+
+    // dots
+    if (dotsWrap) {
+      dotsWrap.innerHTML = '';
+      slides.forEach((_, idx) => {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'dot' + (idx === 0 ? ' active' : '');
+        b.addEventListener('click', () => go(idx, true));
+        dotsWrap.appendChild(b);
+      });
+    }
+
+    function setActive(idx) {
+      slides.forEach((s, k) => s.classList.toggle('active', k === idx));
+      if (dotsWrap) {
+        dotsWrap.querySelectorAll('.dot').forEach((d, k) => d.classList.toggle('active', k === idx));
       }
-    } catch (e) {}
+      i = idx;
+    }
+
+    function next() { setActive((i + 1) % slides.length); }
+    function go(idx, reset) { setActive(idx); if (reset) restart(); }
+    function restart() {
+      if (timer) clearInterval(timer);
+      timer = setInterval(next, 3500);
+    }
+
+    // pausa hover
+    root.addEventListener('mouseenter', () => timer && clearInterval(timer));
+    root.addEventListener('mouseleave', restart);
+
+    setActive(0);
+    restart();
   })();
-  </script>
+</script>
 
   <script>
   (function(){

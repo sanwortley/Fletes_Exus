@@ -7,6 +7,7 @@
 from datetime import datetime, timezone, timedelta
 from math import radians, sin, cos, asin, sqrt
 import os
+import calendar  # ✅ AÑADIDO (para mes/año)
 from typing import Optional, Dict, Any, List
 
 # SEGURIDAD
@@ -20,6 +21,7 @@ from fastapi import FastAPI, HTTPException, Depends, Body, BackgroundTasks, Requ
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from pymongo import MongoClient
+from pymongo.collection import ReturnDocument  # ✅ AÑADIDO (para update atómico y devolver doc)
 from bson import ObjectId
 from dotenv import load_dotenv
 load_dotenv(override=True)
@@ -33,6 +35,7 @@ from fastapi.responses import FileResponse, RedirectResponse
 from .notifications import send_whatsapp_to_javier
 
 from urllib.parse import quote_plus
+
 
 
 # =========================
@@ -52,10 +55,11 @@ async def relax_csp_for_static(request: Request, call_next):
         resp.headers["Content-Security-Policy"] = (
             "default-src 'self'; "
             "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
-            'font-src \'self\' data: https://fonts.gstatic.com; '
+            "font-src 'self' data: https://fonts.gstatic.com; "
             "script-src 'self' 'unsafe-inline'; "
             "img-src 'self' data: blob:; "
-            "connect-src 'self' http://127.0.0.1:8000; "
+            # ✅ IMPORTANTÍSIMO: permitir fetch a localhost + Render
+            "connect-src 'self' http://127.0.0.1:8000 https://fletes-exus.onrender.com; "
             "base-uri 'self'; frame-ancestors 'self'"
         )
     return resp
@@ -118,6 +122,17 @@ db = client["fletes_db"]
 quotes = db["quotes"]
 users = db["users"]
 
+# ✅ AÑADIDO: colecciones agenda
+availability = db["availability"]
+bookings = db["bookings"]
+
+# ✅ índices útiles
+try:
+    availability.create_index("date", unique=True)
+    bookings.create_index([("date", 1), ("time", 1)])
+except Exception:
+    pass
+
 @app.on_event("startup")
 def _on_startup():
     try:
@@ -148,6 +163,8 @@ FACTOR_TRAZADO = float(os.getenv("FACTOR_TRAZADO", "1.25"))
 VEL_KMH = float(os.getenv("VEL_KMH", "35"))
 
 # Reglas adicionales
+MANTENIMIENTO_POR_KM = float(os.getenv("MANTENIMIENTO_POR_KM", "0"))
+
 MANTENIMIENTO_PCT = float(os.getenv("MANTENIMIENTO_PCT", "0.20"))
 COSTO_PEAJE = float(os.getenv("COSTO_PEAJE", "2000"))
 COSTO_CHOFER_HORA = float(os.getenv("COSTO_CHOFER_HORA", "7500"))
@@ -158,6 +175,11 @@ BASE_FIJA = float(os.getenv("BASE_FIJA", "0"))
 MIN_TOTAL = float(os.getenv("MIN_TOTAL", "0"))
 INCLUIR_AYUDANTE_EN_TOTAL = (os.getenv("INCLUIR_AYUDANTE_EN_TOTAL", "1") == "1")
 RETURN_TO_BASE_DEFAULT = (os.getenv("RETURN_TO_BASE_DEFAULT", "0") == "1")
+EXCEL_MODE = (os.getenv("EXCEL_MODE", "0") == "1")
+CARGA_DESC_H = float(os.getenv("CARGA_DESC_H", "0"))
+COSTO_COMBUSTIBLE_KM = float(os.getenv("COSTO_COMBUSTIBLE_KM", "0"))
+INCLUIR_CHOFER_ADMIN_EN_TOTAL = (os.getenv("INCLUIR_CHOFER_ADMIN_EN_TOTAL", "0") == "1")
+MANTENIMIENTO_POR_KM = float(os.getenv("MANTENIMIENTO_POR_KM", "0"))
 
 # Contacto del profesional
 PRO_PHONE = os.getenv("PRO_PHONE", "+5493516678989")
@@ -184,6 +206,11 @@ class QuoteIn(BaseModel):
     accepted_terms_at: Optional[datetime] = None
     model_config = {"populate_by_name": True, "extra": "allow"}
 
+    # ✅ AÑADIDO: turno elegido por el usuario
+    fecha_turno: Optional[str] = None   # YYYY-MM-DD
+    hora_turno: Optional[str] = None    # HH:MM
+
+
 class ConfirmPayload(BaseModel):
     fecha_hora_preferida: Optional[str] = None
     notas: Optional[str] = None
@@ -198,6 +225,19 @@ class LoginOut(BaseModel):
     message: str | None = None
     token: str | None = None
     role: str = "admin"
+
+class AvailabilityDayIn(BaseModel):
+    date: str                # YYYY-MM-DD
+    enabled: bool = True
+    slots: List[str] = []
+
+
+# (lo dejamos por compat si después lo querés usar)
+class ReserveIn(BaseModel):
+    date: str  # YYYY-MM-DD
+    slot: str  # "09:30"
+    quote_id: Optional[str] = None
+
 
 # =========================
 # Helpers
@@ -339,39 +379,57 @@ def calcular_costos(
     viaticos: float = 0.0,
     extra_servicio_min: int = 0,
 ) -> Dict[str, float]:
-    horas_manejo = tiempo_viaje_min / 60.0
-    horas_servicio = horas_manejo * FACTOR_PONDERACION
-    horas_base = horas_manejo + horas_servicio + (extra_servicio_min / 60.0)
 
-    if horas_reales and horas_reales > 0:
-        horas_base = horas_reales + (extra_servicio_min / 60.0)
+    # 1) Horas base (manejo)
+    horas_manejo = (horas_reales if horas_reales and horas_reales > 0 else (tiempo_viaje_min / 60.0))
 
+    # 2) Tiempo total estilo Excel:
+    #    (horas + min/60) * ponderación + carga/descarga(extra)
+    horas_total = (horas_manejo * FACTOR_PONDERACION) + (extra_servicio_min / 60.0)
+
+    # 3) Redondeo por bloques (si querés que sea igual que la planilla, lo podés dejar)
     if REDONDEO_MIN > 0:
         import math
         bloque_h = REDONDEO_MIN / 60.0
-        horas_base = bloque_h * math.ceil(horas_base / bloque_h)
+        horas_total = bloque_h * math.ceil(horas_total / bloque_h)
 
-    costo_tiempo_base = horas_base * COSTO_HORA
-    mantenimiento = costo_tiempo_base * MANTENIMIENTO_PCT
-    costo_tiempo_total = costo_tiempo_base + mantenimiento
+    # 4) Costos por tiempo
+    costo_tiempo = horas_total * COSTO_HORA
+    costo_chofer_parcial = horas_total * COSTO_CHOFER_HORA
+    costo_admin_parcial = horas_total * COSTO_ADMIN_HORA
+    costo_ayudante = horas_total * COSTO_HORA_AYUDANTE if ayudante else 0.0
 
+    # 5) Combustible + mantenimiento (para que te dé como el Excel)
     costo_combustible = (dist_km / max(KM_POR_LITRO, 0.1)) * COSTO_LITRO
-    peajes_total = peajes * COSTO_PEAJE
-    costo_ayudante = horas_base * COSTO_HORA_AYUDANTE if ayudante else 0.0
-    costo_chofer_parcial = horas_base * COSTO_CHOFER_HORA
-    costo_admin_parcial = horas_base * COSTO_ADMIN_HORA
 
-    monto_estimado = BASE_FIJA + costo_tiempo_total + costo_combustible + peajes_total + viaticos
-    if INCLUIR_AYUDANTE_EN_TOTAL:
+    # ✅ IMPORTANTE: tu Excel está metiendo mantenimiento como “$ por km”
+    mantenimiento = dist_km * MANTENIMIENTO_POR_KM
+
+    peajes_total = peajes * COSTO_PEAJE
+
+    # 6) Total
+    monto_estimado = (
+        BASE_FIJA
+        + costo_tiempo
+        + costo_combustible
+        + mantenimiento
+        + costo_chofer_parcial
+        + costo_admin_parcial
+        + peajes_total
+        + viaticos
+    )
+
+    if INCLUIR_AYUDANTE_EN_TOTAL and ayudante:
         monto_estimado += costo_ayudante
+
     monto_estimado = max(monto_estimado, MIN_TOTAL)
 
     return {
-        "horas_base": round(horas_base, 2),
-        "tiempo_servicio_min": int(round(horas_servicio * 60)) + int(extra_servicio_min),
-        "costo_tiempo_base": round(costo_tiempo_base, 2),
+        "horas_base": round(horas_total, 2),
+        "tiempo_servicio_min": int(round(horas_total * 60)),
+        "costo_tiempo_base": round(costo_tiempo, 2),
         "mantenimiento": round(mantenimiento, 2),
-        "costo_tiempo": round(costo_tiempo_total, 2),
+        "costo_tiempo": round(costo_tiempo, 2),
         "costo_combustible": round(costo_combustible, 2),
         "peajes_total": round(peajes_total, 2),
         "viaticos": round(viaticos, 2),
@@ -402,6 +460,10 @@ def _quote_public(doc: dict) -> dict:
         "costo_combustible": float(doc.get("costo_combustible", 0)),
         "monto_estimado": float(doc.get("monto_estimado", 0)),
         "estado": doc.get("estado", "preview"),
+
+        # ✅ AÑADIDO: exponer turno (para que lo muestres en UI/admin)
+        "fecha_turno": doc.get("fecha_turno"),
+        "hora_turno": doc.get("hora_turno"),
     }
 
 def _contact_urls(quote_id: str) -> dict:
@@ -422,7 +484,7 @@ def _notify_new_quote(doc: dict):
         wa_res = {"ok": "false", "error": str(e)}
     return {"whatsapp": wa_res}
 
-def _yn(v): 
+def _yn(v):
     return "Sí" if bool(v) else "No"
 
 def _money(n):
@@ -460,7 +522,11 @@ def format_whatsapp_quote(doc: dict) -> str:
     destino = doc.get("destino", "-")
     _id     = str(doc.get("_id") or doc.get("id") or "-")
 
-    # Si existen coordenadas en el doc, se usan; si no, se refuerza la localidad
+    # ✅ turno
+    ft = doc.get("fecha_turno")
+    ht = doc.get("hora_turno")
+    turno_line = f"• Turno: *{ft} {ht}*\n" if ft and ht else ""
+
     o_lat = doc.get("origen_lat");  o_lng = doc.get("origen_lng")
     d_lat = doc.get("destino_lat"); d_lng = doc.get("destino_lng")
     link_origen  = maps_link(origen,  o_lat, o_lng)
@@ -484,6 +550,7 @@ def format_whatsapp_quote(doc: dict) -> str:
         "🧾 *Nuevo presupuesto enviado desde la web*\n"
         f"• Cliente: *{nombre}*  ({tel})\n"
         f"• Tipo: *{tipo}*   • Fecha: *{fecha}*\n"
+        + turno_line +
         f"• Ayudante: *{ayud}*   • *Incluye regreso a base*\n"
         f"• Origen: {origen}\n"
         f"  ↳ {link_origen}\n"
@@ -497,8 +564,72 @@ def format_whatsapp_quote(doc: dict) -> str:
         "• Detalle tramos:\n"
         f"  · Base→Origen: {b_o_km:.2f} km / {b_o_min} min\n"
         f"  · Origen→Destino: {o_d_km:.2f} km / {o_d_min} min\n"
-        "—\nID: `{_id}`"
+        "—\n"
+        f"ID: `{_id}`"
     )
+
+# =========================
+# ✅ AGENDA (Disponibilidad)
+# =========================
+
+@app.get("/api/availability")
+def get_availability(month: str = Query(..., description="YYYY-MM")):
+    """
+    Público: devuelve SOLO días habilitados (enabled=true)
+    { days: { 'YYYY-MM-DD': ['09:00','10:00'] } }
+    """
+    try:
+        year, mon = map(int, month.split("-"))
+        last_day = calendar.monthrange(year, mon)[1]
+    except Exception:
+        raise HTTPException(status_code=400, detail="month inválido. Usar YYYY-MM")
+
+    start = f"{year:04d}-{mon:02d}-01"
+    end   = f"{year:04d}-{mon:02d}-{last_day:02d}"
+
+    days: Dict[str, List[str]] = {}
+    for doc in availability.find({"date": {"$gte": start, "$lte": end}, "enabled": True}, {"_id": 0, "date": 1, "slots": 1}):
+        days[doc["date"]] = doc.get("slots", [])
+
+    return {"ok": True, "month": month, "days": days}
+
+@app.get("/api/admin/availability")
+def admin_get_availability(month: str = Query(..., description="YYYY-MM"), user=Depends(require_api_key)):
+    """
+    Admin: devuelve TODO (enabled true/false + slots) para pintar grises
+    """
+    try:
+        year, mon = map(int, month.split("-"))
+        last_day = calendar.monthrange(year, mon)[1]
+    except Exception:
+        raise HTTPException(status_code=400, detail="month inválido. Usar YYYY-MM")
+
+    start = f"{year:04d}-{mon:02d}-01"
+    end   = f"{year:04d}-{mon:02d}-{last_day:02d}"
+
+    items = list(availability.find({"date": {"$gte": start, "$lte": end}}, {"_id": 0}))
+    return {"ok": True, "month": month, "items": items}
+
+@app.post("/api/availability/day")
+def upsert_availability_day(body: AvailabilityDayIn, user=Depends(require_api_key)):
+    """
+    Admin: crea/actualiza un día:
+      { "date":"YYYY-MM-DD", "enabled": true, "slots":["09:00","10:00"] }
+    """
+    if not body.date or not isinstance(body.slots, list):
+        raise HTTPException(status_code=400, detail="Se requiere 'date' y 'slots' (lista)")
+
+    availability.update_one(
+        {"date": body.date},
+        {"$set": {
+            "date": body.date,
+            "enabled": bool(body.enabled),
+            "slots": body.slots,
+            "updated_at": datetime.now(timezone.utc),
+        }},
+        upsert=True
+    )
+    return {"ok": True}
 
 # =========================
 # Rutas core
@@ -568,6 +699,11 @@ def _calcular_desde_body(body: QuoteIn) -> dict:
         "viaticos": body.viaticos,
         "accepted_terms": body.accepted_terms,
         "accepted_terms_at": (body.accepted_terms_at or (datetime.now(timezone.utc) if body.accepted_terms else None)),
+
+        # ✅ AÑADIDO: guardar turno elegido (si viene)
+        "fecha_turno": body.fecha_turno,
+        "hora_turno": body.hora_turno,
+
         # totales
         "dist_km": round(dist_total, 3),
         "tiempo_viaje_min": int(tiempo_total_min),
@@ -600,17 +736,44 @@ def _calcular_desde_body(body: QuoteIn) -> dict:
 def preview_quote(body: QuoteIn):
     doc = _calcular_desde_body(body)
     doc["estado"] = "preview"
-    # ❌ sin insert en BD (antes se insertaba como preview) :contentReference[oaicite:0]{index=0}
     return {"ok": True, "quote": _quote_public(doc)}
 
-# ✅ Nuevo: enviar y guardar (sin ID previo)
+# ✅ Nuevo: enviar y guardar (sin ID previo) + RESERVA ATÓMICA
 @app.post("/api/quote/send")
 def send_quote_nuevo(body: QuoteIn, background: BackgroundTasks, debug: bool = Query(default=False)):
+
+    # ✅ exige fecha/hora de turno para poder reservar
+    if not body.fecha_turno or not body.hora_turno:
+        raise HTTPException(status_code=422, detail="Tenés que elegir fecha_turno y hora_turno")
+
+    # ✅ reservar ATÓMICO: exige enabled=true y que el slot exista
+    updated = availability.find_one_and_update(
+        {"date": body.fecha_turno, "enabled": True, "slots": body.hora_turno},
+        {"$pull": {"slots": body.hora_turno}, "$set": {"updated_at": datetime.now(timezone.utc)}},
+        return_document=ReturnDocument.AFTER
+    )
+    if not updated:
+        raise HTTPException(status_code=409, detail="Ese día/horario no está disponible")
+
+    # ✅ calcular y guardar quote
     doc = _calcular_desde_body(body)
     doc["estado"] = "sent"
     doc["created_at"] = datetime.now(timezone.utc)
+
     _id = quotes.insert_one(doc).inserted_id
     doc["_id"] = _id
+
+    # ✅ guardar booking (para auditoría / admin)
+    try:
+        bookings.insert_one({
+            "quote_id": str(_id),
+            "date": body.fecha_turno,
+            "time": body.hora_turno,
+            "status": "reserved",
+            "created_at": datetime.now(timezone.utc),
+        })
+    except Exception:
+        pass
 
     if debug:
         res = _notify_new_quote(doc)
@@ -688,6 +851,19 @@ def confirmar_quote(quote_id: str, body: ConfirmPayload = Body(default=None), ba
         }})
         doc = quotes.find_one({"_id": _id})
 
+    # ✅ marcar booking como confirmado (si existe)
+    try:
+        ft = doc.get("fecha_turno")
+        ht = doc.get("hora_turno")
+        if ft and ht:
+            bookings.update_one(
+                {"quote_id": str(_id), "date": ft, "time": ht},
+                {"$set": {"status": "confirmed", "confirmed_at": datetime.now(timezone.utc)}},
+                upsert=True
+            )
+    except Exception:
+        pass
+
     if background:
         background.add_task(_notify_new_quote, doc)
     else:
@@ -703,6 +879,7 @@ def debug_whatsapp():
     return send_whatsapp_to_javier("🔧 Prueba WhatsApp desde backend (Render).")
 
 app.include_router(router_debug, prefix="/api", tags=["debug"])
+
 
 # =========================
 # Login seguro + rate limit
@@ -746,6 +923,7 @@ async def admin_login(request: Request, body: LoginIn):
 async def ratelimit_test(request: Request):
     return {"ok": True}
 
+
 # =========================
 # Admin (listado simple)
 # =========================
@@ -764,18 +942,22 @@ def _serialize_quote(doc: dict) -> dict:
         "mantenimiento": float(doc.get("mantenimiento", 0)),
         "costo_ayudante": float(doc.get("costo_ayudante", 0)),
         "peajes_total": float(doc.get("peajes_total", 0)),
+        # ✅ mostrar turno en admin
+        "fecha_turno": doc.get("fecha_turno"),
+        "hora_turno": doc.get("hora_turno"),
     })
     return d
 
+# ✅ AHORA REQUIERE TOKEN (tu frontend ya lo manda)
 @app.get("/api/requests")
-def listar_requests():
+def listar_requests(user=Depends(require_api_key)):
     items: List[dict] = []
     for doc in quotes.find().sort("created_at", -1):
         items.append(_serialize_quote(doc))
     return {"items": items}
 
 @app.post("/api/requests/{quote_id}/confirm")
-def admin_confirmar(quote_id: str, background: BackgroundTasks):
+def admin_confirmar(quote_id: str, background: BackgroundTasks, user=Depends(require_api_key)):
     try:
         _id = ObjectId(quote_id)
     except Exception:
@@ -786,11 +968,25 @@ def admin_confirmar(quote_id: str, background: BackgroundTasks):
 
     quotes.update_one({"_id": _id}, {"$set": {"estado": "confirmado", "confirmado_en": datetime.now(timezone.utc)}})
     doc = quotes.find_one({"_id": _id})
+
+    # ✅ marcar booking como confirmado
+    try:
+        ft = doc.get("fecha_turno")
+        ht = doc.get("hora_turno")
+        if ft and ht:
+            bookings.update_one(
+                {"quote_id": str(_id), "date": ft, "time": ht},
+                {"$set": {"status": "confirmed", "confirmed_at": datetime.now(timezone.utc)}},
+                upsert=True
+            )
+    except Exception:
+        pass
+
     background.add_task(_notify_new_quote, doc)
     return {"message": "Presupuesto confirmado"}
 
 @app.post("/api/requests/{quote_id}/reject")
-def admin_rechazar(quote_id: str):
+def admin_rechazar(quote_id: str, user=Depends(require_api_key)):
     try:
         _id = ObjectId(quote_id)
     except Exception:
@@ -800,18 +996,44 @@ def admin_rechazar(quote_id: str):
     return {"message": "Presupuesto rechazado"}
 
 @app.delete("/api/requests/{quote_id}")
-def admin_eliminar(quote_id: str):
+def admin_eliminar(quote_id: str, user=Depends(require_api_key)):
     try:
         _id = ObjectId(quote_id)
     except Exception:
         raise HTTPException(status_code=400, detail="ID inválido")
+
     doc = quotes.find_one({"_id": _id})
     if not doc:
         raise HTTPException(status_code=404, detail="Presupuesto no encontrado")
+
     if (doc.get("estado") or "").lower() != "rechazado":
         raise HTTPException(status_code=400, detail="Solo se puede eliminar si está Rechazado")
+
+    # ✅ recuperar turno antes de borrar
+    ft = doc.get("fecha_turno")
+    ht = doc.get("hora_turno")
+
+    # ✅ borrar quote
     quotes.delete_one({"_id": _id})
-    return {"message": "Eliminado"}
+
+    # ✅ liberar horario: devolver slot a availability
+    if ft and ht:
+        availability.update_one(
+            {"date": ft},
+            {
+                "$setOnInsert": {"date": ft},
+                "$addToSet": {"slots": ht},
+                "$set": {"updated_at": datetime.now(timezone.utc)},
+            },
+            upsert=True
+        )
+
+        # ✅ borrar booking asociado (limpieza)
+        bookings.delete_many({"quote_id": quote_id})
+        bookings.delete_many({"date": ft, "time": ht, "status": {"$in": ["reserved", "confirmed"]}})
+
+    return {"message": "Eliminado y turno liberado" if (ft and ht) else "Eliminado"}
+
 
 # =========================
 # Runner local

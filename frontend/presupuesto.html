@@ -158,6 +158,30 @@
       .grid > div, .full{ grid-column:1/-1; }
       .actions-row{ flex-direction:column; align-items:flex-start; }
     }
+
+
+    /* ===== Calendario disponibilidad ===== */
+.day-btn, .slot-btn{
+  padding:8px 12px;
+  border-radius:10px;
+  border:1px solid #2a2a2a;
+  background:#121212;
+  color:#fff;
+  cursor:pointer;
+  font-weight:700;
+}
+.day-btn:hover, .slot-btn:hover{
+  border-color:var(--primary);
+}
+.day-btn.disabled{
+  opacity:.35;
+  cursor:not-allowed;
+}
+.day-btn.active, .slot-btn.active{
+  background:var(--primary);
+  color:#111;
+}
+
   </style>
 </head>
 
@@ -213,6 +237,17 @@
             <input id="fecha" type="date" required>
           </div>
 
+          <div class="full">
+            <label>Horario disponible</label>
+            <div id="calendarBox" class="card" style="padding:14px">
+            <div id="calendarDays" class="help">Elegí una fecha arriba.</div>
+            <div id="timeSlots" style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap"></div>
+          </div>
+
+            <div class="help">Elegí un día y luego un horario disponible.</div>
+          </div>
+
+
           <!-- Checkbox + botón -->
           <div class="actions-row">
             <div class="left">
@@ -220,7 +255,6 @@
               <label for="ayudante">¿Necesita ayudante?</label>
             </div>
             <button class="btn" id="btnCalc" type="button">Calcular</button>
-
           </div>
           <span id="msg" class="help"></span>
         </div>
@@ -242,24 +276,24 @@
         <div class="help" style="margin-top:10px">¿Dudas? Escribinos por WhatsApp y te respondemos al toque.</div>
       </aside>
     </div>
-  </main>
 
-    <!-- Modal de condiciones -->
-  <div class="modal" id="modalConds">
-    <div class="modal-box">
-      <div class="modal-title">Antes de continuar</div>
-      <p class="help">Confirmá que entendés estas condiciones:</p>
-      <ul class="conds">
-        <li>Las cosas están listas para cargar y en planta baja.</li>
-        <li>El chofer ayuda, pero debe haber al menos un ayudante más.</li>
-        <li>Debe poder arrimar el camión hasta el ingreso.</li>
-      </ul>
-      <div style="display:flex; justify-content:flex-end; gap:10px;">
-        <button class="btn-ghost" id="btnCancelar" type="button" data-action="conds-cancel">Cancelar</button>
-        <button class="btn" id="btnAceptar" type="button" data-action="conds-accept">Acepto</button>
+    <!-- ✅ MODAL DENTRO DEL MAIN (para que SPA lo cargue) -->
+    <div class="modal" id="modalConds">
+      <div class="modal-box">
+        <div class="modal-title">Antes de continuar</div>
+        <p class="help">Confirmá que entendés estas condiciones:</p>
+        <ul class="conds">
+          <li>Las cosas están listas para cargar y en planta baja.</li>
+          <li>El chofer ayuda, pero debe haber al menos un ayudante más.</li>
+          <li>Debe poder arrimar el camión hasta el ingreso.</li>
+        </ul>
+        <div style="display:flex; justify-content:flex-end; gap:10px;">
+          <button class="btn-ghost" id="btnCancelar" type="button">Cancelar</button>
+          <button class="btn" id="btnAceptar" type="button">Acepto</button>
+        </div>
       </div>
     </div>
-  </div>
+  </main>
 
   <!-- Footer -->
   <footer>
@@ -283,30 +317,12 @@
 
 <script>
   (function(){
-    // ===== Fix 1: Anti-duplicado =====
-    window.__presupuestoInstalled = true;
-
     // 👇 Evita doble declaración en SPA
     globalThis.API_BASE = globalThis.API_BASE || (
       (location.hostname === 'localhost' || location.hostname === '127.0.0.1')
         ? 'http://127.0.0.1:8000'
         : 'https://fletes-exus.onrender.com'
     );
-
-    // ===== Fix 2: Fallback data-page =====
-    if (!document.body.dataset.page) {
-      document.body.dataset.page = 'presupuesto';
-      console.warn('[presupuesto] data-page faltaba; se setea a "presupuesto"');
-    }
-
-    // Marcar link activo usando data-page
-    (function(){
-      const current = (document.body.dataset.page || "").toLowerCase();
-      document.querySelectorAll('header nav a').forEach(a=>{
-        const href = (a.getAttribute('href') || "").toLowerCase();
-        if (current && href.includes(current)) a.classList.add('active');
-      });
-    })();
 
     let cleanupTimer = null;
     let cleanupInterval = null;
@@ -376,6 +392,14 @@
           el?.classList.remove("invalid");
         }
       });
+      if (!selectedDate || !selectedTime) {
+        ok = false;
+        const msg = document.getElementById("msg");
+        if (msg) {
+          msg.textContent = "Elegí un horario disponible antes de continuar.";
+          msg.classList.add("error");
+        }
+      }
       return ok;
     }
 
@@ -386,13 +410,20 @@
       });
     });
 
+    // ===== MODAL =====
     const modal = $('modalConds');
+
     $('btnCalc')?.addEventListener('click', (ev)=>{
       ev.preventDefault();
       if(!validateForm()) return;
       modal?.classList.add('open');
     });
-    $('btnCancelar')?.addEventListener('click', (ev)=>{ ev.preventDefault(); modal?.classList.remove('open'); });
+
+    $('btnCancelar')?.addEventListener('click', (ev)=>{
+      ev.preventDefault();
+      modal?.classList.remove('open');
+    });
+
     $('btnAceptar')?.addEventListener('click', (ev)=>{
       ev.preventDefault();
       modal?.classList.remove('open');
@@ -424,7 +455,9 @@
         fecha: $("fecha")?.value,
         ayudante: $("ayudante")?.checked,
         accepted_terms: true,
-        accepted_terms_at: new Date().toISOString()
+        accepted_terms_at: new Date().toISOString(),
+        fecha_turno: selectedDate,
+        hora_turno: selectedTime
       };
 
       const msg = document.getElementById('msg');
@@ -463,7 +496,10 @@
           `;
         }
 
-        if (msg) msg.textContent = "";
+        if (msg) {
+          msg.textContent = "Presupuesto calculado.";
+          msg.classList.remove("error");
+        }
 
         const btnEnviar = document.getElementById('btnEnviar');
         const cw = document.getElementById('contactWrap');
@@ -514,36 +550,13 @@
           out.style.display = 'block';
           out.innerHTML = `<div class="pill" style="border-color:#ffb7b3;background:#1a0f10;color:#ffb3b3">Error</div><p class="help">` + (e.message || 'No se pudo calcular') + `</p>`;
         }
-        const msg = document.getElementById('msg'); msg?.classList.add("error"); if (msg) msg.textContent = "";
+        const msg = document.getElementById('msg');
+        msg?.classList.add("error");
+        if (msg) msg.textContent = "";
       }
     }
 
-    // ===== Fix 3: Delegación robusta (sin depender de data-page) =====
-    document.addEventListener('click', function(e){
-      // Solo actúa si existe el botón de esta vista
-      if (!document.getElementById('btnCalc')) return;
-
-      const isBtnCalc    = e.target.closest && e.target.closest('#btnCalc');
-      const isBtnAceptar = e.target.closest && e.target.closest('#btnAceptar');
-      const isBtnCancel  = e.target.closest && e.target.closest('#btnCancelar');
-      if (!(isBtnCalc || isBtnAceptar || isBtnCancel)) return;
-
-      e.preventDefault();
-      e.stopPropagation();
-
-      const modal = document.getElementById('modalConds');
-
-      if (isBtnCalc) {
-        if (validateForm()) {
-          if (modal) modal.classList.add('open'); else runCalc();
-        }
-        return;
-      }
-      if (isBtnCancel) { modal?.classList.remove('open'); return; }
-      if (isBtnAceptar){ modal?.classList.remove('open'); runCalc(); return; }
-    }, true); // captura = true
-
-    // Validaciones live (null-safe)
+    // Validaciones live
     const telInput = document.getElementById("tel");
     const nameInput = document.getElementById("nombre");
 
@@ -569,11 +582,107 @@
         clearMsg();
       }
     });
+    let selectedDate = null;
+    let selectedTime = null;
+
+   async function loadAvailabilityForMonth(dateStr){
+    const d = new Date(dateStr);
+    const month = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+
+    const res = await fetch(`${API_BASE}/api/availability?month=${month}`);
+    const js = await res.json().catch(()=> ({}));
+    if(!res.ok) throw new Error(js.detail || "No se pudo cargar disponibilidad");
+    return js.days || {};
+  }
+
+    function renderSlots(slots){
+  const wrap = document.getElementById('timeSlots');
+  wrap.innerHTML = "";
+
+  slots.forEach(time=>{
+    const btn = document.createElement('button');
+    btn.type = "button";
+    btn.className = 'slot-btn';
+    btn.textContent = time;
+
+    btn.onclick = ()=>{
+      selectedTime = time;
+      document.querySelectorAll('.slot-btn').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById("msg")?.classList.remove("error");
+    };
+
+    wrap.appendChild(btn);
+  });
+}
+
+   async function renderCalendar(){
+    const dateInput = document.getElementById('fecha');
+    const daysWrap  = document.getElementById('calendarDays');
+    const slotsWrap = document.getElementById('timeSlots');
+
+    const selected = dateInput?.value;
+    if(!selected){
+      if(daysWrap) daysWrap.innerHTML = "Elegí una fecha arriba.";
+      if(slotsWrap) slotsWrap.innerHTML = "";
+      selectedDate = null;
+      selectedTime = null;
+      return;
+    }
+
+    selectedDate = selected;
+    selectedTime = null;
+
+    try {
+      const days  = await loadAvailabilityForMonth(selected);
+      const slots = days[selectedDate] || [];
+
+      if(daysWrap) daysWrap.innerHTML = `Fecha seleccionada: <b>${selectedDate}</b>`;
+      renderSlots(slots);
+
+    } catch (e) {
+      if(daysWrap) daysWrap.innerHTML = "No se pudo cargar disponibilidad";
+      if(slotsWrap) slotsWrap.innerHTML = "";
+    }
+  }
+
+
+    function renderSlots(slots){
+      const wrap = document.getElementById('timeSlots');
+      wrap.innerHTML = "";
+
+      if (!slots.length) {
+        wrap.innerHTML = `<span class="help">No hay horarios disponibles para esta fecha.</span>`;
+        return;
+      }
+
+      slots.forEach(time=>{
+        const btn = document.createElement('button');
+        btn.type = "button";
+        btn.className = 'slot-btn';
+        btn.textContent = time;
+
+        btn.onclick = ()=>{
+          selectedTime = time;
+          document.querySelectorAll('.slot-btn').forEach(b=>b.classList.remove('active'));
+          btn.classList.add('active');
+          clearMsg();
+        };
+
+        wrap.appendChild(btn);
+      });
+    }
+
+
+    document.getElementById('fecha')?.addEventListener('change', ()=>{
+      selectedDate = null;
+      selectedTime = null;
+      renderCalendar();
+    });
 
     console.info('[presupuesto] ready');
   })();
 </script>
-
 
 </body>
 </html>

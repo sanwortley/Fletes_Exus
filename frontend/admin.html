@@ -99,6 +99,168 @@
     .toast{position:fixed;bottom:18px;right:18px;background:#111;border:1px solid var(--stroke);padding:12px 14px;border-radius:12px;box-shadow:var(--shadow);display:none}
     .toast.show{display:block}
 
+    /* ====== SWITCH VISTAS ====== */
+    .view-switch{display:flex;gap:10px;margin:0 0 14px;flex-wrap:wrap}
+    .view-tab{
+      background:#171717;border:1px solid var(--stroke);color:var(--ink);
+      padding:10px 12px;border-radius:12px;font-weight:800;cursor:pointer
+    }
+    .view-tab:hover{filter:brightness(1.12)}
+    .view-tab.active{
+      background:linear-gradient(180deg,var(--brand),var(--brand-2));
+      color:#111;border-color:transparent;box-shadow:0 8px 20px rgba(255,204,0,.18)
+    }
+
+    /* ====== DISPONIBILIDAD ====== */
+    #panelDisponibilidad{display:none}
+    .disp-head{
+      display:flex; gap:10px; flex-wrap:wrap; align-items:center; justify-content:space-between;
+      margin-bottom:12px;
+    }
+    .disp-left{display:flex; gap:10px; flex-wrap:wrap; align-items:center}
+    .chip{
+      display:inline-flex; align-items:center; gap:8px;
+      background:#0e0e0e; border:1px solid var(--stroke);
+      padding:10px 12px; border-radius:14px;
+    }
+    .chip label{color:var(--muted); font-weight:700; font-size:12px}
+    .chip input[type="date"]{
+      background:#0c0c0c; color:var(--ink); border:1px solid var(--stroke);
+      padding:10px 12px; border-radius:12px; outline:none;
+    }
+    .mini-btn{
+      background:#171717; border:1px solid var(--stroke); color:var(--ink);
+      padding:10px 12px; border-radius:12px; font-weight:900; cursor:pointer;
+    }
+    .mini-btn:hover{filter:brightness(1.12)}
+    .mini-btn.primary{
+      background:linear-gradient(180deg,var(--brand),var(--brand-2));
+      color:#111; border-color:transparent;
+    }
+    .status-pill{
+      display:inline-flex; align-items:center; gap:8px;
+      padding:10px 12px; border-radius:999px;
+      border:1px solid var(--stroke); background:#0e0e0e; font-weight:900;
+    }
+    .status-pill.on{ color:var(--ok); }
+    .status-pill.off{ color:var(--bad); }
+
+    .slots{
+      display:grid;
+      grid-template-columns:repeat(auto-fit, minmax(120px, 1fr));
+      gap:10px;
+      margin-top:12px;
+    }
+    .slot{
+      background:#101010; border:1px solid var(--stroke);
+      padding:12px; border-radius:14px;
+      font-weight:900; cursor:pointer; text-align:center;
+      user-select:none;
+    }
+    .slot:hover{filter:brightness(1.08)}
+    .slot.on{
+      background:rgba(54,211,153,.10);
+      border-color:rgba(54,211,153,.35);
+      color:#bff7e4;
+    }
+    .slot.off{
+      opacity:.55;
+    }
+    .disp-hint{color:var(--muted); font-size:13px; margin-top:10px}
+
+        /* ====== CALENDARIO ====== */
+    .cal-head{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      margin-bottom:12px;
+    }
+
+    .cal-title{
+      font-weight:900;
+      padding:10px 14px;
+      border-radius:12px;
+      border:1px solid var(--stroke);
+      background:#0e0e0e;
+      min-width:220px;
+      text-align:center;
+    }
+
+    .cal-grid{
+      display:grid;
+      grid-template-columns:repeat(7,1fr);
+      gap:10px;
+    }
+
+    .cal-dow{
+      color:var(--muted);
+      font-size:12px;
+      font-weight:800;
+      text-align:center;
+    }
+
+    .cal-cell{
+      background:#0f0f0f;
+      border:1px solid var(--stroke);
+      border-radius:14px;
+      min-height:70px;
+      padding:10px;
+      cursor:pointer;
+      position:relative;
+    }
+
+    .cal-cell:hover{filter:brightness(1.12)}
+
+    .cal-cell.muted{
+      opacity:.4;
+      cursor:default;
+    }
+
+    .cal-day{
+      font-weight:900;
+    }
+
+    .cal-cell.selected{
+      outline:2px solid rgba(255,204,0,.45);
+    }
+
+    .cal-detail{
+      margin-top:14px;
+      background:#0e0e0e;
+      border:1px solid var(--stroke);
+      border-radius:14px;
+      padding:14px;
+    }
+
+    .cal-detail-title{
+      color:var(--brand);
+      font-weight:900;
+      margin-bottom:8px;
+    }
+
+    .cal-item{
+      background:#101010;
+      border:1px solid #222;
+      border-radius:12px;
+      padding:12px;
+      margin-bottom:10px;
+    }
+    .cal-num{
+      display:inline-flex;
+      width:28px;
+      height:28px;
+      align-items:center;
+      justify-content:center;
+      border-radius:999px;
+    }
+
+    .cal-day.has .cal-num{
+      background:#fff;
+      color:#111;
+    }
+
+
+
     @media (max-width:760px){
       .login-row{grid-template-columns:1fr;gap:10px}
       .thead{display:none}
@@ -106,7 +268,10 @@
     }
     @keyframes fadeIn{from{opacity:0;transform:scale(.95)}to{opacity:1;transform:scale(1)}}
   </style>
+
+
 </head>
+
 <body>
   <header class="nav">
     <div class="nav-inner">
@@ -115,8 +280,7 @@
         <a href="/index" data-view="/index">Inicio</a>
         <a href="/presupuesto" data-view="/presupuesto">Presupuesto</a>
         <strong class="active">Admin</strong>
-        <!-- 👇 cambia logout genérico por Admin.logout -->
-        <button id="btnLogout" class="btn-out" style="display:none" onclick="Admin.logout()" data-action="admin-logout" type="button">Cerrar sesión</button>
+        <button id="btnLogout" class="btn-out" style="display:none" onclick="Admin.logout()" type="button">Cerrar sesión</button>
       </nav>
     </div>
   </header>
@@ -124,16 +288,21 @@
   <main class="container">
     <h1>Panel de <span class="accent">Administración</span></h1>
 
-    <section class="panel">
+    <div class="view-switch" id="viewSwitch" style="display:none">
+      <button class="view-tab active" id="tabSolicitudes" type="button">Solicitudes</button>
+      <button class="view-tab" id="tabCalendario">Calendario</button>
+      <button class="view-tab" id="tabDisponibilidad" type="button">Disponibilidad</button>
+    </div>
+
+    <section class="panel" id="panelSolicitudes">
       <form id="loginForm" class="login-row" autocomplete="off">
         <input class="input" id="usr" type="text" placeholder="Usuario" autocomplete="username" />
         <input class="input" id="pwd" type="password" placeholder="Contraseña" autocomplete="current-password" />
         <button class="btn btn-primary" type="button" onclick="Admin.login()">Iniciar sesión</button>
-
         <div id="authFlag" class="tag muted">No autenticado</div>
       </form>
 
-      <table class="table" id="tabla">
+      <table class="table" id="tabla" style="display:none">
         <thead class="thead">
           <tr>
             <th>Cliente</th><th>Tipo</th><th>Fecha</th><th>Estado</th><th style="text-align:right">Acciones</th>
@@ -145,51 +314,99 @@
       </table>
     </section>
 
-    <!-- Modal -->
-  <div class="overlay" id="overlay" onclick="if(event.target===this) Admin.closeModal()">
-    <div class="modal" role="dialog" aria-modal="true">
-      <div class="modal-head">
-        <h2 class="modal-title">Detalles del presupuesto</h2>
-        <button class="modal-close" onclick="Admin.closeModal()" type="button">✕</button>
+    <!-- ====== PANEL CALENDARIO ====== -->
+<section class="panel" id="panelCalendario" style="display:none">
+  <div class="cal-head">
+    <button class="mini-btn" id="calPrev" type="button">←</button>
+    <div class="cal-title" id="calTitle">Mes</div>
+    <button class="mini-btn" id="calNext" type="button">→</button>
+  </div>
+
+  <div class="cal-grid" id="calGrid"></div>
+
+  <div class="cal-detail" id="calDetail">
+    <div class="cal-detail-title" id="calDetailTitle">
+      Seleccioná un día
+    </div>
+    <div class="cal-detail-body" id="calDetailBody">
+      Acá vas a ver los fletes del día.
+    </div>
+  </div>
+</section>
+
+
+    <section class="panel" id="panelDisponibilidad">
+      <div class="disp-head">
+        <div class="disp-left">
+          <div class="chip">
+            <label for="dispFecha">Fecha</label>
+            <input id="dispFecha" type="date" />
+          </div>
+
+          <div id="dispEstado" class="status-pill off" title="Estado del día">
+            ● Día deshabilitado
+          </div>
+
+          <button id="btnToggleDia" class="mini-btn" type="button">Habilitar día</button>
+        </div>
+
+        <div style="display:flex; gap:10px; flex-wrap:wrap">
+          <button id="btnLimpiarDia" class="mini-btn" type="button">Limpiar horarios</button>
+          <button id="btnGuardarDia" class="mini-btn primary" type="button">Guardar</button>
+        </div>
       </div>
-      <div class="modal-body">
-        <div class="grid">
-          <div class="kv"><small>Cliente</small><strong id="m_cliente">-</strong></div>
-          <div class="kv"><small>Teléfono</small><strong id="m_tel">-</strong></div>
-          <div class="kv"><small>Tipo de carga</small><strong id="m_tipo">-</strong></div>
-          <div class="kv"><small>Fecha</small><strong id="m_fecha">-</strong></div>
-          <div class="kv"><small>Ayudante</small><strong id="m_ayudante">-</strong></div>
-          <div class="kv"><small>Estado</small><strong id="m_estado">-</strong></div>
-          <div class="kv"><small>Origen</small><strong id="m_origen">-</strong></div>
-          <div class="kv"><small>Destino</small><strong id="m_destino">-</strong></div>
-          <div class="kv"><small>Distancia (km)</small><strong id="m_dist_km">-</strong></div>
-          <div class="kv"><small>Tiempo de manejo (min)</small><strong id="m_tiempo_viaje">-</strong></div>
-          <div class="kv"><small>Tiempo total de servicio (min)</small><strong id="m_tiempo_servicio">-</strong></div>
-          <div class="kv"><small>Tiempo carga/descarga (min)</small><strong id="m_tiempo_carga_desc">-</strong></div>
-          <div class="kv"><small>Costo tiempo</small><strong id="m_costo_tiempo">-</strong></div>
-          <div class="kv"><small>Costo combustible</small><strong id="m_costo_combustible">-</strong></div>
-          <div class="kv"><small>Costo ayudante</small><strong id="m_costo_ayudante">-</strong></div>
-          <div class="kv total">
-            <small><b>Total estimado</b></small>
-            <strong id="m_total">$ -</strong>
+
+      <div id="slots" class="slots"></div>
+      <div class="disp-hint">
+        Tip: tocá un horario para prender/apagar. Si el día está deshabilitado, los horarios quedan bloqueados.
+      </div>
+    </section>
+
+    <div class="overlay" id="overlay" onclick="if(event.target===this) Admin.closeModal()">
+      <div class="modal" role="dialog" aria-modal="true">
+        <div class="modal-head">
+          <h2 class="modal-title">Detalles del presupuesto</h2>
+          <button class="modal-close" onclick="Admin.closeModal()" type="button">✕</button>
+        </div>
+        <div class="modal-body">
+          <div class="grid">
+            <div class="kv"><small>Cliente</small><strong id="m_cliente">-</strong></div>
+            <div class="kv"><small>Teléfono</small><strong id="m_tel">-</strong></div>
+            <div class="kv"><small>Tipo de carga</small><strong id="m_tipo">-</strong></div>
+
+            <div class="kv"><small>Fecha</small><strong id="m_fecha">-</strong></div>
+            <div class="kv"><small>Horario</small><strong id="m_hora">-</strong></div>
+
+            <div class="kv"><small>Ayudante</small><strong id="m_ayudante">-</strong></div>
+            <div class="kv"><small>Estado</small><strong id="m_estado">-</strong></div>
+            <div class="kv"><small>Origen</small><strong id="m_origen">-</strong></div>
+            <div class="kv"><small>Destino</small><strong id="m_destino">-</strong></div>
+            <div class="kv"><small>Distancia (km)</small><strong id="m_dist_km">-</strong></div>
+            <div class="kv"><small>Tiempo de manejo (min)</small><strong id="m_tiempo_viaje">-</strong></div>
+            <div class="kv"><small>Tiempo total de servicio (min)</small><strong id="m_tiempo_servicio">-</strong></div>
+            <div class="kv"><small>Tiempo carga/descarga (min)</small><strong id="m_tiempo_carga_desc">-</strong></div>
+            <div class="kv"><small>Costo tiempo</small><strong id="m_costo_tiempo">-</strong></div>
+            <div class="kv"><small>Costo combustible</small><strong id="m_costo_combustible">-</strong></div>
+            <div class="kv"><small>Costo ayudante</small><strong id="m_costo_ayudante">-</strong></div>
+            <div class="kv total">
+              <small><b>Total estimado</b></small>
+              <strong id="m_total">$ -</strong>
+            </div>
+          </div>
+        </div>
+        <div class="modal-foot">
+          <button class="btn-danger" onclick="Admin.eliminar()" type="button">Eliminar</button>
+          <div style="display:flex; gap:8px">
+            <button class="btn-reject" onclick="Admin.rechazar()" type="button">Rechazar</button>
+            <button class="btn-ok" onclick="Admin.aprobar()" type="button">Confirmar</button>
           </div>
         </div>
       </div>
-      <div class="modal-foot">
-        <button class="btn-danger" onclick="Admin.eliminar()" data-action="admin-delete" type="button">Eliminar</button>
-        <div style="display:flex; gap:8px">
-          <button class="btn-reject" onclick="Admin.rechazar()" data-action="admin-reject" type="button">Rechazar</button>
-          <button class="btn-ok" onclick="Admin.aprobar()" data-action="admin-approve" type="button">Confirmar</button>
-        </div>
-      </div>
     </div>
-  </div>
 
-  <div class="toast" id="toast"></div>
-
+    <div class="toast" id="toast"></div>
   </main>
 
-  
 <script>
 (function(){
   const byId = (id)=>document.getElementById(id);
@@ -204,23 +421,311 @@
   const toast = (msg)=>{ const t=byId('toast'); if(!t) return; t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2200); };
   const peso = (n)=> (n!=null ? ('$ ' + Number(n).toLocaleString('es-AR')) : '-');
   const coalesce = (...vals)=>{ for (const v of vals){ if(v!==undefined && v!==null) return v; } return null; };
-  const getId = (s) => {
-  if (!s) return null;
-  if (typeof s.id === "string" || typeof s.id === "number") return String(s.id);
-  if (s._id && typeof s._id === "object" && typeof s._id.$oid === "string") return s._id.$oid;
-  if (typeof s._id === "string" || typeof s._id === "number") return String(s._id);
-  if (typeof s.ID === "string" || typeof s.ID === "number") return String(s.ID);
-  return null;
-};
-  window.Admin = window.Admin || {};  
-  let token=null, solicitudes=[], selected=null, isAuth=false;
 
-  function setAuthUI(isOn){
-    const flag = byId('authFlag');
-    if (flag){ flag.textContent = isOn ? 'Autenticado' : 'No autenticado'; flag.className = 'tag ' + (isOn ? 'ok' : 'muted'); }
-    const btn = byId('btnLogout');
-    if (btn){ btn.style.display = isOn ? 'inline-flex' : 'none'; }
+  // ====== AUTH REAL (API KEY) ======
+  // Guardá tu API key en localStorage si querés:
+  // localStorage.setItem('ADMIN_API_KEY','TU_KEY')
+  const API_KEY = localStorage.getItem("ADMIN_API_KEY") || "AdminFletesJavier20251110!!";
+  function adminHeaders(extra = {}) {
+    return { "X-API-Key": API_KEY, ...extra };
   }
+
+  const getId = (s) => {
+    if (!s) return null;
+    if (typeof s.id === "string" || typeof s.id === "number") return String(s.id);
+    if (s._id && typeof s._id === "object" && typeof s._id.$oid === "string") return s._id.$oid;
+    if (typeof s._id === "string" || typeof s._id === "number") return String(s._id);
+    if (typeof s.ID === "string" || typeof s.ID === "number") return String(s.ID);
+    return null;
+  };
+
+  window.Admin = window.Admin || {};
+  let token=null, solicitudes=[], selected=null;
+
+  /* ========= CALENDARIO ========= */
+const DOW = ["Lun","Mar","Mié","Jue","Vie","Sáb","Dom"];
+let calCursor = new Date();
+calCursor.setDate(1);
+
+function iso(d){
+  return d.toISOString().slice(0,10);
+}
+
+function monthTitle(d){
+  return d.toLocaleDateString("es-AR",{month:"long",year:"numeric"});
+}
+
+function groupByDay(){
+  const map = {};
+  solicitudes.forEach(s=>{
+    const f = (s.fecha_turno || s.fecha || "").slice(0,10);
+    if(!f) return;
+    map[f] = map[f] || [];
+    map[f].push(s);
+  });
+  return map;
+}
+
+function renderCalendar(){
+  const grid = byId("calGrid");
+  const title = byId("calTitle");
+  if(!grid) return;
+
+  title.textContent = monthTitle(calCursor);
+  grid.innerHTML = "";
+
+  DOW.forEach(d=>{
+    const e=document.createElement("div");
+    e.className="cal-dow";
+    e.textContent=d;
+    grid.appendChild(e);
+  });
+
+  const first = new Date(calCursor.getFullYear(),calCursor.getMonth(),1);
+  const last  = new Date(calCursor.getFullYear(),calCursor.getMonth()+1,0);
+  const offset = (first.getDay()+6)%7;
+  const jobs = groupByDay();
+
+  for(let i=0;i<offset;i++){
+    grid.appendChild(document.createElement("div")).className="cal-cell muted";
+  }
+
+  for(let d=1;d<=last.getDate();d++){
+    const date = new Date(calCursor.getFullYear(),calCursor.getMonth(),d);
+    const key = iso(date);
+    const has = jobs[key]?.length;
+
+    const c=document.createElement("div");
+    c.className="cal-cell";
+    const dayClass = has ? "cal-day has" : "cal-day";
+    c.innerHTML = `
+      <div class="${dayClass}">
+        <span class="cal-num">${d}</span>
+      </div>
+    `;
+
+    c.onclick=()=>selectDay(key);
+    grid.appendChild(c);
+  }
+}
+byId("calPrev")?.addEventListener("click", ()=>{
+  calCursor = new Date(calCursor.getFullYear(), calCursor.getMonth()-1, 1);
+  renderCalendar();
+});
+
+byId("calNext")?.addEventListener("click", ()=>{
+  calCursor = new Date(calCursor.getFullYear(), calCursor.getMonth()+1, 1);
+  renderCalendar();
+});
+
+
+function selectDay(date){
+  const list = groupByDay()[date] || [];
+  byId("calDetailTitle").textContent = date;
+
+  if(!list.length){
+    byId("calDetailBody").innerHTML="<div class='empty'>No hay fletes hoy.</div>";
+    return;
+  }
+
+  byId("calDetailBody").innerHTML = list.map((s,i)=>`
+    <div class="cal-item">
+      <b>${s.nombre_cliente}</b> • ${s.hora_turno || ""}
+      <div>${s.origen} → ${s.destino}</div>
+      <button class="btn-ghost" onclick="Admin.openModal('${getId(s)}',${i})">
+        Detalles
+      </button>
+    </div>
+  `).join("");
+}
+
+
+  /* ========= DISPONIBILIDAD ========= */
+  const DEFAULT_SLOTS = [
+    "08:00","09:00","10:00","11:00","12:00",
+    "13:00","14:00","15:00","16:00","17:00",
+    "18:00","19:00","20:00","21:00","22:00"
+  ];
+
+  let dispState = {
+    byDate: {},      // "YYYY-MM-DD": { enabled:boolean, slots: { "10:00": true } }
+    loadedMonth: ""  // "YYYY-MM"
+  };
+
+  function ensureDateModel(dateStr){
+    if(!dateStr) return null;
+    dispState.byDate[dateStr] = dispState.byDate[dateStr] || { enabled:false, slots:{} };
+    return dispState.byDate[dateStr];
+  }
+
+  function monthOf(dateStr){
+    if(!dateStr) return "";
+    return dateStr.slice(0,7); // YYYY-MM
+  }
+
+  function setDispUIEnabled(dateStr){
+    const model = ensureDateModel(dateStr);
+    const pill = byId('dispEstado');
+    const btn = byId('btnToggleDia');
+    const slotsWrap = byId('slots');
+    if(!model || !pill || !btn || !slotsWrap) return;
+
+    if(model.enabled){
+      pill.classList.remove('off'); pill.classList.add('on');
+      pill.textContent = "● Día habilitado";
+      btn.textContent = "Deshabilitar día";
+      slotsWrap.style.opacity = "1";
+      slotsWrap.style.pointerEvents = "auto";
+    }else{
+      pill.classList.remove('on'); pill.classList.add('off');
+      pill.textContent = "● Día deshabilitado";
+      btn.textContent = "Habilitar día";
+      slotsWrap.style.opacity = ".55";
+      slotsWrap.style.pointerEvents = "none";
+    }
+  }
+
+  function renderSlots(dateStr){
+    const model = ensureDateModel(dateStr);
+    const wrap = byId('slots');
+    if(!wrap || !model) return;
+    wrap.innerHTML = "";
+
+    DEFAULT_SLOTS.forEach(h=>{
+      const on = !!model.slots[h];
+      const b = document.createElement('div');
+      b.className = "slot " + (on ? "on" : "off");
+      b.textContent = h;
+      b.dataset.hour = h;
+      b.addEventListener('click', ()=>{
+        model.slots[h] = !model.slots[h];
+        renderSlots(dateStr);
+      });
+      wrap.appendChild(b);
+    });
+
+    setDispUIEnabled(dateStr);
+  }
+
+  // Carga el mes entero desde backend admin
+  async function fetchMonthAvailability(month){
+    if(!month) return;
+    try{
+      const res = await fetch(`${API_BASE}/api/admin/availability?month=${encodeURIComponent(month)}`, {
+        headers: adminHeaders()
+      });
+      const data = await res.json();
+      if(!res.ok) throw new Error(data.detail || "No se pudo cargar disponibilidad");
+
+      // reset month cache
+      dispState.byDate = dispState.byDate || {};
+      // volcamos items a byDate
+      const items = Array.isArray(data.items) ? data.items : [];
+      items.forEach(it=>{
+        const d = it.date;
+        if(!d) return;
+        dispState.byDate[d] = {
+          enabled: !!it.enabled,
+          slots: (Array.isArray(it.slots) ? it.slots : []).reduce((acc, h)=>{ acc[h]=true; return acc; }, {})
+        };
+      });
+
+      dispState.loadedMonth = month;
+    }catch(e){
+      toast(e.message || "Error cargando disponibilidad");
+    }
+  }
+
+  async function loadDisponibilidad(dateStr){
+    if(!dateStr) return;
+    const m = monthOf(dateStr);
+
+    if(dispState.loadedMonth !== m){
+      await fetchMonthAvailability(m);
+    }
+    ensureDateModel(dateStr);
+    renderSlots(dateStr);
+  }
+
+  function toggleDia(dateStr){
+    if(!dateStr) return;
+    const model = ensureDateModel(dateStr);
+    model.enabled = !model.enabled;
+    setDispUIEnabled(dateStr);
+  }
+
+  function limpiarHorarios(dateStr){
+    if(!dateStr) return;
+    const model = ensureDateModel(dateStr);
+    model.slots = {};
+    renderSlots(dateStr);
+  }
+
+  async function guardarDisponibilidad(dateStr){
+    if(!dateStr) return;
+    const model = ensureDateModel(dateStr);
+
+    // { "10:00": true } -> ["10:00"]
+    const slotsArr = Object.entries(model.slots)
+      .filter(([_, v]) => !!v)
+      .map(([h]) => h);
+
+    try{
+      const res = await fetch(`${API_BASE}/api/availability/day`, {
+        method: "POST",
+        headers: adminHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({
+          date: dateStr,
+          enabled: !!model.enabled,
+          slots: slotsArr
+        })
+      });
+
+      const data = await res.json().catch(()=>({}));
+      if(!res.ok) throw new Error(data.detail || "Error guardando disponibilidad");
+
+      toast("Disponibilidad guardada ✅");
+
+      // refrescar mes (por si el backend normaliza)
+      dispState.loadedMonth = "";
+      await loadDisponibilidad(dateStr);
+    }catch(e){
+      toast(e.message || "Error guardando disponibilidad");
+    }
+  }
+
+  /* ========= UI AUTH (solo UI) ========= */
+  function setAuthUI(isOn){
+  const flag = byId('authFlag');
+  if (flag){
+    flag.textContent = isOn ? 'Autenticado' : 'No autenticado';
+    flag.className = 'tag ' + (isOn ? 'ok' : 'muted');
+  }
+
+  const btn = byId('btnLogout');
+  if (btn){ btn.style.display = isOn ? 'inline-flex' : 'none'; }
+
+  const sw = byId('viewSwitch');
+  if (sw) sw.style.display = isOn ? 'flex' : 'none';
+
+  const tabla = byId('tabla');
+  if (tabla) tabla.style.display = isOn ? 'table' : 'none';
+
+  const pd = byId('panelDisponibilidad');
+  if (pd) pd.style.display = 'none';
+
+  // ✅ NUEVO: ocultar calendario + volver a Solicitudes
+  const pc = byId('panelCalendario');
+  if (pc) pc.style.display = 'none';
+
+  const tabSol = byId('tabSolicitudes');
+  const tabCal = byId('tabCalendario');
+  const tabDisp = byId('tabDisponibilidad');
+  tabSol?.classList.add('active');
+  tabCal?.classList.remove('active');
+  tabDisp?.classList.remove('active');
+}
+
 
   function renderEmpty(msg){
     const tb = byId('tbody'); if(!tb) return;
@@ -228,7 +733,7 @@
   }
 
   function adminLogout(reason){
-    token=null; isAuth=false; selected=null;
+    token=null; selected=null;
     if (isAdminView()){
       setAuthUI(false);
       renderEmpty(reason || 'Iniciá sesión para ver las solicitudes de presupuesto.');
@@ -239,156 +744,143 @@
   }
 
   async function login(){
+    // Este login ahora es “UI only”, el backend admin se valida por X-API-Key
     if (!isAdminView()) return;
     const usr=byId('usr'), pwd=byId('pwd');
     const username=usr?usr.value.trim():'', password=pwd?pwd.value.trim():'';
     if(!username || !password){ toast('Ingresá usuario y contraseña'); return; }
-    try{
-      const res = await fetch(`${API_BASE}/api/login`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ username, password }) });
-      const data = await res.json();
-      if(!res.ok) throw new Error(data.detail || 'Credenciales inválidas');
-      token = data.token; isAuth=true;
-      setAuthUI(true); toast('Sesión iniciada');
-      await loadSolicitudes();
-    }catch(e){ toast(e.message || 'Error de login'); }
+
+    token = "ui-session"; // solo flag UI
+    setAuthUI(true);
+    toast('Sesión iniciada');
+    await loadSolicitudes();
+
+    const df = byId('dispFecha');
+    if(df && !df.value){
+      const today = new Date();
+      const yyyy = today.getFullYear();
+      const mm = String(today.getMonth()+1).padStart(2,'0');
+      const dd = String(today.getDate()).padStart(2,'0');
+      df.value = `${yyyy}-${mm}-${dd}`;
+    }
+    if(byId('dispFecha')?.value) await loadDisponibilidad(byId('dispFecha').value);
   }
 
   async function loadSolicitudes(){
     if (!isAdminView()) return;
     if (!token){ renderEmpty('Iniciá sesión para ver las solicitudes de presupuesto.'); return; }
     try{
-      const res = await fetch(`${API_BASE}/api/requests`, { headers:{'Authorization':`Bearer ${token}`} });
+      const res = await fetch(`${API_BASE}/api/requests`, {
+        headers: adminHeaders()
+      });
       const data = await res.json();
       if(!res.ok) throw new Error(data.detail || 'No se pudieron cargar las solicitudes');
       solicitudes = Array.isArray(data.items) ? data.items : [];
       render();
       if (solicitudes.length===0) renderEmpty('No hay solicitudes.');
-    }catch(e){ renderEmpty(e.message || 'No se pudieron cargar las solicitudes.'); }
-  }
-function render(){
-  if (!isAdminView()) return;
-  const tb = byId('tbody');
-  if (!tb) return;
-  tb.innerHTML = '';
-
-  solicitudes.forEach((s, i) => {
-    const estado = (s.estado || 'pendiente').toLowerCase();
-    const cls = estado === 'confirmado'
-      ? 'aprobado'
-      : (estado === 'rechazado' ? 'rechazado' : 'pendiente');
-    const texto = estado.charAt(0).toUpperCase() + estado.slice(1);
-    const rowId = getId(s);
-
-    const tr = document.createElement('tr');
-    tr.className = 'row';
-    tr.innerHTML = `
-      <td>
-        <div class="client">
-          <span class="name">${s.nombre_cliente || '-'}</span>
-          <span class="sub">${s.telefono || '-'}</span>
-        </div>
-      </td>
-      <td>${s.tipo_carga || '-'}</td>
-      <td>${s.fecha || '-'}</td>
-      <td><span class="badge ${cls}">${texto}</span></td>
-      <td>
-        <div class="actions">
-          <!-- 👇 Llamada directa, sin data-attrs ni delegado -->
-          <button class="btn-ghost" type="button"
-                  onclick="Admin.openModal('${rowId ?? ''}', ${i})">
-            Detalles
-          </button>
-        </div>
-      </td>`;
-    tb.appendChild(tr);
-  });
-}
-
-
-
-  function bindRowClicks(){
-  const tb = byId('tbody');
-  if (!tb || tb.dataset.bound) return;
-  tb.dataset.bound="1";
-  tb.addEventListener('click', (e)=>{
-    const btn = e.target.closest('button[data-action="open"]');
-    if (!btn) return;
-    const rawId = btn.dataset.id;
-    const id  = rawId && rawId !== "[object Object]" ? rawId : null;
-    const idx = btn.dataset.idx != null ? Number(btn.dataset.idx) : null;
-    openModal(id, idx);
-  });
-}
-
-
-function openModal(id, idx){
-  if (!isAdminView()) return;
-  if (!token){ adminLogout(); return; }
-
-  // 1) Buscamos por id “normalizado”
-  let s = null;
-  if (id != null) {
-    const sid = String(id);
-    s = solicitudes.find(x => String(getId(x)) === sid);
-  }
-  // 2) Fallback por índice si no encontró por id
-  if (!s && Number.isInteger(idx) && idx >= 0 && idx < solicitudes.length) {
-    s = solicitudes[idx];
-  }
-  if (!s) {
-    console.warn('⚠️ No se encontró la solicitud', { id, idx, items: solicitudes.map(getId) });
-    toast('No se encontró la solicitud');
-    return;
+    }catch(e){
+      renderEmpty(e.message || 'No se pudieron cargar las solicitudes.');
+    }
   }
 
-  selected = s;
+  function render(){
+    if (!isAdminView()) return;
+    const tb = byId('tbody');
+    if (!tb) return;
+    tb.innerHTML = '';
 
-  const tiempo_viaje_min = coalesce(
-    s.tiempo_viaje_min,
-    (s.tramo_base_origen_min && s.tramo_origen_destino_min)
-      ? Number(s.tramo_base_origen_min)+Number(s.tramo_origen_destino_min)+Number(s.tramo_destino_base_min||0)
-      : null
-  );
-  const tiempo_servicio_min   = coalesce(s.tiempo_servicio_min, null);
-  const tiempo_carga_desc_min = coalesce(s.tiempo_carga_descarga_min, s.tiempo_servicio_min);
-  const costo_tiempo = coalesce(
-    s.costo_tiempo,
-    (s.costo_tiempo_base!=null && s.mantenimiento!=null)
-      ? (Number(s.costo_tiempo_base)+Number(s.mantenimiento))
-      : null
-  );
+    solicitudes.forEach((s, i) => {
+      const estado = (s.estado || 'pendiente').toLowerCase();
+      const cls = estado === 'confirmado'
+        ? 'aprobado'
+        : (estado === 'rechazado' ? 'rechazado' : 'pendiente');
+      const texto = estado.charAt(0).toUpperCase() + estado.slice(1);
+      const rowId = getId(s);
 
-  const set = (id,val)=>{ const el=byId(id); if(el) el.textContent=val; };
-  set('m_cliente', s.nombre_cliente || '-');
-  set('m_tel', s.telefono || '-');
-  set('m_tipo', s.tipo_carga || '-');
-  set('m_fecha', s.fecha || '-');
-  set('m_ayudante', s.ayudante ? 'Sí' : 'No');
-  set('m_estado', s.estado || '-');
-  set('m_origen', s.origen || '-');
-  set('m_destino', s.destino || '-');
+      const tr = document.createElement('tr');
+      tr.className = 'row';
+      tr.innerHTML = `
+        <td>
+          <div class="client">
+            <span class="name">${s.nombre_cliente || '-'}</span>
+            <span class="sub">${s.telefono || '-'}</span>
+          </div>
+        </td>
+        <td>${s.tipo_carga || '-'}</td>
+        <td>
+          ${ (s.fecha_turno || s.fecha || '-') }
+          ${ (s.hora_turno ? ` • ${s.hora_turno}` : '') }
+        </td>
+        <td><span class="badge ${cls}">${texto}</span></td>
+        <td>
+          <div class="actions">
+            <button class="btn-ghost" type="button"
+                    onclick="Admin.openModal('${rowId ?? ''}', ${i})">
+              Detalles
+            </button>
+          </div>
+        </td>`;
+      tb.appendChild(tr);
+    });
+  }
 
-  set('m_dist_km', (s.dist_km!=null ? Number(s.dist_km).toFixed(3).replace('.', ',') : '-'));
-  set('m_tiempo_viaje', (tiempo_viaje_min!=null ? `${tiempo_viaje_min} min` : '-'));
-  set('m_tiempo_servicio', (tiempo_servicio_min!=null ? `${tiempo_servicio_min} min` : '-'));
-  set('m_tiempo_carga_desc', (tiempo_carga_desc_min!=null ? `${tiempo_carga_desc_min} min` : '-'));
+  function openModal(id, idx){
+    if (!isAdminView()) return;
+    if (!token){ adminLogout(); return; }
 
-  set('m_costo_tiempo', peso(costo_tiempo));
-  set('m_costo_combustible', peso(s.costo_combustible));
-  set('m_costo_ayudante', peso(s.costo_ayudante));
-  set('m_total', peso(s.monto_estimado));
+    let s = null;
+    if (id != null) {
+      const sid = String(id);
+      s = solicitudes.find(x => String(getId(x)) === sid);
+    }
+    if (!s && Number.isInteger(idx) && idx >= 0 && idx < solicitudes.length) {
+      s = solicitudes[idx];
+    }
+    if (!s) { toast('No se encontró la solicitud'); return; }
 
-  const ov = byId('overlay');
-  if (!ov) { console.warn('No existe #overlay'); toast('No se encontró el modal'); return; }
-  ov.classList.add('open');
+    selected = s;
 
-  // 👇 Plan B por si algún estilo pisa el display
-  
+    const tiempo_viaje_min = coalesce(
+      s.tiempo_viaje_min,
+      (s.tramo_base_origen_min && s.tramo_origen_destino_min)
+        ? Number(s.tramo_base_origen_min)+Number(s.tramo_origen_destino_min)+Number(s.tramo_destino_base_min||0)
+        : null
+    );
+    const tiempo_servicio_min   = coalesce(s.tiempo_servicio_min, null);
+    const tiempo_carga_desc_min = coalesce(s.tiempo_carga_descarga_min, s.tiempo_servicio_min);
+    const costo_tiempo = coalesce(
+      s.costo_tiempo,
+      (s.costo_tiempo_base!=null && s.mantenimiento!=null)
+        ? (Number(s.costo_tiempo_base)+Number(s.mantenimiento))
+        : null
+    );
 
-  //console.debug('[openModal] seleccionado=', getId(selected), selected);
-}
+    const set = (id,val)=>{ const el=byId(id); if(el) el.textContent=val; };
 
+    set('m_cliente', s.nombre_cliente || '-');
+    set('m_tel', s.telefono || '-');
+    set('m_tipo', s.tipo_carga || '-');
 
+    set('m_fecha', s.fecha_turno || s.fecha || '-');
+    set('m_hora',  s.hora_turno || '-');
+
+    set('m_ayudante', s.ayudante ? 'Sí' : 'No');
+    set('m_estado', s.estado || '-');
+    set('m_origen', s.origen || '-');
+    set('m_destino', s.destino || '-');
+
+    set('m_dist_km', (s.dist_km!=null ? Number(s.dist_km).toFixed(3).replace('.', ',') : '-'));
+    set('m_tiempo_viaje', (tiempo_viaje_min!=null ? `${tiempo_viaje_min} min` : '-'));
+    set('m_tiempo_servicio', (tiempo_servicio_min!=null ? `${tiempo_servicio_min} min` : '-'));
+    set('m_tiempo_carga_desc', (tiempo_carga_desc_min!=null ? `${tiempo_carga_desc_min} min` : '-'));
+
+    set('m_costo_tiempo', peso(costo_tiempo));
+    set('m_costo_combustible', peso(s.costo_combustible));
+    set('m_costo_ayudante', peso(s.costo_ayudante));
+    set('m_total', peso(s.monto_estimado));
+
+    byId('overlay')?.classList.add('open');
+  }
 
   function closeModal(){ byId('overlay')?.classList.remove('open'); selected=null; }
 
@@ -396,7 +888,10 @@ function openModal(id, idx){
     if (!selected || !token || !isAdminView()) return;
     try{
       const sid=getId(selected);
-      const res=await fetch(`${API_BASE}/api/requests/${sid}/confirm`, { method:'POST', headers:{'Authorization':`Bearer ${token}`} });
+      const res=await fetch(`${API_BASE}/api/requests/${sid}/confirm`, {
+        method:'POST',
+        headers: adminHeaders()
+      });
       const data=await res.json();
       if(!res.ok) throw new Error(data.detail || 'No se pudo confirmar');
       toast('Solicitud confirmada ✅'); closeModal(); await loadSolicitudes();
@@ -407,7 +902,10 @@ function openModal(id, idx){
     if (!selected || !token || !isAdminView()) return;
     try{
       const sid=getId(selected);
-      const res=await fetch(`${API_BASE}/api/requests/${sid}/reject`, { method:'POST', headers:{'Authorization':`Bearer ${token}`,'Content-Type':'application/json'} });
+      const res=await fetch(`${API_BASE}/api/requests/${sid}/reject`, {
+        method:'POST',
+        headers: adminHeaders({ 'Content-Type':'application/json' })
+      });
       const data=await res.json();
       if(!res.ok) throw new Error(data.detail || 'No se pudo rechazar');
       toast('Solicitud rechazada'); closeModal(); await loadSolicitudes();
@@ -420,45 +918,146 @@ function openModal(id, idx){
     if (!confirm(`¿Eliminar la solicitud de "${selected.nombre_cliente}"? Esta acción no se puede deshacer.`)) return;
     try{
       const sid=getId(selected);
-      const res=await fetch(`${API_BASE}/api/requests/${sid}`, { method:'DELETE', headers:{'Authorization':`Bearer ${token}`} });
+      const res=await fetch(`${API_BASE}/api/requests/${sid}`, {
+        method:'DELETE',
+        headers: adminHeaders()
+      });
       const data=await res.json();
       if(!res.ok) throw new Error(data.detail || 'No se pudo eliminar');
       toast('Solicitud eliminada'); closeModal(); await loadSolicitudes();
     }catch(e){ toast(e.message || 'Error al eliminar'); }
   }
 
-  // Init protegido (no contamina global y no pisa otras vistas)
   window.Admin = window.Admin || {};
-Object.assign(window.Admin, {
-  login,
-  logout: adminLogout,
-  openModal,
-  closeModal,
-  aprobar,
-  rechazar,
-  eliminar
-});
+  Object.assign(window.Admin, {
+    login,
+    logout: adminLogout,
+    openModal,
+    closeModal,
+    aprobar,
+    rechazar,
+    eliminar,
+    loadDisponibilidad,
+    guardarDisponibilidad,
+    toggleDia,
+    limpiarHorarios
+  });
 
-// Después sí, tu init que ata listeners y hace logout inicial
-(function initAdmin(){
-  const NEED=['authFlag','tbody','loginForm'];
-  const hasAdmin=()=>NEED.every(id=>document.getElementById(id));
-  let inited=false;
-  function safeInit(){
-    if(inited || !hasAdmin()) return;
-    inited=true;
-    adminLogout();
-    document.getElementById('loginForm')?.addEventListener('submit', (e)=>{ e.preventDefault(); login(); });
-    document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible') adminLogout('Por seguridad, iniciá sesión nuevamente.'); });
-    window.addEventListener('pageshow',(ev)=>{ if(ev.persisted) adminLogout('Por seguridad, iniciá sesión nuevamente.'); });
-    window.addEventListener('beforeunload',()=>{ window.token=null; });
-  }
-  safeInit();
-  requestAnimationFrame(safeInit);
-  const mo=new MutationObserver(()=>safeInit());
-  mo.observe(document,{childList:true,subtree:true});
-  const stop=setInterval(()=>{ if(inited){ mo.disconnect(); clearInterval(stop);} },300);
-})();
+  (function initAdmin(){
+    const NEED=['authFlag','tbody','loginForm'];
+    const hasAdmin=()=>NEED.every(id=>document.getElementById(id));
+    let inited=false;
+
+    function safeInit(){
+      if(inited || !hasAdmin()) return;
+      inited=true;
+
+      adminLogout();
+
+      document.getElementById('loginForm')
+        ?.addEventListener('submit', (e)=>{ e.preventDefault(); login(); });
+
+      document.addEventListener('visibilitychange',()=>{
+        if(document.visibilityState==='visible') adminLogout('Por seguridad, iniciá sesión nuevamente.');
+      });
+      window.addEventListener('pageshow',(ev)=>{
+        if(ev.persisted) adminLogout('Por seguridad, iniciá sesión nuevamente.');
+      });
+
+      byId('dispFecha')?.addEventListener('change', (e)=>{
+        Admin.loadDisponibilidad(e.target.value);
+      });
+
+      byId('btnToggleDia')?.addEventListener('click', ()=>{
+        const d = byId('dispFecha')?.value;
+        if(!d) return toast("Elegí una fecha");
+        Admin.toggleDia(d);
+      });
+
+      byId('btnLimpiarDia')?.addEventListener('click', ()=>{
+        const d = byId('dispFecha')?.value;
+        if(!d) return toast("Elegí una fecha");
+        Admin.limpiarHorarios(d);
+      });
+
+      byId('btnGuardarDia')?.addEventListener('click', ()=>{
+        const d = byId('dispFecha')?.value;
+        if(!d) return toast("Elegí una fecha");
+        Admin.guardarDisponibilidad(d);
+      });
+    }
+
+    safeInit();
+    requestAnimationFrame(safeInit);
+    const mo=new MutationObserver(()=>safeInit());
+    mo.observe(document,{childList:true,subtree:true});
+    const stop=setInterval(()=>{ if(inited){ mo.disconnect(); clearInterval(stop);} },300);
+  })();
+
+  (function initViewSwitch(){
+    const tabSol = document.getElementById('tabSolicitudes');
+    const tabDisp = document.getElementById('tabDisponibilidad');
+    const tabla = document.getElementById('tabla');
+    const panelDisp = document.getElementById('panelDisponibilidad');
+    const tabCal = document.getElementById('tabCalendario');
+    const panelCal = document.getElementById('panelCalendario');
+
+    if (!tabSol || !tabDisp || !tabla || !panelDisp) return;
+
+  const setActive = async (which) => {
+  // helpers: prender/apagar tabs
+    const setTab = (active) => {
+      tabSol?.classList.toggle('active', active === 'sol');
+      tabCal?.classList.toggle('active', active === 'cal');
+      tabDisp?.classList.toggle('active', active === 'disp');
+    };
+
+    // helpers: mostrar/ocultar paneles
+    const setPanel = (active) => {
+      // Solicitudes usa la tabla (tu UI actual)
+      if (tabla) tabla.style.display = (active === 'sol') ? 'table' : 'none';
+
+      // Calendario es un panel aparte
+      if (panelCal) panelCal.style.display = (active === 'cal') ? 'block' : 'none';
+
+      // Disponibilidad es tu panel actual
+      if (panelDisp) panelDisp.style.display = (active === 'disp') ? 'block' : 'none';
+    };
+
+    // 1) Set UI
+    setTab(which);
+    setPanel(which);
+
+    // 2) Acciones por vista
+    if (which === 'cal') {
+      // renderCalendar() es la función que te pasé para dibujar el mes
+      if (typeof renderCalendar === 'function') renderCalendar();
+      return;
+    }
+
+    if (which === 'disp') {
+      const df = byId('dispFecha');
+      if (df && !df.value) {
+        const today = new Date();
+        const yyyy = today.getFullYear();
+        const mm = String(today.getMonth() + 1).padStart(2, '0');
+        const dd = String(today.getDate()).padStart(2, '0');
+        df.value = `${yyyy}-${mm}-${dd}`;
+      }
+      if (df?.value) await Admin.loadDisponibilidad(df.value);
+      return;
+    }
+
+  // 'sol' -> no hace falta nada extra
+};
+
+
+    tabSol.addEventListener('click', ()=> setActive('sol'));
+    tabCal.addEventListener('click', () => setActive('cal'));
+    tabDisp.addEventListener('click', ()=> setActive('disp'));
+    setActive('sol');
+  })();
+
 })();
 </script>
 
