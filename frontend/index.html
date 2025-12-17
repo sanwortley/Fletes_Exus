@@ -9,175 +9,25 @@
   <!-- Tipografías pro -->
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=DM+Sans:wght@500;700&display=swap" rel="stylesheet">
-
-  <style>
-    :root {
-      --primary:#ffcc00;
-      --bg:#000;
-      --text:#fff;
-      --muted:#ccc;
-      --card:#111;
-      --radius:20px;
-    }
-
-    *{box-sizing:border-box;margin:0;padding:0;}
-    body{
-      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-      letter-spacing:.1px;
-      background: var(--bg);
-      color: var(--text);
-      line-height:1.6;
-    }
-
-    /* ===== Header sticky ===== */
-    header{
-      position: sticky; top:0; z-index:50;
-      background:linear-gradient(180deg,#000 0%, #000 85%, rgba(0,0,0,.86) 100%);
-      display:flex; justify-content:space-between; align-items:center;
-      padding:16px 24px;
-      border-bottom:1px solid rgba(255,204,0,.35);
-      backdrop-filter: blur(6px);
-    }
-    header b{
-      color:var(--primary); font-size:1.4rem; letter-spacing:.5px;
-      font-family:"DM Sans", Inter, sans-serif; font-weight:700;
-    }
-    nav a{
-      color:#fff; text-decoration:none; margin-left:10px; padding:6px 10px;
-      font-weight:600; opacity:.9; transition:.2s; border-radius:10px;
-    }
-    nav a:hover{ opacity:1; color:var(--primary); background:rgba(255,204,0,.12); }
-
-    .container{ max-width:1120px; margin:40px auto; padding:0 20px; }
-
-    /* ===== Hero ===== */
-    .hero{
-      background:#0e0e0e; border:1px solid #1e1e1e; border-radius:var(--radius);
-      padding:44px 28px; text-align:center;
-      box-shadow:0 10px 30px rgba(0,0,0,.6), 0 0 0 1px rgba(255,204,0,.08) inset;
-    }
-    .hero h1{
-      color:var(--primary); font-size:2.2rem; margin-bottom:12px;
-      line-height:1.15; letter-spacing:.2px; font-family:"DM Sans", Inter, sans-serif;
-    }
-    .hero p{ font-size:1.08rem; max-width:680px; margin:0 auto 20px; color:#eaeaea; opacity:.92; }
-    .btn{
-      background:var(--primary); color:#000; font-weight:800; text-decoration:none;
-      padding:12px 22px; border-radius:14px; display:inline-block; transition:.25s;
-      box-shadow:0 8px 22px rgba(255,204,0,.25);
-    }
-    .btn:hover{ background:#e6b800; transform:translateY(-1px) scale(1.05); }
-
-    /* ===== Carrusel ===== */
-    .carousel{
-      position:relative; width:100%;
-      aspect-ratio:16/9; border-radius:18px; overflow:hidden;
-      margin:28px auto 0; box-shadow:0 4px 18px rgba(0,0,0,.5); background:#000;
-    }
-    @supports not (aspect-ratio:16/9){
-      .carousel{ height:340px; }
-    }
-    .slide{
-      position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
-      opacity:0; transition:opacity .6s ease; background:#000;
-    }
-    .slide.active{ opacity:1; }
-    .slide img{ width:100%; height:100%; object-fit:contain; display:block; background:#000; }
-
-    /* Slide croquis tipo ficha técnica */
-    .slide--blueprint{ background:#111; padding:12px; }
-    .slide--blueprint .frame{
-      width:min(900px, 92%); height:100%; background:#fff; border-radius:18px;
-      display:flex; align-items:center; justify-content:center; margin:auto;
-      box-shadow:0 12px 30px rgba(0,0,0,.45);
-    }
-    .slide--blueprint img{ width:96%; height:auto; object-fit:contain; background:#fff; }
-
-    .controls{
-      position:absolute; bottom:12px; left:50%; transform:translateX(-50%);
-      display:flex; gap:10px; z-index:2;
-    }
-    .dot{
-      width:8px; height:8px; border-radius:999px; border:0; cursor:pointer;
-      background:rgba(255,255,255,.45); box-shadow:0 1px 2px rgba(0,0,0,.4);
-      transition:width .2s ease, background .2s ease;
-    }
-    .dot.active{ width:22px; background:var(--primary); }
-
-    /* ===== Cards ===== */
-    .cards{
-      display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
-      gap:24px; margin-top:46px;
-    }
-    .card{
-      background:linear-gradient(180deg,#111 0%, #0d0d0d 100%);
-      border:1px solid #1f1f1f; border-radius:20px; padding:22px;
-      box-shadow:0 2px 10px rgba(0,0,0,.4);
-      transition:transform .2s ease, box-shadow .2s ease, border-color .2s ease;
-    }
-    .card:hover{
-      transform:translateY(-2px);
-      box-shadow:0 12px 28px rgba(0,0,0,.45);
-      border-color:rgba(255,204,0,.25);
-    }
-    .card h2{
-      color:var(--primary); margin-bottom:12px; font-size:1.2rem;
-      display:flex; align-items:center; gap:10px; font-weight:800;
-      letter-spacing:.2px; font-family:"DM Sans", Inter, sans-serif;
-    }
-    .card h2::before{
-      content:""; width:10px; height:10px; border-radius:50%;
-      background:var(--primary); box-shadow:0 0 0 4px rgba(255,204,0,.15);
-    }
-
-    /* Bullets accesibles sin emojis */
-    .features{ list-style:none; padding-left:0; margin:10px 0 0; }
-    .features li{
-      display:flex; align-items:center; gap:10px;
-      margin:10px 0; color:#ddd; font-size:18px;
-    }
-    .features .bullet{
-      width:12px; height:12px; border-radius:50%;
-      background:var(--primary); flex:0 0 12px;
-      box-shadow:0 0 0 4px rgba(255,204,0,.08);
-    }
-
-    /* ===== Footer ===== */
-    footer{
-      background:#080808; border-top:1px solid rgba(255,204,0,.3);
-      padding:30px 20px; margin-top:60px; text-align:center;
-    }
-    .footer-title{ color:var(--primary); font-weight:800; font-size:1.15rem; margin-bottom:10px; letter-spacing:.2px; }
-    .social{ display:flex; justify-content:center; gap:20px; margin:14px 0; }
-    .social a{
-      color:var(--text); text-decoration:none; display:inline-flex; align-items:center; justify-content:center;
-      width:38px; height:38px; border-radius:50%; border:1px solid #222; background:#121212; transition:.2s;
-    }
-    .social a:hover{ border-color:var(--primary); box-shadow:0 0 0 2px rgba(255,204,0,.15); }
-    .social a svg{ width:20px; height:20px; fill:#fff; }
-    .footer-info{ color:#bdbdbd; font-size:.92rem; margin-top:8px; }
-
-    /* ===== CTA WhatsApp flotante ===== */
-    .whatsapp-float{
-      position:fixed; width:56px; height:56px; bottom:24px; right:24px;
-      background-color:#25D366; color:#fff; border-radius:50%;
-      display:flex; align-items:center; justify-content:center;
-      box-shadow:0 8px 24px rgba(37,211,102,.35); z-index:100; text-decoration:none; transition:.2s;
-    }
-    .whatsapp-float:hover{ transform:translateY(-1px) scale(1.08); }
-    .whatsapp-float svg{ width:30px; height:30px; fill:#fff; }
-  </style>
+  <link rel="stylesheet" href="/static/css/index.css">
+  <link rel="stylesheet" href="/static/css/header.css">
+  
 </head>
 
 <body>
-<header>
-  <b>Fletes Larga Distancia</b>
-  <nav>
-    <a href="/index" data-view="/index">Inicio</a>
-    <a href="/presupuesto" data-view="/presupuesto">Presupuesto</a>
-    <a href="/admin" data-view="/admin">Admin</a>
-  </nav>
+<header class="nav">
+  <div class="nav-inner">
+    <div class="brand">Fletes Larga Distancia</div>
+
+    <nav class="nav-links">
+      <a href="/" data-view="/">Inicio</a>
+      <a href="/presupuesto" data-view="/presupuesto">Presupuesto</a>
+      <a href="/admin" data-view="/admin">Admin</a>
+    </nav>
+
+  </div>
 </header>
+
 
   <main class="container">
     <!-- Hero -->
@@ -189,44 +39,45 @@
     </section>
 
     <!-- Carrusel -->
-    <section class="carousel" id="carousel">
+   <section class="carousel" id="carousel" data-home-only>
+
       <!-- Slide croquis (ficha técnica) -->
       <figure class="slide slide--blueprint active">
         <div class="frame">
-          <img loading="lazy" src="/static/images/animado.jpeg" alt="Croquis técnico del camión con medidas 3 m de largo y 1,7 m de ancho">
+          <img loading="lazy" src="/images/animado.jpeg" alt="Croquis técnico del camión con medidas 3 m de largo y 1,7 m de ancho">
         </div>
       </figure>
 
       <figure class="slide">
-        <img loading="lazy" src="/static/images/camion1.jpeg" alt="Camión en servicio 1">
+        <img loading="lazy" src="/images/camion1.jpeg" alt="Camión en servicio 1">
       </figure>
 
       <figure class="slide">
-        <img loading="lazy" src="/static/images/camion10.png" alt="Camión en servicio 10">
+        <img loading="lazy" src="/images/camion10.png" alt="Camión en servicio 10">
       </figure>
 
       <figure class="slide">
-        <img loading="lazy" src="/static/images/camion2.jpeg" alt="Camión de mudanza 2">
+        <img loading="lazy" src="/images/camion2.jpeg" alt="Camión de mudanza 2">
       </figure>
 
       <figure class="slide">
-        <img loading="lazy" src="/static/images/camion3.jpeg" alt="Camión en servicio 3">
+        <img loading="lazy" src="/images/camion3.jpeg" alt="Camión en servicio 3">
       </figure>
 
       <figure class="slide">
-        <img loading="lazy" src="/static/images/camion5.jpeg" alt="Camión en servicio 5">
+        <img loading="lazy" src="/images/camion5.jpeg" alt="Camión en servicio 5">
       </figure>
 
       <figure class="slide">
-        <img loading="lazy" src="/static/images/camion11.png" alt="Camión en servicio 11">
+        <img loading="lazy" src="/images/camion11.png" alt="Camión en servicio 11">
       </figure>
 
       <figure class="slide">
-        <img loading="lazy" src="/static/images/camion8.jpeg" alt="Camión de mudanza 8">
+        <img loading="lazy" src="/images/camion8.jpeg" alt="Camión de mudanza 8">
       </figure>
 
       <figure class="slide">
-        <img loading="lazy" src="/static/images/camion9.jpeg" alt="Camión en servicio 9">
+        <img loading="lazy" src="/images/camion9.jpeg" alt="Camión en servicio 9">
       </figure>
 
       <div class="controls" id="dots"></div>
@@ -591,6 +442,44 @@
     Object.assign(window, { openModal, closeModal, aprobar, rechazar, eliminar, logout });
   })();
   </script>
+  <script>
+  (function () {
+    const norm = (p) => {
+      p = (p || '/').trim();
+      p = p.replace(/\/+$/, '') || '/';          // saca trailing /
+      // soporta modo "archivos" por si cae en /admin.html
+      if (p.endsWith('.html')) p = '/' + p.replace('.html', '');
+      if (p === '/index') p = '/';
+      return p;
+    };
+
+    function setActive() {
+      const cur = norm(location.pathname);
+      document.querySelectorAll('.nav-links a').forEach(a => {
+        const target = norm(a.dataset.view || a.getAttribute('href'));
+        a.classList.toggle('active', target === cur);
+      });
+    }
+
+    // marca bien al cargar
+    setActive();
+
+    // marca bien cuando el SPA cambia URL
+    window.addEventListener('popstate', setActive);
+
+    // evita el “doble click” que te re-navega raro a Home
+    document.addEventListener('click', (e) => {
+      const a = e.target.closest('.nav-links a[data-view]');
+      if (!a) return;
+      const to = norm(a.dataset.view);
+      const cur = norm(location.pathname);
+      if (to === cur) e.preventDefault(); // si ya estás en /admin, no hagas nada
+      // si tu spa.js hace pushState, el popstate + setActive lo deja perfecto
+      setTimeout(setActive, 0);
+    });
+  })();
+  </script>
+
 
   <script defer src="/static/spa.js"></script>
 </body>

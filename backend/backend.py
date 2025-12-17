@@ -70,8 +70,10 @@ async def relax_csp_for_static(request: Request, call_next):
 BASE_DIR = Path(__file__).resolve().parents[1]   # .../Exus
 FRONT_DIR = BASE_DIR / "frontend"
 
-app.mount("/static", StaticFiles(directory=FRONT_DIR), name="static")
+# SOLO assets
+app.mount("/static", StaticFiles(directory=FRONT_DIR / "static"), name="static")
 app.mount("/images", StaticFiles(directory=FRONT_DIR / "images"), name="images")
+
 
 # ======= FRONTEND ROUTES =======
 
@@ -91,13 +93,16 @@ def redirect_index_html():
 
 # Redirigir /presupuesto → /
 @app.get("/presupuesto", include_in_schema=False)
-def redirect_presupuesto():
-    return RedirectResponse(url="/", status_code=308)
+def presupuesto_page():
+    return FileResponse(FRONT_DIR / "presupuesto.html")
 
 # Redirigir /admin → /
 @app.get("/admin", include_in_schema=False)
-def redirect_admin():
-    return RedirectResponse(url="/", status_code=308)
+@app.get("/admin/", include_in_schema=False)
+def admin_page():
+    return FileResponse(FRONT_DIR / "admin.html")
+
+
 
 
 ALLOWED_ORIGINS = [o.strip() for o in (os.getenv("ALLOWED_ORIGINS") or "").split(",") if o.strip()]
@@ -987,12 +992,64 @@ def _serialize_quote(doc: dict) -> dict:
     return d
 
 # ✅ AHORA REQUIERE TOKEN (tu frontend ya lo manda)
+from datetime import timezone as dt_timezone  # arriba ya importaste timezone, esto es opcional
+
 @app.get("/api/requests")
-def listar_requests(user=Depends(require_api_key)):
+def listar_requests(
+    status: str = Query(default="pending", description="pending | historicos | all"),
+    user=Depends(require_api_key)
+):
+    """
+    pending: fecha_turno >= hoy
+    historicos: fecha_turno < hoy
+    all: todo
+    """
+
+    # timezone AR (Córdoba): UTC-3
+    now_ar = datetime.now(timezone(timedelta(hours=-3)))
+    today_str = now_ar.date().isoformat()  # "YYYY-MM-DD"
+
+    st = (status or "pending").strip().lower()
+
+    # usamos fecha_turno si existe; si no, caemos a "fecha" (por compat)
+    # -> si un doc no tiene ninguna fecha, lo mandamos a pending por defecto.
+    date_field = "fecha_turno"
+
+    base_filter: dict = {}
+
+    if st == "pending":
+        base_filter = {
+            "$or": [
+                {date_field: {"$gte": today_str}},
+                {date_field: {"$exists": False}},
+                {date_field: None},
+                {"fecha": {"$gte": today_str}},          # fallback
+                {"fecha": {"$exists": False}},
+                {"fecha": None},
+            ]
+        }
+
+    elif st == "historicos":
+        base_filter = {
+            "$or": [
+                {date_field: {"$lt": today_str}},
+                {"fecha": {"$lt": today_str}},           # fallback
+            ]
+        }
+
+    elif st == "all":
+        base_filter = {}
+
+    else:
+        raise HTTPException(status_code=400, detail="status inválido. Usar pending | historicos | all")
+
     items: List[dict] = []
-    for doc in quotes.find().sort("created_at", -1):
+    for doc in quotes.find(base_filter).sort("created_at", -1):
         items.append(_serialize_quote(doc))
-    return {"items": items}
+
+    return {"items": items, "status": st, "today": today_str}
+
+
 
 @app.post("/api/requests/{quote_id}/confirm")
 def admin_confirmar(quote_id: str, background: BackgroundTasks, user=Depends(require_api_key)):
@@ -1072,6 +1129,13 @@ def admin_eliminar(quote_id: str, user=Depends(require_api_key)):
         bookings.delete_many({"date": ft, "time": ht, "status": {"$in": ["reserved", "confirmed"]}})
 
     return {"message": "Eliminado y turno liberado" if (ft and ht) else "Eliminado"}
+
+# ✅ 2) recién DESPUÉS tu catch-all para el SPA
+@app.get("/{path:path}", include_in_schema=False)
+def spa(path: str):
+    if path.startswith(("api", "static", "images")):
+        raise HTTPException(status_code=404, detail="API route not found")
+    return FileResponse(FRONT_DIR / "index.html")
 
 
 # =========================

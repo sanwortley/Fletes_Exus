@@ -12,278 +12,28 @@
 
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-
-  <style>
-    :root{
-      --brand:#ffcc00; --brand-2:#ffb700;
-      --bg:#0b0b0b; --card:#131313; --ink:#f5f7fb; --muted:#a9b1bd; --stroke:#232323;
-      --ok:#36d399; --warn:#ffd95a; --bad:#ff6b6b;
-      --radius:16px; --shadow:0 10px 30px rgba(0,0,0,.45);
-    }
-    *{box-sizing:border-box}
-    html,body{height:100%}
-    body{
-      margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,Arial;
-      background:
-        radial-gradient(900px 600px at 90% -20%, #191919 0%, transparent 55%),
-        radial-gradient(900px 600px at 10% -20%, #151515 0%, transparent 55%),
-        var(--bg);
-      color:var(--ink);
-    }
-    .nav{position:sticky;top:0;z-index:10;background:rgba(0,0,0,.6);backdrop-filter:blur(8px);border-bottom:1px solid var(--stroke)}
-    .nav-inner{max-width:1100px;margin:0 auto;display:flex;align-items:center;gap:16px;padding:12px 18px}
-    .brand{display:flex;align-items:center;gap:10px;font-weight:700}
-    .dot{width:10px;height:10px;border-radius:50%;background:linear-gradient(180deg,var(--brand),var(--brand-2));box-shadow:0 0 18px var(--brand)}
-    .nav-links{margin-left:auto;display:flex;gap:12px;align-items:center}
-    .nav-links a{opacity:.9;color:var(--ink);text-decoration:none;padding:6px 10px;border-radius:10px}
-    .nav-links a:hover{opacity:1;background:#171717}
-    .nav-links .active{background:#171717}
-    .btn-out{background:#171717;border:1px solid var(--stroke);color:var(--ink);padding:8px 12px;border-radius:10px;font-weight:700;cursor:pointer}
-    .btn-out:hover{filter:brightness(1.1)}
-
-    .container{max-width:1100px;margin:28px auto;padding:0 18px}
-    h1{margin:10px 0 18px;font-size:38px}
-    .accent{background:linear-gradient(180deg,var(--brand),var(--brand-2));-webkit-background-clip:text;background-clip:text;color:transparent;text-shadow:0 0 24px rgba(255,204,0,.18)}
-    .panel{background:linear-gradient(180deg,#131313,#101010);border:1px solid var(--stroke);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px}
-
-    .login-row{display:grid;grid-template-columns:1fr 1fr auto auto;gap:12px;align-items:center;background:#0e0e0e;border:1px solid var(--stroke);border-radius:14px;padding:12px;margin-bottom:18px}
-    .input{background:#0c0c0c;border:1px solid var(--stroke);color:var(--ink);border-radius:12px;padding:12px;outline:none}
-    .input::placeholder{color:#7f8893}
-    .btn{border:none;border-radius:12px;padding:12px 16px;font-weight:700;cursor:pointer;transition:transform .08s ease,filter .15s ease}
-    .btn-primary{background:linear-gradient(180deg,var(--brand),var(--brand-2));color:#111;box-shadow:0 8px 20px rgba(255,204,0,.28)}
-    .btn-primary:active{transform:translateY(1px)}
-    .tag{font-size:12px;font-weight:700}
-    .tag.ok{color:var(--ok)} .tag.bad{color:var(--bad)} .tag.muted{color:var(--muted)}
-
-    .table{width:100%;border-collapse:separate;border-spacing:0 10px}
-    .thead th{color:var(--muted);text-align:left;padding:0 12px 8px;font-size:14px}
-    .row{background:#101010;border:1px solid var(--stroke);border-radius:14px;box-shadow:var(--shadow)}
-    .row td{padding:14px 12px;vertical-align:middle}
-    .client{display:flex;flex-direction:column;gap:4px}
-    .client .name{font-weight:700}
-    .client .sub{color:var(--muted);font-size:13px}
-    .badge{display:inline-flex;align-items:center;padding:8px 12px;font-weight:800;letter-spacing:.4px;border-radius:999px;border:1px solid transparent;font-size:12px}
-    .aprobado{color:#0f3;background:rgba(0,255,120,.08);border-color:rgba(0,255,120,.25)}
-    .pendiente{color:#ffd95a;background:rgba(255,217,90,.08);border-color:rgba(0,255,90,.25)}
-    .rechazado{color:#ff8b8b;background:rgba(255,107,107,.12);border-color:rgba(255,107,107,.25)}
-    .btn-ghost{background:transparent;color:var(--ink);border:1px solid #2a2a2a;padding:8px 12px;border-radius:10px;font-weight:700}
-    .btn-ghost:hover{filter:brightness(1.15)}
-    .actions{display:flex;gap:8px;justify-content:flex-end}
-    .empty{color:var(--muted);text-align:center;padding:16px 8px}
-
-    .overlay{position:fixed;inset:0;background:rgba(0,0,0,0.65);display:none;justify-content:center;align-items:center;z-index:999}
-    .overlay.open{display:flex}
-
-    .modal{
-      background:#111;color:#fff;border-radius:12px;box-shadow:0 0 20px rgba(255,204,0,.3);
-      width:90%;max-width:700px;max-height:90vh;overflow-y:auto;padding:20px 25px;display:flex;flex-direction:column;gap:16px;
-      animation:fadeIn .25s ease-out;
-    }
-    .modal-head{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #333;padding-bottom:8px}
-    .modal-title{font-size:1.4em;font-weight:700;color:var(--brand)}
-    .modal-close{background:transparent;color:#aaa;border:none;font-size:1.4em;cursor:pointer;transition:color .2s}
-    .modal-close:hover{color:var(--brand)}
-    .modal-body{display:flex;flex-direction:column;gap:12px}
-    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:10px}
-    .kv{background:#181818;padding:10px 14px;border-radius:8px}
-    .kv small{display:block;font-size:.8em;color:#aaa}
-    .kv strong{font-size:1em;color:#fff}
-    .kv.total{grid-column:1 / -1;text-align:right}
-    #overlay .modal-foot{display:flex;justify-content:space-between;align-items:center;border-top:1px solid #333;padding-top:12px}
-    #m_total{font-size:1.6em;color:var(--brand);font-weight:900}
-
-    .btn-danger{background:#2b0b0b;border:1px solid #3a1616;color:#ffb3b3;padding:10px 12px;border-radius:10px;font-weight:800}
-    .btn-reject{background:#2b160b;border:1px solid #3a2316;color:#ffc9a1;padding:10px 12px;border-radius:10px;font-weight:800}
-    .btn-ok{background:linear-gradient(180deg,var(--brand),var(--brand-2));color:#111;padding:11px 16px;border-radius:12px;font-weight:900;border:none}
-
-    .toast{position:fixed;bottom:18px;right:18px;background:#111;border:1px solid var(--stroke);padding:12px 14px;border-radius:12px;box-shadow:var(--shadow);display:none}
-    .toast.show{display:block}
-
-    /* ====== SWITCH VISTAS ====== */
-    .view-switch{display:flex;gap:10px;margin:0 0 14px;flex-wrap:wrap}
-    .view-tab{
-      background:#171717;border:1px solid var(--stroke);color:var(--ink);
-      padding:10px 12px;border-radius:12px;font-weight:800;cursor:pointer
-    }
-    .view-tab:hover{filter:brightness(1.12)}
-    .view-tab.active{
-      background:linear-gradient(180deg,var(--brand),var(--brand-2));
-      color:#111;border-color:transparent;box-shadow:0 8px 20px rgba(255,204,0,.18)
-    }
-
-    /* ====== DISPONIBILIDAD ====== */
-    #panelDisponibilidad{display:none}
-    .disp-head{
-      display:flex; gap:10px; flex-wrap:wrap; align-items:center; justify-content:space-between;
-      margin-bottom:12px;
-    }
-    .disp-left{display:flex; gap:10px; flex-wrap:wrap; align-items:center}
-    .chip{
-      display:inline-flex; align-items:center; gap:8px;
-      background:#0e0e0e; border:1px solid var(--stroke);
-      padding:10px 12px; border-radius:14px;
-    }
-    .chip label{color:var(--muted); font-weight:700; font-size:12px}
-    .chip input[type="date"]{
-      background:#0c0c0c; color:var(--ink); border:1px solid var(--stroke);
-      padding:10px 12px; border-radius:12px; outline:none;
-    }
-    .mini-btn{
-      background:#171717; border:1px solid var(--stroke); color:var(--ink);
-      padding:10px 12px; border-radius:12px; font-weight:900; cursor:pointer;
-    }
-    .mini-btn:hover{filter:brightness(1.12)}
-    .mini-btn.primary{
-      background:linear-gradient(180deg,var(--brand),var(--brand-2));
-      color:#111; border-color:transparent;
-    }
-    .status-pill{
-      display:inline-flex; align-items:center; gap:8px;
-      padding:10px 12px; border-radius:999px;
-      border:1px solid var(--stroke); background:#0e0e0e; font-weight:900;
-    }
-    .status-pill.on{ color:var(--ok); }
-    .status-pill.off{ color:var(--bad); }
-
-    .slots{
-      display:grid;
-      grid-template-columns:repeat(auto-fit, minmax(120px, 1fr));
-      gap:10px;
-      margin-top:12px;
-    }
-    .slot{
-      background:#101010; border:1px solid var(--stroke);
-      padding:12px; border-radius:14px;
-      font-weight:900; cursor:pointer; text-align:center;
-      user-select:none;
-    }
-    .slot:hover{filter:brightness(1.08)}
-    .slot.on{
-      background:rgba(54,211,153,.10);
-      border-color:rgba(54,211,153,.35);
-      color:#bff7e4;
-    }
-    .slot.off{
-      opacity:.55;
-    }
-    .disp-hint{color:var(--muted); font-size:13px; margin-top:10px}
-
-        /* ====== CALENDARIO ====== */
-    .cal-head{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      margin-bottom:12px;
-    }
-
-    .cal-title{
-      font-weight:900;
-      padding:10px 14px;
-      border-radius:12px;
-      border:1px solid var(--stroke);
-      background:#0e0e0e;
-      min-width:220px;
-      text-align:center;
-    }
-
-    .cal-grid{
-      display:grid;
-      grid-template-columns:repeat(7,1fr);
-      gap:10px;
-    }
-
-    .cal-dow{
-      color:var(--muted);
-      font-size:12px;
-      font-weight:800;
-      text-align:center;
-    }
-
-    .cal-cell{
-      background:#0f0f0f;
-      border:1px solid var(--stroke);
-      border-radius:14px;
-      min-height:70px;
-      padding:10px;
-      cursor:pointer;
-      position:relative;
-    }
-
-    .cal-cell:hover{filter:brightness(1.12)}
-
-    .cal-cell.muted{
-      opacity:.4;
-      cursor:default;
-    }
-
-    .cal-day{
-      font-weight:900;
-    }
-
-    .cal-cell.selected{
-      outline:2px solid rgba(255,204,0,.45);
-    }
-
-    .cal-detail{
-      margin-top:14px;
-      background:#0e0e0e;
-      border:1px solid var(--stroke);
-      border-radius:14px;
-      padding:14px;
-    }
-
-    .cal-detail-title{
-      color:var(--brand);
-      font-weight:900;
-      margin-bottom:8px;
-    }
-
-    .cal-item{
-      background:#101010;
-      border:1px solid #222;
-      border-radius:12px;
-      padding:12px;
-      margin-bottom:10px;
-    }
-    .cal-num{
-      display:inline-flex;
-      width:28px;
-      height:28px;
-      align-items:center;
-      justify-content:center;
-      border-radius:999px;
-    }
-
-    .cal-day.has .cal-num{
-      background:#fff;
-      color:#111;
-    }
-
-
-
-    @media (max-width:760px){
-      .login-row{grid-template-columns:1fr;gap:10px}
-      .thead{display:none}
-      .row{display:grid}
-    }
-    @keyframes fadeIn{from{opacity:0;transform:scale(.95)}to{opacity:1;transform:scale(1)}}
-  </style>
-
-
+  <link rel="stylesheet" href="/static/css/admin.css">
+  <link rel="stylesheet" href="/static/css/header.css">
 </head>
 
 <body>
   <header class="nav">
-    <div class="nav-inner">
-      <div class="brand"><span class="dot"></span> Fletes Larga Distancia Admin</div>
-      <nav class="nav-links">
-        <a href="/index" data-view="/index">Inicio</a>
-        <a href="/presupuesto" data-view="/presupuesto">Presupuesto</a>
-        <strong class="active">Admin</strong>
-        <button id="btnLogout" class="btn-out" style="display:none" onclick="Admin.logout()" type="button">Cerrar sesión</button>
-      </nav>
-    </div>
-  </header>
+  <div class="nav-inner">
+    <div class="brand">Fletes Larga Distancia</div>
+
+    <nav class="nav-links">
+      <a href="/" data-view="/">Inicio</a>
+      <a href="/presupuesto" data-view="/presupuesto">Presupuesto</a>
+      <a href="/admin" data-view="/admin">Admin</a>
+
+      <!-- ✅ aparece solo logueado -->
+      <button id="btnLogout" class="btn-out" type="button" hidden onclick="Admin.logout()">
+        Cerrar sesión
+      </button>
+    </nav>
+  </div>
+</header>
+
 
   <main class="container">
     <h1>Panel de <span class="accent">Administración</span></h1>
@@ -295,6 +45,11 @@
     </div>
 
     <section class="panel" id="panelSolicitudes">
+      <div class="requests-tabs" id="reqSwitch" style="display:none">
+        <button id="tabReqPend" class="tab-btn active" type="button">Pendientes</button>
+        <button id="tabReqHist" class="tab-btn" type="button">Históricos</button>
+      </div>
+
       <form id="loginForm" class="login-row" autocomplete="off">
         <input class="input" id="usr" type="text" placeholder="Usuario" autocomplete="username" />
         <input class="input" id="pwd" type="password" placeholder="Contraseña" autocomplete="current-password" />
@@ -315,25 +70,24 @@
     </section>
 
     <!-- ====== PANEL CALENDARIO ====== -->
-<section class="panel" id="panelCalendario" style="display:none">
-  <div class="cal-head">
-    <button class="mini-btn" id="calPrev" type="button">←</button>
-    <div class="cal-title" id="calTitle">Mes</div>
-    <button class="mini-btn" id="calNext" type="button">→</button>
-  </div>
+    <section class="panel" id="panelCalendario" style="display:none">
+      <div class="cal-head">
+        <button class="mini-btn" id="calPrev" type="button">←</button>
+        <div class="cal-title" id="calTitle">Mes</div>
+        <button class="mini-btn" id="calNext" type="button">→</button>
+      </div>
 
-  <div class="cal-grid" id="calGrid"></div>
+      <div class="cal-grid" id="calGrid"></div>
 
-  <div class="cal-detail" id="calDetail">
-    <div class="cal-detail-title" id="calDetailTitle">
-      Seleccioná un día
-    </div>
-    <div class="cal-detail-body" id="calDetailBody">
-      Acá vas a ver los fletes del día.
-    </div>
-  </div>
-</section>
-
+      <div class="cal-detail" id="calDetail">
+        <div class="cal-detail-title" id="calDetailTitle">
+          Seleccioná un día
+        </div>
+        <div class="cal-detail-body" id="calDetailBody">
+          Acá vas a ver los fletes del día.
+        </div>
+      </div>
+    </section>
 
     <section class="panel" id="panelDisponibilidad">
       <div class="disp-head">
@@ -423,8 +177,6 @@
   const coalesce = (...vals)=>{ for (const v of vals){ if(v!==undefined && v!==null) return v; } return null; };
 
   // ====== AUTH REAL (API KEY) ======
-  // Guardá tu API key en localStorage si querés:
-  // localStorage.setItem('ADMIN_API_KEY','TU_KEY')
   const API_KEY = localStorage.getItem("ADMIN_API_KEY") || "AdminFletesJavier20251110!!";
   function adminHeaders(extra = {}) {
     return { "X-API-Key": API_KEY, ...extra };
@@ -439,108 +191,139 @@
     return null;
   };
 
+  let reqMode = "pending"; // "pending" | "historicos"
+
   window.Admin = window.Admin || {};
   let token=null, solicitudes=[], selected=null;
 
+  // ====== EXPIRACIÓN SESIÓN ADMIN (30 min) ======
+  const SESSION_MS = 30 * 60 * 1000;
+  const KEY_ON  = "ADMIN_SESSION_ON";
+  const KEY_EXP = "ADMIN_SESSION_EXPIRES_AT";
+  let expTimer = null;
+
+  function setSessionExpiryFromNow(){
+    const exp = Date.now() + SESSION_MS;
+    sessionStorage.setItem(KEY_ON, "1");
+    sessionStorage.setItem(KEY_EXP, String(exp));
+    startExpiryTimer();
+  }
+
+  function isSessionValid(){
+    const on = sessionStorage.getItem(KEY_ON) === "1";
+    const exp = Number(sessionStorage.getItem(KEY_EXP) || "0");
+    return on && exp && Date.now() < exp;
+  }
+
+  function startExpiryTimer(){
+    if (expTimer) clearTimeout(expTimer);
+
+    const exp = Number(sessionStorage.getItem(KEY_EXP) || "0");
+    const remaining = exp - Date.now();
+
+    if (!exp || remaining <= 0){
+      adminLogout("Sesión vencida (30 min). Volvé a iniciar sesión.");
+      return;
+    }
+
+    expTimer = setTimeout(() => {
+      adminLogout("Sesión vencida (30 min). Volvé a iniciar sesión.");
+    }, remaining);
+  }
+
+
   /* ========= CALENDARIO ========= */
-const DOW = ["Lun","Mar","Mié","Jue","Vie","Sáb","Dom"];
-let selectedDayKey = null; // YYYY-MM-DD
-let calCursor = new Date();   
-calCursor.setDate(1);
+  const DOW = ["Lun","Mar","Mié","Jue","Vie","Sáb","Dom"];
+  let selectedDayKey = null; // YYYY-MM-DD
+  let calCursor = new Date();
+  calCursor.setDate(1);
 
-function iso(d){
-  return d.toISOString().slice(0,10);
-}
+  function iso(d){ return d.toISOString().slice(0,10); }
+  function monthTitle(d){ return d.toLocaleDateString("es-AR",{month:"long",year:"numeric"}); }
 
-function monthTitle(d){
-  return d.toLocaleDateString("es-AR",{month:"long",year:"numeric"});
-}
-
-function groupByDay(){
-  const map = {};
-  solicitudes.forEach(s=>{
-    const f = (s.fecha_turno || s.fecha || "").slice(0,10);
-    if(!f) return;
-    map[f] = map[f] || [];
-    map[f].push(s);
-  });
-  return map;
-}
-
-function renderCalendar(){
-  const grid = byId("calGrid");
-  const title = byId("calTitle");
-  if(!grid) return;
-
-  title.textContent = monthTitle(calCursor);
-  grid.innerHTML = "";
-
-  DOW.forEach(d=>{
-    const e=document.createElement("div");
-    e.className="cal-dow";
-    e.textContent=d;
-    grid.appendChild(e);
-  });
-
-  const first = new Date(calCursor.getFullYear(),calCursor.getMonth(),1);
-  const last  = new Date(calCursor.getFullYear(),calCursor.getMonth()+1,0);
-  const offset = (first.getDay()+6)%7;
-  const jobs = groupByDay();
-
-  for(let i=0;i<offset;i++){
-    grid.appendChild(document.createElement("div")).className="cal-cell muted";
+  function groupByDay(){
+    const map = {};
+    solicitudes.forEach(s=>{
+      const f = (s.fecha_turno || s.fecha || "").slice(0,10);
+      if(!f) return;
+      map[f] = map[f] || [];
+      map[f].push(s);
+    });
+    return map;
   }
 
-  for(let d=1;d<=last.getDate();d++){
-    const date = new Date(calCursor.getFullYear(),calCursor.getMonth(),d);
-    const key = iso(date);
-    const has = jobs[key]?.length;
+  function renderCalendar(){
+    const grid = byId("calGrid");
+    const title = byId("calTitle");
+    if(!grid) return;
 
-    const c=document.createElement("div");
-    c.className="cal-cell";
-    const dayClass = has ? "cal-day has" : "cal-day";
-    c.innerHTML = `
-      <div class="${dayClass}">
-        <span class="cal-num">${d}</span>
+    title.textContent = monthTitle(calCursor);
+    grid.innerHTML = "";
+
+    DOW.forEach(d=>{
+      const e=document.createElement("div");
+      e.className="cal-dow";
+      e.textContent=d;
+      grid.appendChild(e);
+    });
+
+    const first = new Date(calCursor.getFullYear(),calCursor.getMonth(),1);
+    const last  = new Date(calCursor.getFullYear(),calCursor.getMonth()+1,0);
+    const offset = (first.getDay()+6)%7;
+    const jobs = groupByDay();
+
+    for(let i=0;i<offset;i++){
+      grid.appendChild(document.createElement("div")).className="cal-cell muted";
+    }
+
+    for(let d=1;d<=last.getDate();d++){
+      const date = new Date(calCursor.getFullYear(),calCursor.getMonth(),d);
+      const key = iso(date);
+      const has = jobs[key]?.length;
+
+      const c=document.createElement("div");
+      c.className="cal-cell";
+      const dayClass = has ? "cal-day has" : "cal-day";
+      c.innerHTML = `
+        <div class="${dayClass}">
+          <span class="cal-num">${d}</span>
+        </div>
+      `;
+      c.onclick=()=>selectDay(key);
+      grid.appendChild(c);
+    }
+  }
+
+  byId("calPrev")?.addEventListener("click", ()=>{
+    calCursor = new Date(calCursor.getFullYear(), calCursor.getMonth()-1, 1);
+    renderCalendar();
+  });
+
+  byId("calNext")?.addEventListener("click", ()=>{
+    calCursor = new Date(calCursor.getFullYear(), calCursor.getMonth()+1, 1);
+    renderCalendar();
+  });
+
+  function selectDay(date){
+    selectedDayKey = date;
+    const list = groupByDay()[date] || [];
+    byId("calDetailTitle").textContent = date;
+
+    if(!list.length){
+      byId("calDetailBody").innerHTML="<div class='empty'>No hay fletes hoy.</div>";
+      return;
+    }
+
+    byId("calDetailBody").innerHTML = list.map((s,i)=>`
+      <div class="cal-item">
+        <b>${s.nombre_cliente}</b> • ${s.hora_turno || ""}
+        <div>${s.origen} → ${s.destino}</div>
+        <button class="btn-ghost" onclick="Admin.openModal('${getId(s)}',${i})">
+          Detalles
+        </button>
       </div>
-    `;
-
-    c.onclick=()=>selectDay(key);
-    grid.appendChild(c);
+    `).join("");
   }
-}
-byId("calPrev")?.addEventListener("click", ()=>{
-  calCursor = new Date(calCursor.getFullYear(), calCursor.getMonth()-1, 1);
-  renderCalendar();
-});
-
-byId("calNext")?.addEventListener("click", ()=>{
-  calCursor = new Date(calCursor.getFullYear(), calCursor.getMonth()+1, 1);
-  renderCalendar();
-});
-
-
-function selectDay(date){
-  selectedDayKey = date; 
-  const list = groupByDay()[date] || [];
-  byId("calDetailTitle").textContent = date;
-
-  if(!list.length){
-    byId("calDetailBody").innerHTML="<div class='empty'>No hay fletes hoy.</div>";
-    return;
-  }
-
-  byId("calDetailBody").innerHTML = list.map((s,i)=>`
-    <div class="cal-item">
-      <b>${s.nombre_cliente}</b> • ${s.hora_turno || ""}
-      <div>${s.origen} → ${s.destino}</div>
-      <button class="btn-ghost" onclick="Admin.openModal('${getId(s)}',${i})">
-        Detalles
-      </button>
-    </div>
-  `).join("");
-}
-
 
   /* ========= DISPONIBILIDAD ========= */
   const DEFAULT_SLOTS = [
@@ -609,7 +392,6 @@ function selectDay(date){
     setDispUIEnabled(dateStr);
   }
 
-  // Carga el mes entero desde backend admin
   async function fetchMonthAvailability(month){
     if(!month) return;
     try{
@@ -619,9 +401,7 @@ function selectDay(date){
       const data = await res.json();
       if(!res.ok) throw new Error(data.detail || "No se pudo cargar disponibilidad");
 
-      // reset month cache
       dispState.byDate = dispState.byDate || {};
-      // volcamos items a byDate
       const items = Array.isArray(data.items) ? data.items : [];
       items.forEach(it=>{
         const d = it.date;
@@ -664,70 +444,72 @@ function selectDay(date){
   }
 
   async function guardarDisponibilidad(dateStr){
-    if(!dateStr) return;
-    const model = ensureDateModel(dateStr);
+  if(!dateStr) return;
+  const model = ensureDateModel(dateStr);
 
-    // { "10:00": true } -> ["10:00"]
-    const slotsArr = Object.entries(model.slots)
-      .filter(([_, v]) => !!v)
-      .map(([h]) => h);
+  const slotsArr = Object.entries(model.slots)
+    .filter(([_, v]) => !!v)
+    .map(([h]) => h);
 
-    try{
-      const res = await fetch(`${API_BASE}/api/availability/day`, {
-        method: "POST",
-        headers: adminHeaders({ "Content-Type": "application/json" }),
-        body: JSON.stringify({
-          date: dateStr,
-          enabled: !!model.enabled,
-          slots: slotsArr
-        })
-      });
+  try{
+    const res = await fetch(`${API_BASE}/api/availability/day`, {
+      method: "POST",
+      headers: adminHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify({ date: dateStr, enabled: !!model.enabled, slots: slotsArr })
+    });
 
-      const data = await res.json().catch(()=>({}));
-      if(!res.ok) throw new Error(data.detail || "Error guardando disponibilidad");
+    const ct = res.headers.get("content-type") || "";
 
-      toast("Disponibilidad guardada ✅");
-
-      // refrescar mes (por si el backend normaliza)
-      dispState.loadedMonth = "";
-      await loadDisponibilidad(dateStr);
-    }catch(e){
-      toast(e.message || "Error guardando disponibilidad");
+    // ✅ si vuelve HTML, mostralo y cortá
+    if (!ct.includes("application/json")) {
+      const txt = await res.text();
+      throw new Error("La API devolvió HTML (ruta incorrecta o catch-all del SPA).");
     }
+
+    const data = await res.json();
+    if(!res.ok) throw new Error(data.detail || "Error guardando disponibilidad");
+
+    toast("Disponibilidad guardada ✅");
+    dispState.loadedMonth = "";
+    await loadDisponibilidad(dateStr);
+
+  }catch(e){
+    toast(e.message || "Error guardando disponibilidad");
   }
+}
+
 
   /* ========= UI AUTH (solo UI) ========= */
   function setAuthUI(isOn){
-  const flag = byId('authFlag');
-  if (flag){
-    flag.textContent = isOn ? 'Autenticado' : 'No autenticado';
-    flag.className = 'tag ' + (isOn ? 'ok' : 'muted');
+    const loginForm = byId('loginForm');
+    const btnLogout = byId('btnLogout');
+    const flag = byId('authFlag');
+    const tabla = byId('tabla');
+    const viewSwitch = byId('viewSwitch');
+    const reqSwitch = byId('reqSwitch');
+
+    if (loginForm) loginForm.style.display = isOn ? 'none' : 'grid';
+    if (btnLogout){
+      btnLogout.hidden = !isOn;          // ✅ muestra/oculta de verdad
+    }
+
+
+    if (flag){
+      flag.textContent = isOn ? 'Autenticado' : 'No autenticado';
+      flag.className = 'tag ' + (isOn ? 'ok' : 'muted');
+    }
+
+    if (viewSwitch) viewSwitch.style.display = isOn ? 'flex' : 'none';
+    if (tabla) tabla.style.display = isOn ? 'table' : 'none';
+    if (reqSwitch) reqSwitch.style.display = isOn ? 'flex' : 'none';
+
+    byId('panelDisponibilidad')?.style.setProperty('display','none');
+    byId('panelCalendario')?.style.setProperty('display','none');
+
+    byId('tabSolicitudes')?.classList.add('active');
+    byId('tabCalendario')?.classList.remove('active');
+    byId('tabDisponibilidad')?.classList.remove('active');
   }
-
-  const btn = byId('btnLogout');
-  if (btn){ btn.style.display = isOn ? 'inline-flex' : 'none'; }
-
-  const sw = byId('viewSwitch');
-  if (sw) sw.style.display = isOn ? 'flex' : 'none';
-
-  const tabla = byId('tabla');
-  if (tabla) tabla.style.display = isOn ? 'table' : 'none';
-
-  const pd = byId('panelDisponibilidad');
-  if (pd) pd.style.display = 'none';
-
-  // ✅ NUEVO: ocultar calendario + volver a Solicitudes
-  const pc = byId('panelCalendario');
-  if (pc) pc.style.display = 'none';
-
-  const tabSol = byId('tabSolicitudes');
-  const tabCal = byId('tabCalendario');
-  const tabDisp = byId('tabDisponibilidad');
-  tabSol?.classList.add('active');
-  tabCal?.classList.remove('active');
-  tabDisp?.classList.remove('active');
-}
-
 
   function renderEmpty(msg){
     const tb = byId('tbody'); if(!tb) return;
@@ -735,55 +517,99 @@ function selectDay(date){
   }
 
   function adminLogout(reason){
-    token=null; selected=null;
-    if (isAdminView()){
-      setAuthUI(false);
-      renderEmpty(reason || 'Iniciá sesión para ver las solicitudes de presupuesto.');
-      const usr=byId('usr'), pwd=byId('pwd');
-      if (usr) usr.value=''; if (pwd) pwd.value='';
-      usr?.focus();
-    }
+    
+    if (expTimer) clearTimeout(expTimer);
+    sessionStorage.removeItem(KEY_EXP);
+    sessionStorage.removeItem(KEY_ON); // ya lo hacías, pero dejalo así prolijo
+
+    token = null;
+    selected = null;
+    solicitudes = [];
+
+    if (!isAdminView()) return;
+
+    setAuthUI(false);
+    renderEmpty(reason || 'Iniciá sesión para ver las solicitudes de presupuesto.');
+
+    const usr = byId('usr'), pwd = byId('pwd');
+    if (usr) usr.value = '';
+    if (pwd) pwd.value = '';
+    usr?.focus();
   }
 
   async function login(){
-    // Este login ahora es “UI only”, el backend admin se valida por X-API-Key
-    if (!isAdminView()) return;
-    const usr=byId('usr'), pwd=byId('pwd');
-    const username=usr?usr.value.trim():'', password=pwd?pwd.value.trim():'';
-    if(!username || !password){ toast('Ingresá usuario y contraseña'); return; }
+  if (!isAdminView()) return;
 
-    token = "ui-session"; // solo flag UI
+  const usr=byId('usr'), pwd=byId('pwd');
+  const username=usr?usr.value.trim():'', password=pwd?pwd.value.trim():'';
+  if(!username || !password){ toast('Ingresá usuario y contraseña'); return; }
+
+  try{
+    const res = await fetch(`${API_BASE}/api/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: username, password })
+    });
+
+    const data = await res.json().catch(()=> ({}));
+    if(!res.ok || !data.ok){
+      throw new Error(data.detail || data.message || "Credenciales inválidas");
+    }
+
+    // ✅ si login OK (aunque tu seguridad real siga siendo X-API-Key)
+    token = "ui-session";
+    setSessionExpiryFromNow(); // ✅ guarda ON + EXPIRES y arranca el timer
+
+
     setAuthUI(true);
-    toast('Sesión iniciada');
+    toast("Sesión iniciada");
     await loadSolicitudes();
 
-    const df = byId('dispFecha');
-    if(df && !df.value){
-      const today = new Date();
-      const yyyy = today.getFullYear();
-      const mm = String(today.getMonth()+1).padStart(2,'0');
-      const dd = String(today.getDate()).padStart(2,'0');
-      df.value = `${yyyy}-${mm}-${dd}`;
-    }
-    if(byId('dispFecha')?.value) await loadDisponibilidad(byId('dispFecha').value);
+  }catch(e){
+    adminLogout(e.message || "No se pudo iniciar sesión");
   }
+}
 
-  async function loadSolicitudes(){
-    if (!isAdminView()) return;
-    if (!token){ renderEmpty('Iniciá sesión para ver las solicitudes de presupuesto.'); return; }
-    try{
-      const res = await fetch(`${API_BASE}/api/requests`, {
-        headers: adminHeaders()
-      });
-      const data = await res.json();
-      if(!res.ok) throw new Error(data.detail || 'No se pudieron cargar las solicitudes');
-      solicitudes = Array.isArray(data.items) ? data.items : [];
-      render();
-      if (solicitudes.length===0) renderEmpty('No hay solicitudes.');
-    }catch(e){
-      renderEmpty(e.message || 'No se pudieron cargar las solicitudes.');
+
+  async function loadSolicitudes(mode = reqMode){
+  if (!isAdminView()) return;
+  if (!token){ renderEmpty('Iniciá sesión para ver las solicitudes de presupuesto.'); return; }
+
+  reqMode = mode;
+
+  try{
+    const url = `${API_BASE}/api/requests?status=${encodeURIComponent(reqMode)}`;
+
+    const res = await fetch(url, { headers: adminHeaders() });
+
+    const ct = res.headers.get("content-type") || "";
+
+    // Si vino HTML, lo mostramos cortito para diagnosticar
+    if (!ct.includes("application/json")) {
+      const txt = await res.text();
+      throw new Error("La API devolvió HTML (ruta incorrecta o backend no respondió JSON).");
     }
+
+    const data = await res.json();
+
+    if(!res.ok) throw new Error(data.detail || 'No se pudieron cargar las solicitudes');
+
+    solicitudes = Array.isArray(data.items) ? data.items : [];
+
+    render();
+
+    if (solicitudes.length===0){
+      renderEmpty(reqMode === "historicos" ? "No hay históricos." : "No hay pendientes.");
+    }
+
+    if (typeof renderCalendar === "function") renderCalendar();
+    if (selectedDayKey) selectDay(selectedDayKey);
+
+  }catch(e){
+    renderEmpty(e.message || 'No se pudieron cargar las solicitudes.');
   }
+}
+
 
   function render(){
     if (!isAdminView()) return;
@@ -795,7 +621,7 @@ function selectDay(date){
       const estado = (s.estado || 'pendiente').toLowerCase();
       const cls = estado === 'confirmado'
         ? 'aprobado'
-        : (estado === 'rechazado' ? 'rechazado' : 'pendiente');
+        : (estado === 'rechazado' ? 'rechazado' : (estado === 'historico' ? 'rechazado' : 'pendiente'));
       const texto = estado.charAt(0).toUpperCase() + estado.slice(1);
       const rowId = getId(s);
 
@@ -915,7 +741,6 @@ function selectDay(date){
   }
 
   async function eliminar(){
-    
     if (!selected || !token || !isAdminView()) return;
     if ((selected.estado||'').toLowerCase()!=='rechazado'){ toast('Solo se puede eliminar si está Rechazado'); return; }
     if (!confirm(`¿Eliminar la solicitud de "${selected.nombre_cliente}"? Esta acción no se puede deshacer.`)) return;
@@ -933,7 +758,6 @@ function selectDay(date){
     }catch(e){ toast(e.message || 'Error al eliminar'); }
   }
 
-  window.Admin = window.Admin || {};
   Object.assign(window.Admin, {
     login,
     logout: adminLogout,
@@ -957,17 +781,19 @@ function selectDay(date){
       if(inited || !hasAdmin()) return;
       inited=true;
 
-      adminLogout();
+      // ✅ RESTAURA sesión LOCAL (solo pestaña) si existía
+      if (!isSessionValid()) {
+        adminLogout();
+      } else {
+        token = "ui-session";
+        setAuthUI(true);
+        startExpiryTimer();
+        loadSolicitudes();
+      }
+
 
       document.getElementById('loginForm')
         ?.addEventListener('submit', (e)=>{ e.preventDefault(); login(); });
-
-      document.addEventListener('visibilitychange',()=>{
-        if(document.visibilityState==='visible') adminLogout('Por seguridad, iniciá sesión nuevamente.');
-      });
-      window.addEventListener('pageshow',(ev)=>{
-        if(ev.persisted) adminLogout('Por seguridad, iniciá sesión nuevamente.');
-      });
 
       byId('dispFecha')?.addEventListener('change', (e)=>{
         Admin.loadDisponibilidad(e.target.value);
@@ -1006,56 +832,60 @@ function selectDay(date){
     const panelDisp = document.getElementById('panelDisponibilidad');
     const tabCal = document.getElementById('tabCalendario');
     const panelCal = document.getElementById('panelCalendario');
+    const tabPend = byId('tabReqPend');
+    const tabHist = byId('tabReqHist');
+
+    tabPend?.addEventListener('click', async ()=>{
+      tabPend.classList.add('active');
+      tabHist?.classList.remove('active');
+      await loadSolicitudes("pending");
+    });
+
+    tabHist?.addEventListener('click', async ()=>{
+      tabHist.classList.add('active');
+      tabPend?.classList.remove('active');
+      await loadSolicitudes("historicos");
+    });
 
     if (!tabSol || !tabDisp || !tabla || !panelDisp) return;
 
-  const setActive = async (which) => {
-  // helpers: prender/apagar tabs
-    const setTab = (active) => {
-      tabSol?.classList.toggle('active', active === 'sol');
-      tabCal?.classList.toggle('active', active === 'cal');
-      tabDisp?.classList.toggle('active', active === 'disp');
-    };
+    const setActive = async (which) => {
+      const rs = byId('reqSwitch');
+      if (rs) rs.style.display = (token && which === 'sol') ? 'flex' : 'none';
 
-    // helpers: mostrar/ocultar paneles
-    const setPanel = (active) => {
-      // Solicitudes usa la tabla (tu UI actual)
-      if (tabla) tabla.style.display = (active === 'sol') ? 'table' : 'none';
+      const setTab = (active) => {
+        tabSol?.classList.toggle('active', active === 'sol');
+        tabCal?.classList.toggle('active', active === 'cal');
+        tabDisp?.classList.toggle('active', active === 'disp');
+      };
 
-      // Calendario es un panel aparte
-      if (panelCal) panelCal.style.display = (active === 'cal') ? 'block' : 'none';
+      const setPanel = (active) => {
+        if (tabla) tabla.style.display = (active === 'sol') ? 'table' : 'none';
+        if (panelCal) panelCal.style.display = (active === 'cal') ? 'block' : 'none';
+        if (panelDisp) panelDisp.style.display = (active === 'disp') ? 'block' : 'none';
+      };
 
-      // Disponibilidad es tu panel actual
-      if (panelDisp) panelDisp.style.display = (active === 'disp') ? 'block' : 'none';
-    };
+      setTab(which);
+      setPanel(which);
 
-    // 1) Set UI
-    setTab(which);
-    setPanel(which);
-
-    // 2) Acciones por vista
-    if (which === 'cal') {
-      // renderCalendar() es la función que te pasé para dibujar el mes
-      if (typeof renderCalendar === 'function') renderCalendar();
-      return;
-    }
-
-    if (which === 'disp') {
-      const df = byId('dispFecha');
-      if (df && !df.value) {
-        const today = new Date();
-        const yyyy = today.getFullYear();
-        const mm = String(today.getMonth() + 1).padStart(2, '0');
-        const dd = String(today.getDate()).padStart(2, '0');
-        df.value = `${yyyy}-${mm}-${dd}`;
+      if (which === 'cal') {
+        if (typeof renderCalendar === 'function') renderCalendar();
+        return;
       }
-      if (df?.value) await Admin.loadDisponibilidad(df.value);
-      return;
-    }
 
-  // 'sol' -> no hace falta nada extra
-};
-
+      if (which === 'disp') {
+        const df = byId('dispFecha');
+        if (df && !df.value) {
+          const today = new Date();
+          const yyyy = today.getFullYear();
+          const mm = String(today.getMonth() + 1).padStart(2, '0');
+          const dd = String(today.getDate()).padStart(2, '0');
+          df.value = `${yyyy}-${mm}-${dd}`;
+        }
+        if (df?.value) await Admin.loadDisponibilidad(df.value);
+        return;
+      }
+    };
 
     tabSol.addEventListener('click', ()=> setActive('sol'));
     tabCal.addEventListener('click', () => setActive('cal'));
@@ -1066,6 +896,45 @@ function selectDay(date){
 })();
 </script>
 
-  <script defer src="/static/spa.js"></script>
+<script>
+(function () {
+  const norm = (p) => {
+    p = (p || '/').trim();
+    p = p.replace(/\/+$/, '') || '/';          // saca trailing /
+    // soporta modo "archivos" por si cae en /admin.html
+    if (p.endsWith('.html')) p = '/' + p.replace('.html', '');
+    if (p === '/index') p = '/';
+    return p;
+  };
+
+  function setActive() {
+    const cur = norm(location.pathname);
+    document.querySelectorAll('.nav-links a').forEach(a => {
+      const target = norm(a.dataset.view || a.getAttribute('href'));
+      a.classList.toggle('active', target === cur);
+    });
+  }
+
+  // marca bien al cargar
+  setActive();
+
+  // marca bien cuando el SPA cambia URL
+  window.addEventListener('popstate', setActive);
+
+  // evita el “doble click” que te re-navega raro a Home
+  document.addEventListener('click', (e) => {
+    const a = e.target.closest('.nav-links a[data-view]');
+    if (!a) return;
+    const to = norm(a.dataset.view);
+    const cur = norm(location.pathname);
+    if (to === cur) e.preventDefault(); // si ya estás en /admin, no hagas nada
+    // si tu spa.js hace pushState, el popstate + setActive lo deja perfecto
+    setTimeout(setActive, 0);
+  });
+})();
+</script>
+
+
+<!-- ✅ NO cargar spa.js acá. Dejalo solo en index -->
 </body>
 </html>
