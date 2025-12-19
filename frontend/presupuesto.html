@@ -21,11 +21,12 @@
   <div class="nav-inner">
     <div class="brand">Fletes Larga Distancia</div>
 
-    <nav class="nav-links">
-      <a href="/" data-view="/">Inicio</a>
-      <a href="/presupuesto" data-view="/presupuesto">Presupuesto</a>
-      <a href="/admin" data-view="/admin">Admin</a>
-    </nav>
+    <div class="nav-links">
+      <a href="/"            data-view="inicio">Inicio</a>
+      <a href="/presupuesto" data-view="presupuesto">Presupuesto</a>
+      <a href="/admin"       data-view="admin">Admin</a>
+    </div>
+
 
   </div>
 </header>
@@ -519,13 +520,15 @@
 </script>
 <script>
 (function () {
-  const path = location.pathname.replace(/\/+$/, '') || '/';
-  document.querySelectorAll('.nav-links a').forEach(a => {
-    const href = a.getAttribute('href');
-    a.classList.toggle('active', href === path);
+  const page = document.body.dataset.page; // "inicio" | "presupuesto" | "admin"
+
+  document.querySelectorAll(".nav-links a").forEach(a => {
+    a.classList.toggle("active", a.dataset.view === page);
   });
 })();
 </script>
+
+
 
 </body>
 </html>

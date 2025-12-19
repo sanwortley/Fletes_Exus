@@ -47,109 +47,6 @@ a{
   padding:0 20px;
 }
 
-/* =========================================================
-   HEADER / NAV — UNIFICADO (INDEX = PRESUPUESTO)
-========================================================= */
-
-.nav{
-  position: sticky;
-  top:0;
-  z-index:50;
-  background:linear-gradient(
-    180deg,
-    #000 0%,
-    #000 85%,
-    rgba(0,0,0,.86) 100%
-  );
-  border-bottom:1px solid rgba(255,204,0,.35);
-  backdrop-filter: blur(6px);
-}
-
-.nav-inner{
-  max-width:1120px;
-  margin:0 auto;
-  padding:16px 24px;
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:12px;
-}
-
-.brand{
-  display:flex;
-  align-items:center;
-  gap:10px;
-  font-weight:700;
-  letter-spacing:.5px;
-  font-family:"DM Sans", Inter, system-ui, sans-serif;
-  color:var(--primary);
-  font-size:1.4rem;
-  white-space:nowrap;
-}
-
-.brand::before{
-  content:"";
-  width:10px;
-  height:10px;
-  border-radius:50%;
-  background:var(--primary);
-  box-shadow:0 0 12px rgba(255,204,0,.55);
-}
-
-.nav-links{
-  margin-left:auto;
-  display:flex;
-  align-items:center;
-  gap:10px;
-  flex-wrap:wrap;
-  justify-content:flex-end;
-}
-
-.nav-links a{
-  color:#fff;
-  text-decoration:none;
-  padding:10px 16px;
-  font-weight:700;
-  opacity:.95;
-  border-radius:999px;
-  border:1px solid rgba(255,204,0,.35);
-  background:transparent;
-  transition:.2s;
-}
-
-.nav-links a:hover{
-  opacity:1;
-  color:var(--primary);
-  background:rgba(255,204,0,.12);
-  box-shadow:0 0 0 2px rgba(255,204,0,.08);
-}
-
-.nav-links a.active{
-  opacity:1;
-  color:#111;
-  background:linear-gradient(180deg,var(--primary),var(--primary-2));
-  border-color:transparent;
-}
-
-/* botón logout / acciones */
-.btn-out{
-  background:transparent;
-  border:1px solid rgba(255,204,0,.35);
-  color:#fff;
-  padding:10px 16px;
-  border-radius:999px;
-  font-weight:800;
-  cursor:pointer;
-  transition:.2s;
-}
-
-.btn-out:hover{
-  color:var(--primary);
-  background:rgba(255,204,0,.12);
-  box-shadow:0 0 0 2px rgba(255,204,0,.08);
-}
-
-
 
 /* =========================================================
    BOTONES GENERALES
@@ -450,34 +347,6 @@ footer{
 }
 
 @media (max-width: 680px){
-  header{
-    padding:12px 14px;
-    gap:10px;
-  }
-
-  /* Logo/título */
-  header b{
-    font-size:1.15rem;
-    white-space:nowrap;
-  }
-
-  /* Nav pasa a 2 filas y no se rompe */
-  nav{
-    flex-wrap:wrap;
-    justify-content:flex-end;
-    gap:8px;
-  }
-
-  nav a{
-    margin:0;
-    padding:8px 10px;
-    font-size:14px;
-  }
-
-  .btn-out{
-    padding:8px 10px;
-    font-size:14px;
-  }
 
   .container{ padding:0 14px; }
 
@@ -506,30 +375,4 @@ footer{
 /* =========================================================
    RESPONSIVE HEADER (INDEX)
 ========================================================= */
-@media (max-width: 760px){
-
-  .nav-inner{
-    padding:12px 14px;
-    flex-wrap:wrap;
-    gap:10px;
-  }
-
-  .brand{
-    font-size:1.15rem;
-    flex:1 1 auto;
-  }
-
-  .nav-links{
-    width:100%;
-    justify-content:flex-start;
-    gap:8px;
-  }
-
-  .nav-links a,
-  .btn-out{
-    padding:9px 12px;
-    font-size:14px;
-    white-space:nowrap;
-  }
-}
 

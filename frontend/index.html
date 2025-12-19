@@ -14,16 +14,18 @@
   
 </head>
 
-<body>
+<body data-page="inicio">
+
 <header class="nav">
   <div class="nav-inner">
     <div class="brand">Fletes Larga Distancia</div>
 
-    <nav class="nav-links">
-      <a href="/" data-view="/">Inicio</a>
-      <a href="/presupuesto" data-view="/presupuesto">Presupuesto</a>
-      <a href="/admin" data-view="/admin">Admin</a>
-    </nav>
+    <div class="nav-links">
+      <a href="/"            data-view="inicio">Inicio</a>
+      <a href="/presupuesto" data-view="presupuesto">Presupuesto</a>
+      <a href="/admin"       data-view="admin">Admin</a>
+    </div>
+
 
   </div>
 </header>
@@ -34,7 +36,8 @@
     <section class="hero">
       <h1>Fletes y Mudanzas en Córdoba</h1>
       <p>Pequeña empresa familiar con atención inmediata, confiabilidad y puntualidad. Presupuesto fijo por viaje, sin importar distancia ni horas.</p>
-      <a href="/presupuesto" class="btn" data-view="/presupuesto">Calcular presupuesto</a>
+      <a href="/presupuesto" class="btn">Calcular presupuesto</a>
+
 
     </section>
 
@@ -444,41 +447,15 @@
   </script>
   <script>
   (function () {
-    const norm = (p) => {
-      p = (p || '/').trim();
-      p = p.replace(/\/+$/, '') || '/';          // saca trailing /
-      // soporta modo "archivos" por si cae en /admin.html
-      if (p.endsWith('.html')) p = '/' + p.replace('.html', '');
-      if (p === '/index') p = '/';
-      return p;
-    };
+    const page = document.body.dataset.page; // "inicio" | "presupuesto" | "admin"
 
-    function setActive() {
-      const cur = norm(location.pathname);
-      document.querySelectorAll('.nav-links a').forEach(a => {
-        const target = norm(a.dataset.view || a.getAttribute('href'));
-        a.classList.toggle('active', target === cur);
-      });
-    }
-
-    // marca bien al cargar
-    setActive();
-
-    // marca bien cuando el SPA cambia URL
-    window.addEventListener('popstate', setActive);
-
-    // evita el “doble click” que te re-navega raro a Home
-    document.addEventListener('click', (e) => {
-      const a = e.target.closest('.nav-links a[data-view]');
-      if (!a) return;
-      const to = norm(a.dataset.view);
-      const cur = norm(location.pathname);
-      if (to === cur) e.preventDefault(); // si ya estás en /admin, no hagas nada
-      // si tu spa.js hace pushState, el popstate + setActive lo deja perfecto
-      setTimeout(setActive, 0);
+    document.querySelectorAll(".nav-links a").forEach(a => {
+      a.classList.toggle("active", a.dataset.view === page);
     });
   })();
   </script>
+
+
 
 
   <script defer src="/static/spa.js"></script>

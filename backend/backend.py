@@ -356,6 +356,46 @@ def _distance_time_fallback(origen: str, destino: str) -> Dict[str, Any]:
     tiempo_viaje_min = int(round((dist_km / max(VEL_KMH, 1)) * 60))
     return {"dist_km": round(dist_km, 2), "tiempo_viaje_min": int(tiempo_viaje_min)}
 
+AR_TZ = timezone(timedelta(hours=-3))
+
+def _today_ar_str() -> str:
+    return datetime.now(AR_TZ).date().isoformat()
+
+def _purge_expired_unconfirmed():
+    hoy = _today_ar_str()
+
+    expired = list(quotes.find(
+        {"estado": {"$in": ["sent", "rechazado"]}, "fecha_turno": {"$lt": hoy}},
+        {"_id": 1}
+    ))
+
+    if not expired:
+        return 0
+
+    ids = [d["_id"] for d in expired]
+    quotes.delete_many({"_id": {"$in": ids}})
+    return len(ids)
+
+
+
+def _marcar_realizados():
+    hoy = _today_ar_str()
+
+    # Confirmado + fecha_turno pasada => Realizado
+    quotes.update_many(
+        {
+            "estado": "confirmado",
+            "fecha_turno": {"$lt": hoy}
+        },
+        {
+            "$set": {
+                "estado": "realizado",
+                "realizado_en": datetime.now(timezone.utc)
+            }
+        }
+    )
+
+
 def calcular_ruta(origen: str, destino: str) -> Dict[str, Any]:
     used = None
     res = None
@@ -418,8 +458,6 @@ def calcular_costos(
         + costo_tiempo
         + costo_combustible
         + mantenimiento
-        + costo_chofer_parcial
-        + costo_admin_parcial
         + peajes_total
         + viaticos
     )
@@ -653,24 +691,59 @@ def admin_get_availability(month: str = Query(..., description="YYYY-MM"), user=
 
 @app.post("/api/availability/day")
 def upsert_availability_day(body: AvailabilityDayIn, user=Depends(require_api_key)):
-    """
-    Admin: crea/actualiza un día:
-      { "date":"YYYY-MM-DD", "enabled": true, "slots":["09:00","10:00"] }
-    """
+
     if not body.date or not isinstance(body.slots, list):
         raise HTTPException(status_code=400, detail="Se requiere 'date' y 'slots' (lista)")
+
+    # 🔒 1) Buscar horarios ya reservados o confirmados
+    ocupados = set(
+        b["time"] for b in bookings.find(
+            {
+                "date": body.date,
+                "status": {"$in": ["reserved", "confirmed"]}
+            },
+            {"_id": 0, "time": 1}
+        )
+    )
+
+    # 🔒 2) Filtrar slots enviados por el admin
+    slots_validos = [s for s in body.slots if s not in ocupados]
 
     availability.update_one(
         {"date": body.date},
         {"$set": {
             "date": body.date,
             "enabled": bool(body.enabled),
-            "slots": body.slots,
+            "slots": slots_validos,
             "updated_at": datetime.now(timezone.utc),
         }},
         upsert=True
     )
-    return {"ok": True}
+
+    return {
+        "ok": True,
+        "bloqueados": list(ocupados),
+        "slots_guardados": slots_validos
+    }
+
+
+@app.get("/api/admin/bookings/day")
+def admin_get_bookings_day(date: str = Query(..., description="YYYY-MM-DD"), user=Depends(require_api_key)):
+    """
+    Devuelve horarios ocupados (reserved/confirmed) para bloquearlos en el panel de disponibilidad.
+    """
+    if not date or len(date) != 10:
+        raise HTTPException(status_code=400, detail="date inválida. Usar YYYY-MM-DD")
+
+    ocupados = sorted(list(set(
+        b["time"] for b in bookings.find(
+            {"date": date, "status": {"$in": ["reserved", "confirmed"]}},
+            {"_id": 0, "time": 1}
+        )
+        if b.get("time")
+    )))
+
+    return {"ok": True, "date": date, "ocupados": ocupados}
 
 # =========================
 # Rutas core
@@ -999,43 +1072,34 @@ def listar_requests(
     status: str = Query(default="pending", description="pending | historicos | all"),
     user=Depends(require_api_key)
 ):
-    """
-    pending: fecha_turno >= hoy
-    historicos: fecha_turno < hoy
-    all: todo
-    """
+    # 1) marcar realizados (confirmados vencidos)
+    _marcar_realizados()
 
-    # timezone AR (Córdoba): UTC-3
-    now_ar = datetime.now(timezone(timedelta(hours=-3)))
-    today_str = now_ar.date().isoformat()  # "YYYY-MM-DD"
-
+    # 2) hoy AR (YYYY-MM-DD)
+    today_str = _today_ar_str()
     st = (status or "pending").strip().lower()
 
-    # usamos fecha_turno si existe; si no, caemos a "fecha" (por compat)
-    # -> si un doc no tiene ninguna fecha, lo mandamos a pending por defecto.
-    date_field = "fecha_turno"
-
-    base_filter: dict = {}
+    # 3) autolimpieza: borrar NO confirmados vencidos
+    #    (sent o rechazado) -> se borran solos cuando ya pasó la fecha_turno
+    #    ⚠️ NO liberar horarios acá (para Opción A)
+    quotes.delete_many({
+        "estado": {"$in": ["sent", "rechazado"]},
+        "fecha_turno": {"$lt": today_str}
+    })
 
     if st == "pending":
         base_filter = {
+            "estado": {"$in": ["sent", "rechazado", "confirmado"]},
             "$or": [
-                {date_field: {"$gte": today_str}},
-                {date_field: {"$exists": False}},
-                {date_field: None},
-                {"fecha": {"$gte": today_str}},          # fallback
-                {"fecha": {"$exists": False}},
-                {"fecha": None},
+                {"fecha_turno": {"$gte": today_str}},
+                {"fecha_turno": {"$exists": False}},
+                {"fecha_turno": None},
             ]
         }
 
     elif st == "historicos":
-        base_filter = {
-            "$or": [
-                {date_field: {"$lt": today_str}},
-                {"fecha": {"$lt": today_str}},           # fallback
-            ]
-        }
+        # ✅ Solo los ya realizados (o si querés también rechazados viejos, pero vos no)
+        base_filter = {"estado": "realizado"}
 
     elif st == "all":
         base_filter = {}
@@ -1048,8 +1112,6 @@ def listar_requests(
         items.append(_serialize_quote(doc))
 
     return {"items": items, "status": st, "today": today_str}
-
-
 
 @app.post("/api/requests/{quote_id}/confirm")
 def admin_confirmar(quote_id: str, background: BackgroundTasks, user=Depends(require_api_key)):
@@ -1087,8 +1149,15 @@ def admin_rechazar(quote_id: str, user=Depends(require_api_key)):
         _id = ObjectId(quote_id)
     except Exception:
         raise HTTPException(status_code=400, detail="ID inválido")
-    if quotes.update_one({"_id": _id}, {"$set": {"estado": "rechazado"}}).matched_count == 0:
+
+    updated = quotes.update_one(
+        {"_id": _id},
+        {"$set": {"estado": "rechazado", "updated_at": datetime.utcnow()}}
+    )
+
+    if updated.matched_count == 0:
         raise HTTPException(status_code=404, detail="Presupuesto no encontrado")
+
     return {"message": "Presupuesto rechazado"}
 
 @app.delete("/api/requests/{quote_id}")
@@ -1101,9 +1170,6 @@ def admin_eliminar(quote_id: str, user=Depends(require_api_key)):
     doc = quotes.find_one({"_id": _id})
     if not doc:
         raise HTTPException(status_code=404, detail="Presupuesto no encontrado")
-
-    if (doc.get("estado") or "").lower() != "rechazado":
-        raise HTTPException(status_code=400, detail="Solo se puede eliminar si está Rechazado")
 
     # ✅ recuperar turno antes de borrar
     ft = doc.get("fecha_turno")
@@ -1129,6 +1195,7 @@ def admin_eliminar(quote_id: str, user=Depends(require_api_key)):
         bookings.delete_many({"date": ft, "time": ht, "status": {"$in": ["reserved", "confirmed"]}})
 
     return {"message": "Eliminado y turno liberado" if (ft and ht) else "Eliminado"}
+
 
 # ✅ 2) recién DESPUÉS tu catch-all para el SPA
 @app.get("/{path:path}", include_in_schema=False)
