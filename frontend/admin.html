@@ -382,7 +382,8 @@
 
       function ensureDateModel(dateStr) {
         if (!dateStr) return null;
-        dispState.byDate[dateStr] = dispState.byDate[dateStr] || { enabled: false, slots: {} };
+        // ENABLED by default
+        dispState.byDate[dateStr] = dispState.byDate[dateStr] || { enabled: true, slots: {} };
         return dispState.byDate[dateStr];
       }
 
@@ -423,10 +424,10 @@
 
         DEFAULT_SLOTS.forEach(h => {
           const isLocked = locked.has(h);
-          const on = !!model.slots[h];
+          const on = true; // Por defecto ON en la vista admin para que se vean todos verdes y habilitados por defecto.
 
           const b = document.createElement('div');
-          b.className = "slot " + (on ? "on" : "off") + (isLocked ? " locked" : "");
+          b.className = "slot " + (model.slots[h] === false ? "off" : "on") + (isLocked ? " locked" : "");
           b.textContent = h;
           b.dataset.hour = h;
 
@@ -435,7 +436,8 @@
               toast("Ese horario ya está en uso (reservado/confirmado).");
               return;
             }
-            model.slots[h] = !model.slots[h];
+            // Si es undefined (default), pasamos a false (off). Si es false, a true (on).
+            model.slots[h] = (model.slots[h] === false) ? true : false;
             renderSlots(dateStr);
           });
 
@@ -461,7 +463,7 @@
             const d = it.date;
             if (!d) return;
             dispState.byDate[d] = {
-              enabled: !!it.enabled,
+              enabled: (it.enabled !== undefined) ? !!it.enabled : true,
               slots: (Array.isArray(it.slots) ? it.slots : []).reduce((acc, h) => { acc[h] = true; return acc; }, {})
             };
           });

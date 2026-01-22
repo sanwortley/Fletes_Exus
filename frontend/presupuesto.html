@@ -1,8 +1,9 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Calcular presupuesto - Fletes Larga Distancia</title>
 
   <!-- Ocultar ruta visible (si no es "/") -->
@@ -10,26 +11,27 @@
 
   <!-- Tipografías -->
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=DM+Sans:wght@500;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/static/css/presu.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=DM+Sans:wght@500;700&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="/static/css/presu.css?v=2">
   <link rel="stylesheet" href="/static/css/header.css">
- 
+
 </head>
 
 <body data-page="presupuesto">
- <header class="nav">
-  <div class="nav-inner">
-    <div class="brand">Fletes Larga Distancia</div>
+  <header class="nav">
+    <div class="nav-inner">
+      <div class="brand">Fletes Larga Distancia</div>
 
-    <div class="nav-links">
-      <a href="/"            data-view="inicio">Inicio</a>
-      <a href="/presupuesto" data-view="presupuesto">Presupuesto</a>
-      <a href="/admin"       data-view="admin">Admin</a>
+      <div class="nav-links">
+        <a href="/" data-view="inicio">Inicio</a>
+        <a href="/presupuesto" data-view="presupuesto">Presupuesto</a>
+        <a href="/admin" data-view="admin">Admin</a>
+      </div>
+
+
     </div>
-
-
-  </div>
-</header>
+  </header>
 
 
   <main class="container">
@@ -74,12 +76,12 @@
             <input id="fecha" type="date" required>
           </div>
 
-          <div class="full">
+          <div class="full calendar-row">
             <label>Horario disponible</label>
             <div id="calendarBox" class="card" style="padding:14px">
-            <div id="calendarDays" class="help">Elegí una fecha arriba.</div>
-            <div id="timeSlots" style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap"></div>
-          </div>
+              <div id="calendarDays" class="help">Elegí una fecha arriba.</div>
+              <div id="timeSlots" class="slots-grid"></div>
+            </div>
 
             <div class="help">Elegí un día y luego un horario disponible.</div>
           </div>
@@ -136,184 +138,201 @@
   <footer>
     <div class="footer-title">Contactanos</div>
     <div class="social">
-      <a href="https://wa.me/5493516678989?text=Hola%20Javier,%20necesito%20un%20presupuesto" target="_blank" title="WhatsApp" aria-label="WhatsApp">
-        <svg viewBox="0 0 32 32" role="img" aria-hidden="true"><path d="M16 3C9.372 3 4 8.372 4 15c0 2.115.55 4.103 1.514 5.837L4 29l8.377-1.472A11.91 11.91 0 0 0 16 27c6.628 0 12-5.372 12-12S22.628 3 16 3zm0 2c5.523 0 10 4.477 10 10s-4.477 10-10 10a9.9 9.9 0 0 1-3.987-.832l-.284-.12-.298.052-4.2.738.748-4.104.053-.29-.143-.257A9.9 9.9 0 0 1 6 15c0-5.523 4.477-10 10-10zm5.053 13.873c-.275-.138-1.63-.806-1.875-.898-.244-.092-.422-.138-.6.138-.18.275-.694.956-.85 1.15-.156.193-.312.206-.575.07-.275-.138-1.158-.426-2.213-1.362-.818-.72-1.373-1.61-1.534-1.894-.162-.281-.02-.436.118-.593.122-.122.275-.318.412-.48.138-.162.18-.275.275-.468.092-.193.046-.35-.023-.504-.07-.156-.6-1.448-.825-1.984-.218-.52-.444-.448-.606-.456-.156-.008-.336-.01-.516-.01-.18 0-.47.068-.716.34-.244.275-.932.91-.932 2.222 0 1.312.956 2.58 1.09 2.758.138.18 2.01 3.07 4.85 4.284.68.296 1.21.472 1.63.604.686.218 1.312.187 1.81.114.552-.082 1.69-.69 1.944-1.355.244-.664.244-1.238.172-1.35-.07-.11-.26-.18-.55-.32z"/></svg>
+      <a href="https://wa.me/5493517552167?text=Hola%20Javier,%20necesito%20un%20presupuesto" target="_blank"
+        title="WhatsApp" aria-label="WhatsApp">
+        <svg viewBox="0 0 32 32" role="img" aria-hidden="true">
+          <path
+            d="M16 3C9.372 3 4 8.372 4 15c0 2.115.55 4.103 1.514 5.837L4 29l8.377-1.472A11.91 11.91 0 0 0 16 27c6.628 0 12-5.372 12-12S22.628 3 16 3zm0 2c5.523 0 10 4.477 10 10s-4.477 10-10 10a9.9 9.9 0 0 1-3.987-.832l-.284-.12-.298.052-4.2.738.748-4.104.053-.29-.143-.257A9.9 9.9 0 0 1 6 15c0-5.523 4.477-10 10-10zm5.053 13.873c-.275-.138-1.63-.806-1.875-.898-.244-.092-.422-.138-.6.138-.18.275-.694.956-.85 1.15-.156.193-.312.206-.575.07-.275-.138-1.158-.426-2.213-1.362-.818-.72-1.373-1.61-1.534-1.894-.162-.281-.02-.436.118-.593.122-.122.275-.318.412-.48.138-.162.18-.275.275-.468.092-.193.046-.35-.023-.504-.07-.156-.6-1.448-.825-1.984-.218-.52-.444-.448-.606-.456-.156-.008-.336-.01-.516-.01-.18 0-.47.068-.716.34-.244.275-.932.91-.932 2.222 0 1.312.956 2.58 1.09 2.758.138.18 2.01 3.07 4.85 4.284.68.296 1.21.472 1.63.604.686.218 1.312.187 1.81.114.552-.082 1.69-.69 1.944-1.355.244-.664.244-1.238.172-1.35-.07-.11-.26-.18-.55-.32z" />
+        </svg>
       </a>
-      <a href="https://www.instagram.com/fletes_largadistancia" target="_blank" title="Instagram" aria-label="Instagram">
-        <svg viewBox="0 0 24 24" role="img" aria-hidden="true"><path d="M12 2.2c3.2 0 3.6 0 4.9.1 1.2.1 1.9.2 2.3.4.6.2 1 .4 1.5.9.5.5.7.9.9 1.5.2.4.3 1.1.4 2.3.1 1.3.1 1.7.1 4.9s0 3.6-.1 4.9c-.1 1.2-.2 1.9-.4 2.3-.2.6-.4 1-.9 1.5-.5.5-.9.7-1.5.9-.4.2-1.1.3-2.3.4-1.3.1-1.7.1-4.9.1s-3.6 0-4.9-.1c-1.2-.1-1.9-.2-2.3-.4-.6-.2-1-.4-1.5-.9-.5-.5-.7-.9-.9-1.5-.2-.4-.3-1.1-.4-2.3C2.2 15.6 2.2 15.2 2.2 12s0-3.6.1-4.9c.1-1.2.2-1.9.4-2.3.2-.6.4-1 .9-1.5.5-.5.9-.7 1.5-.9.4-.2 1.1-.3 2.3-.4C8.4 2.2 8.8 2.2 12 2.2m0-1.7C8.7.5 8.3.5 7 .6 5.7.7 4.8.9 4.1 1.2c-.8.3-1.5.7-2.2 1.4C1.3 3.2.9 3.9.6 4.7c-.3.7-.5 1.6-.6 2.9C0 8.8 0 9.3 0 12s0 3.2.1 4.5c.1 1.3.3 2.2.6 2.9.3.8.7 1.5 1.4 2.2.7.7 1.4 1.1 2.2 1.4.7.3 1.6.5 2.9.6 1.3.1 1.8.1 4.5.1s3.2 0 4.5-.1c1.3-.1 2.2-.3 2.9-.6.8-.3 1.5-.7 2.2-1.4.7-.7 1.1-1.4 1.4-2.2.3-.7.5-1.6.6-2.9.1-1.3.1-1.8.1-4.5s0-3.2-.1-4.5c-.1-1.3-.3-2.2-.6-2.9-.3-.8-.7-1.5-1.4-2.2-.7-.7-1.4-1.1-2.2-1.4-.7-.3-1.6-.5-2.9-.6C15.2.5 14.7.5 12 .5z"/><path d="M12 5.8A6.2 6.2 0 1 0 12 18.2 6.2 6.2 0 1 0 12 5.8zm0 10.2A4 4 0 1 1 12 8a4 4 0 0 1 0 8z"/><circle cx="18.4" cy="5.6" r="1.4"/></svg>
+      <a href="https://www.instagram.com/fletes_largadistancia" target="_blank" title="Instagram"
+        aria-label="Instagram">
+        <svg viewBox="0 0 24 24" role="img" aria-hidden="true">
+          <path
+            d="M12 2.2c3.2 0 3.6 0 4.9.1 1.2.1 1.9.2 2.3.4.6.2 1 .4 1.5.9.5.5.7.9.9 1.5.2.4.3 1.1.4 2.3.1 1.3.1 1.7.1 4.9s0 3.6-.1 4.9c-.1 1.2-.2 1.9-.4 2.3-.2.6-.4 1-.9 1.5-.5.5-.9.7-1.5.9-.4.2-1.1.3-2.3.4-1.3.1-1.7.1-4.9.1s-3.6 0-4.9-.1c-1.2-.1-1.9-.2-2.3-.4-.6-.2-1-.4-1.5-.9-.5-.5-.7-.9-.9-1.5-.2-.4-.3-1.1-.4-2.3C2.2 15.6 2.2 15.2 2.2 12s0-3.6.1-4.9c.1-1.2.2-1.9.4-2.3.2-.6.4-1 .9-1.5.5-.5.9-.7 1.5-.9.4-.2 1.1-.3 2.3-.4C8.4 2.2 8.8 2.2 12 2.2m0-1.7C8.7.5 8.3.5 7 .6 5.7.7 4.8.9 4.1 1.2c-.8.3-1.5.7-2.2 1.4C1.3 3.2.9 3.9.6 4.7c-.3.7-.5 1.6-.6 2.9C0 8.8 0 9.3 0 12s0 3.2.1 4.5c.1 1.3.3 2.2.6 2.9.3.8.7 1.5 1.4 2.2.7.7 1.4 1.1 2.2 1.4.7.3 1.6.5 2.9.6 1.3.1 1.8.1 4.5.1s3.2 0 4.5-.1c1.3-.1 2.2-.3 2.9-.6.8-.3 1.5-.7 2.2-1.4.7-.7 1.1-1.4 1.4-2.2.3-.7.5-1.6.6-2.9.1-1.3.1-1.8.1-4.5s0-3.2-.1-4.5c-.1-1.3-.3-2.2-.6-2.9-.3-.8-.7-1.5-1.4-2.2-.7-.7-1.4-1.1-2.2-1.4-.7-.3-1.6-.5-2.9-.6C15.2.5 14.7.5 12 .5z" />
+          <path d="M12 5.8A6.2 6.2 0 1 0 12 18.2 6.2 6.2 0 1 0 12 5.8zm0 10.2A4 4 0 1 1 12 8a4 4 0 0 1 0 8z" />
+          <circle cx="18.4" cy="5.6" r="1.4" />
+        </svg>
       </a>
-      <a href="tel:+5493516678989" title="Llamar" aria-label="Teléfono">
-        <svg viewBox="0 0 24 24" role="img" aria-hidden="true"><path d="M6.6 10.8a15.1 15.1 0 0 0 6.6 6.6l2.2-2.2c.3-.3.8-.4 1.2-.2 1.3.5 2.7.8 4.1.8.7 0 1.2.5 1.2 1.2V21c0 .7-.5 1.2-1.2 1.2C10.4 22.2 1.8 13.6 1.8 2.4 1.8 1.7 2.3 1.2 3 1.2H6c.7 0 1.2.5 1.2 1.2 0 1.4.3 2.8.8 4.1.1.4 0 .9-.3 1.2L6.6 10.8z"/></svg>
+      <a href="tel:+5493517552167" title="Llamar" aria-label="Teléfono">
+        <svg viewBox="0 0 24 24" role="img" aria-hidden="true">
+          <path
+            d="M6.6 10.8a15.1 15.1 0 0 0 6.6 6.6l2.2-2.2c.3-.3.8-.4 1.2-.2 1.3.5 2.7.8 4.1.8.7 0 1.2.5 1.2 1.2V21c0 .7-.5 1.2-1.2 1.2C10.4 22.2 1.8 13.6 1.8 2.4 1.8 1.7 2.3 1.2 3 1.2H6c.7 0 1.2.5 1.2 1.2 0 1.4.3 2.8.8 4.1.1.4 0 .9-.3 1.2L6.6 10.8z" />
+        </svg>
       </a>
     </div>
     <div class="footer-info">
-      © 2025 Fletes Larga Distancia · Córdoba, Argentina<br/>
+      © 2025 Fletes Larga Distancia · Córdoba, Argentina<br />
       Atención rápida, confiable y con presupuesto inmediato.
     </div>
   </footer>
 
-<script>
-  (function(){
-    // 👇 Evita doble declaración en SPA
-    globalThis.API_BASE = globalThis.API_BASE || (
-      (location.hostname === 'localhost' || location.hostname === '127.0.0.1')
-        ? 'http://127.0.0.1:8000'
-        : 'https://fletes-exus.onrender.com'
-    );
+  <script>
+    (function () {
+      // 👇 Evita doble declaración en SPA
+      globalThis.API_BASE = globalThis.API_BASE || (
+        (location.hostname === 'localhost' || location.hostname === '127.0.0.1')
+          ? 'http://127.0.0.1:8000'
+          : 'https://fletes-exus.onrender.com'
+      );
 
-    let cleanupTimer = null;
-    let cleanupInterval = null;
+      let cleanupTimer = null;
+      let cleanupInterval = null;
 
-    function resetForm() {
-      ["nombre","tel","origen","destino","fecha"].forEach(id=>{
-        const el = document.getElementById(id);
-        if (el) el.value = "";
-      });
-      const tipo = document.getElementById("tipo"); if (tipo) tipo.value = "mudanza";
-      const chk  = document.getElementById("ayudante"); if (chk) chk.checked = false;
+      // ✅ Evitar fechas pasadas
+      const todayVal = new Date().toISOString().split("T")[0];
+      document.getElementById("fecha")?.setAttribute("min", todayVal);
 
-      const msg = document.getElementById("msg"); if (msg) { msg.textContent = ""; msg.classList.remove("error"); }
-      const out = document.getElementById("out"); if (out) { out.style.display="none"; out.innerHTML=""; }
+      function resetForm() {
+        ["nombre", "tel", "origen", "destino", "fecha"].forEach(id => {
+          const el = document.getElementById(id);
+          if (el) el.value = "";
+        });
+        const tipo = document.getElementById("tipo"); if (tipo) tipo.value = "mudanza";
+        const chk = document.getElementById("ayudante"); if (chk) chk.checked = false;
 
-      clearTimeout(cleanupTimer);
-      clearInterval(cleanupInterval);
-      document.getElementById('cleanupTicker')?.remove();
-    }
+        const msg = document.getElementById("msg"); if (msg) { msg.textContent = ""; msg.classList.remove("error"); }
+        const out = document.getElementById("out"); if (out) { out.style.display = "none"; out.innerHTML = ""; }
 
-    function scheduleCleanup(seconds = 30) {
-      clearTimeout(cleanupTimer);
-      clearInterval(cleanupInterval);
-      document.getElementById('cleanupTicker')?.remove();
-
-      const cw = document.getElementById('contactWrap');
-      if (!cw) return;
-
-      const span = document.createElement('span');
-      span.className = 'help';
-      span.id = 'cleanupTicker';
-      span.style.marginLeft = '8px';
-      let left = seconds;
-      span.textContent = `La página se reinicia en ${left}s`;
-      cw.appendChild(span);
-
-      cleanupInterval = setInterval(() => {
-        left -= 1;
-        if (left <= 0) clearInterval(cleanupInterval);
-        span.textContent = `La página se reinicia en ${Math.max(left,0)}s`;
-      }, 1000);
-
-      cleanupTimer = setTimeout(resetForm, seconds * 1000);
-    }
-
-    const requiredIds = ["nombre","tel","origen","destino","fecha"];
-    const $ = (id)=>document.getElementById(id);
-
-    function clearMsg(){
-      const msg = $("msg");
-      if(!msg) return;
-      msg.textContent = "";
-      msg.classList.remove("error");
-    }
-
-    function validateForm(){
-      clearMsg();
-      let ok = true, first = null;
-      requiredIds.forEach(id=>{
-        const el = $(id);
-        const val = (id === "fecha") ? el?.value : (el?.value || "").trim();
-        if(!val){
-          ok = false;
-          el?.classList.add("invalid");
-          if(!first) first = el;
-        }else{
-          el?.classList.remove("invalid");
-        }
-      });
-      if (!selectedDate || !selectedTime) {
-        ok = false;
-        const msg = document.getElementById("msg");
-        if (msg) {
-          msg.classList.add("error");
-        }
+        clearTimeout(cleanupTimer);
+        clearInterval(cleanupInterval);
+        document.getElementById('cleanupTicker')?.remove();
       }
-      return ok;
-    }
 
-    requiredIds.forEach(id=>{
-      $(id)?.addEventListener("input", (e)=>{
-        e.target.classList.remove("invalid");
+      function scheduleCleanup(seconds = 30) {
+        clearTimeout(cleanupTimer);
+        clearInterval(cleanupInterval);
+        document.getElementById('cleanupTicker')?.remove();
+
+        const cw = document.getElementById('contactWrap');
+        if (!cw) return;
+
+        const span = document.createElement('span');
+        span.className = 'help';
+        span.id = 'cleanupTicker';
+        span.style.marginLeft = '8px';
+        let left = seconds;
+        span.textContent = `La página se reinicia en ${left}s`;
+        cw.appendChild(span);
+
+        cleanupInterval = setInterval(() => {
+          left -= 1;
+          if (left <= 0) clearInterval(cleanupInterval);
+          span.textContent = `La página se reinicia en ${Math.max(left, 0)}s`;
+        }, 1000);
+
+        cleanupTimer = setTimeout(resetForm, seconds * 1000);
+      }
+
+      const requiredIds = ["nombre", "tel", "origen", "destino", "fecha"];
+      const $ = (id) => document.getElementById(id);
+
+      function clearMsg() {
+        const msg = $("msg");
+        if (!msg) return;
+        msg.textContent = "";
+        msg.classList.remove("error");
+      }
+
+      function validateForm() {
         clearMsg();
+        let ok = true, first = null;
+        requiredIds.forEach(id => {
+          const el = $(id);
+          const val = (id === "fecha") ? el?.value : (el?.value || "").trim();
+          if (!val) {
+            ok = false;
+            el?.classList.add("invalid");
+            if (!first) first = el;
+          } else {
+            el?.classList.remove("invalid");
+          }
+        });
+        if (!selectedDate || !selectedTime) {
+          ok = false;
+          const msg = document.getElementById("msg");
+          if (msg) {
+            msg.classList.add("error");
+          }
+        }
+        return ok;
+      }
+
+      requiredIds.forEach(id => {
+        $(id)?.addEventListener("input", (e) => {
+          e.target.classList.remove("invalid");
+          clearMsg();
+        });
       });
-    });
 
-    // ===== MODAL =====
-    const modal = $('modalConds');
+      // ===== MODAL =====
+      const modal = $('modalConds');
 
-    $('btnCalc')?.addEventListener('click', (ev)=>{
-      ev.preventDefault();
-      if(!validateForm()) return;
-      modal?.classList.add('open');
-    });
-
-    $('btnCancelar')?.addEventListener('click', (ev)=>{
-      ev.preventDefault();
-      modal?.classList.remove('open');
-    });
-
-    $('btnAceptar')?.addEventListener('click', (ev)=>{
-      ev.preventDefault();
-      modal?.classList.remove('open');
-      runCalc();
-    });
-
-    async function postJSON(url, payload){
-      const res = await fetch(url, {
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body: JSON.stringify(payload||{})
+      $('btnCalc')?.addEventListener('click', (ev) => {
+        ev.preventDefault();
+        if (!validateForm()) return;
+        modal?.classList.add('open');
       });
-      const j = await res.json().catch(()=> ({}));
-      if(!res.ok) throw new Error(j.detail || 'Error de servidor');
-      return j;
-    }
 
-    async function runCalc(){
-      clearTimeout(cleanupTimer);
-      clearInterval(cleanupInterval);
-      document.getElementById('cleanupTicker')?.remove();
+      $('btnCancelar')?.addEventListener('click', (ev) => {
+        ev.preventDefault();
+        modal?.classList.remove('open');
+      });
 
-      const data = {
-        nombre: $("nombre")?.value?.trim(),
-        telefono: $("tel")?.value?.trim(),
-        tipo_carga: $("tipo")?.value,
-        origen: $("origen")?.value?.trim(),
-        destino: $("destino")?.value?.trim(),
-        fecha: $("fecha")?.value,
-        ayudante: $("ayudante")?.checked,
-        accepted_terms: true,
-        accepted_terms_at: new Date().toISOString(),
-        fecha_turno: selectedDate,
-        hora_turno: selectedTime
-      };
+      $('btnAceptar')?.addEventListener('click', (ev) => {
+        ev.preventDefault();
+        modal?.classList.remove('open');
+        runCalc();
+      });
 
-      const msg = document.getElementById('msg');
-      if (msg) msg.textContent = "Calculando...";
+      async function postJSON(url, payload) {
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload || {})
+        });
+        const j = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(j.detail || 'Error de servidor');
+        return j;
+      }
 
-      try{
-        const resp = await postJSON(`${API_BASE}/api/quote`, data);
-        const q = resp.quote || resp;
+      async function runCalc() {
+        clearTimeout(cleanupTimer);
+        clearInterval(cleanupInterval);
+        document.getElementById('cleanupTicker')?.remove();
 
-        const totalVal     = q?.monto_estimado ?? 0;
-        const estadoVal    = (q?.estado ?? "preview").toString();
-        const origenShow   = q?.origen ?? data.origen;
-        const destinoShow  = q?.destino ?? data.destino;
+        const data = {
+          nombre: $("nombre")?.value?.trim(),
+          telefono: $("tel")?.value?.trim(),
+          tipo_carga: $("tipo")?.value,
+          origen: $("origen")?.value?.trim(),
+          destino: $("destino")?.value?.trim(),
+          fecha: $("fecha")?.value,
+          ayudante: $("ayudante")?.checked,
+          accepted_terms: true,
+          accepted_terms_at: new Date().toISOString(),
+          fecha_turno: selectedDate,
+          hora_turno: selectedTime
+        };
 
-        const fmt = (n)=>Number(n||0).toLocaleString('es-AR');
+        const msg = document.getElementById('msg');
+        if (msg) msg.textContent = "Calculando...";
 
-        const out = document.getElementById('out');
-        if (out){
-          out.style.display = 'block';
-          out.innerHTML = `
+        try {
+          const resp = await postJSON(`${API_BASE}/api/quote`, data);
+          const q = resp.quote || resp;
+
+          const totalVal = q?.monto_estimado ?? 0;
+          const estadoVal = (q?.estado ?? "preview").toString();
+          const origenShow = q?.origen ?? data.origen;
+          const destinoShow = q?.destino ?? data.destino;
+
+          const fmt = (n) => Number(n || 0).toLocaleString('es-AR');
+
+          const out = document.getElementById('out');
+          if (out) {
+            out.style.display = 'block';
+            out.innerHTML = `
             <h3>Resultado</h3>
             <p><b>Origen:</b> ${origenShow} &nbsp;→&nbsp; <b>Destino:</b> ${destinoShow}</p>
             <div class="total">Total estimado: $ ${fmt(totalVal)}</div>
@@ -330,205 +349,252 @@
               No mostramos el detalle interno. El profesional recibirá tu solicitud y se pondrá en contacto.
             </p>
           `;
-        }
-
-        if (msg) {
-          msg.textContent = "Presupuesto calculado.";
-          msg.classList.remove("error");
-        }
-
-        const btnEnviar = document.getElementById('btnEnviar');
-        const cw = document.getElementById('contactWrap');
-
-        btnEnviar?.addEventListener('click', async () => {
-          if (btnEnviar.dataset.busy === "1") return;
-          btnEnviar.dataset.busy = "1";
-          btnEnviar.disabled = true;
-
-          const oldText = btnEnviar.textContent;
-          btnEnviar.textContent = "Enviando…";
-
-          try {
-            await postJSON(`${API_BASE}/api/quote/send`, data);
-            if (cw) cw.innerHTML = `<p class="help" style="margin:6px 0">¡Listo! Se envió tu presupuesto.</p>`;
-            scheduleCleanup(30);
-          } catch (e) {
-            const m = String(e.message || "Error desconocido");
-            alert(`No se pudo enviar: ${m}`);
-            btnEnviar.disabled = false;
-            btnEnviar.dataset.busy = "0";
-            btnEnviar.textContent = oldText;
-            return;
           }
 
-          btnEnviar.textContent = "Enviado";
-        });
-
-        document.getElementById('btnCancelarDraft')?.addEventListener('click', async ()=>{
-          try {
-            const btn = document.getElementById('btnCancelarDraft');
-            btn.disabled = true;
-            const out = document.getElementById('out');
-            if (out) out.style.display = 'none';
-            resetForm();
-            alert('Presupuesto cancelado.');
-          } catch(e) {
-            alert('No se pudo cancelar: ' + e.message);
-          } finally {
-            const b = document.getElementById('btnCancelarDraft');
-            if (b) b.disabled = false;
+          if (msg) {
+            msg.textContent = "Presupuesto calculado.";
+            msg.classList.remove("error");
           }
-        });
 
-      }catch(e){
-        const out = document.getElementById('out');
-        if (out){
-          out.style.display = 'block';
-          out.innerHTML = `<div class="pill" style="border-color:#ffb7b3;background:#1a0f10;color:#ffb3b3">Error</div><p class="help">` + (e.message || 'No se pudo calcular') + `</p>`;
+          const btnEnviar = document.getElementById('btnEnviar');
+          const cw = document.getElementById('contactWrap');
+
+          btnEnviar?.addEventListener('click', async () => {
+            if (btnEnviar.dataset.busy === "1") return;
+            btnEnviar.dataset.busy = "1";
+            btnEnviar.disabled = true;
+
+            const oldText = btnEnviar.textContent;
+            btnEnviar.textContent = "Enviando…";
+
+            try {
+              await postJSON(`${API_BASE}/api/quote/send`, data);
+              if (cw) cw.innerHTML = `<p class="help" style="margin:6px 0">¡Listo! Se envió tu presupuesto.</p>`;
+              scheduleCleanup(30);
+            } catch (e) {
+              const m = String(e.message || "Error desconocido");
+              alert(`No se pudo enviar: ${m}`);
+              btnEnviar.disabled = false;
+              btnEnviar.dataset.busy = "0";
+              btnEnviar.textContent = oldText;
+              return;
+            }
+
+            btnEnviar.textContent = "Enviado";
+          });
+
+          document.getElementById('btnCancelarDraft')?.addEventListener('click', async () => {
+            try {
+              const btn = document.getElementById('btnCancelarDraft');
+              btn.disabled = true;
+              const out = document.getElementById('out');
+              if (out) out.style.display = 'none';
+              resetForm();
+              alert('Presupuesto cancelado.');
+            } catch (e) {
+              alert('No se pudo cancelar: ' + e.message);
+            } finally {
+              const b = document.getElementById('btnCancelarDraft');
+              if (b) b.disabled = false;
+            }
+          });
+
+        } catch (e) {
+          const out = document.getElementById('out');
+          if (out) {
+            out.style.display = 'block';
+            out.innerHTML = `<div class="pill" style="border-color:#ffb7b3;background:#1a0f10;color:#ffb3b3">Error</div><p class="help">` + (e.message || 'No se pudo calcular') + `</p>`;
+          }
+          const msg = document.getElementById('msg');
+          msg?.classList.add("error");
+          if (msg) msg.textContent = "";
         }
-        const msg = document.getElementById('msg');
-        msg?.classList.add("error");
-        if (msg) msg.textContent = "";
-      }
-    }
-
-    // Validaciones live
-    const telInput = document.getElementById("tel");
-    const nameInput = document.getElementById("nombre");
-
-    telInput?.addEventListener("input", (e) => {
-      const cleaned = e.target.value.replace(/\D/g, "");
-      if (e.target.value !== cleaned) {
-        e.target.classList.add("invalid");
-        document.getElementById("msg")?.classList.add("error");
-      } else {
-        e.target.classList.remove("invalid");
-        clearMsg();
-      }
-      e.target.value = cleaned;
-    });
-
-    nameInput?.addEventListener("input", (e) => {
-      const valid = /^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+$/.test(e.target.value.trim());
-      if (!valid && e.target.value !== "") {
-        e.target.classList.add("invalid");
-        document.getElementById("msg")?.classList.add("error");
-      } else {
-        e.target.classList.remove("invalid");
-        clearMsg();
-      }
-    });
-    let selectedDate = null;
-    let selectedTime = null;
-
-   async function loadAvailabilityForMonth(dateStr){
-    const d = new Date(dateStr);
-    const month = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
-
-    const res = await fetch(`${API_BASE}/api/availability?month=${month}`);
-    const js = await res.json().catch(()=> ({}));
-    if(!res.ok) throw new Error(js.detail || "No se pudo cargar disponibilidad");
-    return js.days || {};
-  }
-
-    function renderSlots(slots){
-  const wrap = document.getElementById('timeSlots');
-  wrap.innerHTML = "";
-
-  slots.forEach(time=>{
-    const btn = document.createElement('button');
-    btn.type = "button";
-    btn.className = 'slot-btn';
-    btn.textContent = time;
-
-    btn.onclick = ()=>{
-      selectedTime = time;
-      document.querySelectorAll('.slot-btn').forEach(b=>b.classList.remove('active'));
-      btn.classList.add('active');
-      document.getElementById("msg")?.classList.remove("error");
-    };
-
-    wrap.appendChild(btn);
-  });
-}
-
-   async function renderCalendar(){
-    const dateInput = document.getElementById('fecha');
-    const daysWrap  = document.getElementById('calendarDays');
-    const slotsWrap = document.getElementById('timeSlots');
-
-    const selected = dateInput?.value;
-    if(!selected){
-      if(daysWrap) daysWrap.innerHTML = "Elegí una fecha arriba.";
-      if(slotsWrap) slotsWrap.innerHTML = "";
-      selectedDate = null;
-      selectedTime = null;
-      return;
-    }
-
-    selectedDate = selected;
-    selectedTime = null;
-
-    try {
-      const days  = await loadAvailabilityForMonth(selected);
-      const slots = days[selectedDate] || [];
-
-      if(daysWrap) daysWrap.innerHTML = `Fecha seleccionada: <b>${selectedDate}</b>`;
-      renderSlots(slots);
-
-    } catch (e) {
-      if(daysWrap) daysWrap.innerHTML = "No se pudo cargar disponibilidad";
-      if(slotsWrap) slotsWrap.innerHTML = "";
-    }
-  }
-
-
-    function renderSlots(slots){
-      const wrap = document.getElementById('timeSlots');
-      wrap.innerHTML = "";
-
-      if (!slots.length) {
-        wrap.innerHTML = `<span class="help">No hay horarios disponibles para esta fecha.</span>`;
-        return;
       }
 
-      slots.forEach(time=>{
-        const btn = document.createElement('button');
-        btn.type = "button";
-        btn.className = 'slot-btn';
-        btn.textContent = time;
+      // Validaciones live
+      const telInput = document.getElementById("tel");
+      const nameInput = document.getElementById("nombre");
 
-        btn.onclick = ()=>{
-          selectedTime = time;
-          document.querySelectorAll('.slot-btn').forEach(b=>b.classList.remove('active'));
-          btn.classList.add('active');
+      telInput?.addEventListener("input", (e) => {
+        const cleaned = e.target.value.replace(/\D/g, "");
+        if (e.target.value !== cleaned) {
+          e.target.classList.add("invalid");
+          document.getElementById("msg")?.classList.add("error");
+        } else {
+          e.target.classList.remove("invalid");
           clearMsg();
-        };
-
-        wrap.appendChild(btn);
+        }
+        e.target.value = cleaned;
       });
-    }
+
+      nameInput?.addEventListener("input", (e) => {
+        const valid = /^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+$/.test(e.target.value.trim());
+        if (!valid && e.target.value !== "") {
+          e.target.classList.add("invalid");
+          document.getElementById("msg")?.classList.add("error");
+        } else {
+          e.target.classList.remove("invalid");
+          clearMsg();
+        }
+      });
+      let selectedDate = null;
+      let selectedTime = null;
+
+      async function loadAvailabilityForMonth(dateStr) {
+        const d = new Date(dateStr);
+        const month = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+
+        const res = await fetch(`${API_BASE}/api/availability?month=${month}`);
+        const js = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(js.detail || "No se pudo cargar disponibilidad");
+        return js.days || {};
+      }
+
+      function renderSlots(slots) {
+        const wrap = document.getElementById('timeSlots');
+        wrap.innerHTML = "";
+
+        slots.forEach(time => {
+          const btn = document.createElement('button');
+          btn.type = "button";
+          btn.className = 'slot-btn';
+          btn.textContent = time;
+
+          btn.onclick = () => {
+            selectedTime = time;
+            document.querySelectorAll('.slot-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            document.getElementById("msg")?.classList.remove("error");
+          };
+
+          wrap.appendChild(btn);
+        });
+      }
+
+      async function renderCalendar() {
+        const dateInput = document.getElementById('fecha');
+        const daysWrap = document.getElementById('calendarDays');
+        const slotsWrap = document.getElementById('timeSlots');
+
+        const selected = dateInput?.value;
+        if (!selected) {
+          if (daysWrap) daysWrap.innerHTML = "Elegí una fecha arriba.";
+          if (slotsWrap) slotsWrap.innerHTML = "";
+          selectedDate = null;
+          selectedTime = null;
+          return;
+        }
+
+        selectedDate = selected;
+        selectedTime = null;
+
+        // Definir horario por defecto FULL (todos los horarios habilitados visualmente)
+        // El backend validará si realmente está bloqueado, pero la UI se ve "limpia" y disponible.
+        const defaultSlots = [
+          "08:00", "09:00", "10:00", "11:00", "12:00",
+          "13:00", "14:00", "15:00", "16:00", "17:00",
+          "18:00", "19:00", "20:00", "21:00", "22:00"
+        ];
+
+        try {
+          // Intentamos cargar disponibilidad real (por si hay bloqueos específicos)
+          const days = await loadAvailabilityForMonth(selected);
+          let slots = days[selectedDate] || [];
+
+          // Si la API no devuelve nada para hoy (día no creado/configurado), 
+          // asumimos que está ABIERTO COMPLETAMENTE (mostramos todos los slots).
+          if (!days[selectedDate]) {
+            slots = defaultSlots;
+          }
+
+          if (daysWrap) daysWrap.innerHTML = `Fecha seleccionada: <b style="color:var(--primary)">${selectedDate.split('-').reverse().join('/')}</b>`;
+          renderSlots(slots.sort());
+
+        } catch (e) {
+          // Fallback en caso de error de red: mostrar todo abierto
+          if (daysWrap) daysWrap.innerHTML = `Fecha seleccionada: <b style="color:var(--primary)">${selectedDate.split('-').reverse().join('/')}</b>`;
+          renderSlots(defaultSlots);
+        }
+      }
 
 
-    document.getElementById('fecha')?.addEventListener('change', ()=>{
-      selectedDate = null;
-      selectedTime = null;
-      renderCalendar();
-    });
+      function renderSlots(slots) {
+        const wrap = document.getElementById('timeSlots');
+        wrap.innerHTML = "";
 
-  })();
-</script>
-<script>
-(function () {
-  const page = document.body.dataset.page; // "inicio" | "presupuesto" | "admin"
+        // Ordenar horarios cronológicamente
+        slots.sort();
 
-  document.querySelectorAll(".nav-links a").forEach(a => {
-    a.classList.toggle("active", a.dataset.view === page);
-  });
-})();
-</script>
+        // ✅ Filtrar horarios ya pasados si es HOY
+        if (selectedDate) {
+          const now = new Date();
+          const selParts = selectedDate.split("-");
+          const selYear = parseInt(selParts[0]);
+          const selMonth = parseInt(selParts[1]) - 1;
+          const selDay = parseInt(selParts[2]);
+
+          const isToday = (
+            selYear === now.getFullYear() &&
+            selMonth === now.getMonth() &&
+            selDay === now.getDate()
+          );
+
+          if (isToday) {
+            const currentHour = now.getHours();
+            const currentMin = now.getMinutes();
+
+            slots = slots.filter(timeStr => { // "08:00"
+              const [h, m] = timeStr.split(":").map(Number);
+              if (h < currentHour) return false;
+              if (h === currentHour && m <= currentMin) return false;
+              return true;
+            });
+          }
+        }
+
+        if (!slots.length) {
+          wrap.innerHTML = `<span class="help">No hay horarios disponibles (ya es tarde por hoy).</span>`;
+          return;
+        }
+
+        slots.forEach(time => {
+          const btn = document.createElement('button');
+          btn.type = "button";
+          btn.className = 'slot-btn';
+          btn.textContent = time;
+
+          btn.onclick = () => {
+            selectedTime = time;
+            document.querySelectorAll('.slot-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            clearMsg();
+          };
+
+          wrap.appendChild(btn);
+        });
+      }
+
+
+      document.getElementById('fecha')?.addEventListener('change', () => {
+        selectedDate = null;
+        selectedTime = null;
+        renderCalendar();
+      });
+
+    })();
+  </script>
+  <script>
+    (function () {
+      const page = document.body.dataset.page; // "inicio" | "presupuesto" | "admin"
+
+      document.querySelectorAll(".nav-links a").forEach(a => {
+        a.classList.toggle("active", a.dataset.view === page);
+      });
+    })();
+  </script>
 
 
 
 </body>
+
 </html>

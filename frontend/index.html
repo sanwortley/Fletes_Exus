@@ -1,117 +1,101 @@
-<!-- index.html --> 
+<!-- index.html -->
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Fletes Larga Distancia — Fletes y Mudanzas en Córdoba</title>
 
-  <!-- Tipografías pro -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=DM+Sans:wght@500;700&display=swap" rel="stylesheet">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;800&family=Inter:wght@400;500;600&display=swap"
+    rel="stylesheet">
   <link rel="stylesheet" href="/static/css/index.css">
   <link rel="stylesheet" href="/static/css/header.css">
-  
+
 </head>
 
 <body data-page="inicio">
 
-<header class="nav">
-  <div class="nav-inner">
-    <div class="brand">Fletes Larga Distancia</div>
+  <header class="nav">
+    <div class="nav-inner">
+      <div class="brand">Fletes Larga Distancia</div>
 
-    <div class="nav-links">
-      <a href="/"            data-view="inicio">Inicio</a>
-      <a href="/presupuesto" data-view="presupuesto">Presupuesto</a>
-      <a href="/admin"       data-view="admin">Admin</a>
+      <div class="nav-links">
+        <a href="/" data-view="inicio">Inicio</a>
+        <a href="/presupuesto" data-view="presupuesto">Presupuesto</a>
+        <a href="/admin" data-view="admin">Admin</a>
+      </div>
+
+
     </div>
-
-
-  </div>
-</header>
+  </header>
 
 
   <main class="container">
-    <!-- Hero -->
+    <!-- Hero Picture Style (Split) -->
     <section class="hero">
-      <h1>Fletes y Mudanzas en Córdoba</h1>
-      <p>Pequeña empresa familiar con atención inmediata, confiabilidad y puntualidad. Presupuesto fijo por viaje, sin importar distancia ni horas.</p>
-      <a href="/presupuesto" class="btn">Calcular presupuesto</a>
-
-
-    </section>
-
-    <!-- Carrusel -->
-   <section class="carousel" id="carousel" data-home-only>
-
-      <!-- Slide croquis (ficha técnica) -->
-      <figure class="slide slide--blueprint active">
-        <div class="frame">
-          <img loading="lazy" src="/images/animado.jpeg" alt="Croquis técnico del camión con medidas 3 m de largo y 1,7 m de ancho">
-        </div>
-      </figure>
-
-      <figure class="slide">
-        <img loading="lazy" src="/images/camion1.jpeg" alt="Camión en servicio 1">
-      </figure>
-
-      <figure class="slide">
-        <img loading="lazy" src="/images/camion10.png" alt="Camión en servicio 10">
-      </figure>
-
-      <figure class="slide">
-        <img loading="lazy" src="/images/camion2.jpeg" alt="Camión de mudanza 2">
-      </figure>
-
-      <figure class="slide">
-        <img loading="lazy" src="/images/camion3.jpeg" alt="Camión en servicio 3">
-      </figure>
-
-      <figure class="slide">
-        <img loading="lazy" src="/images/camion5.jpeg" alt="Camión en servicio 5">
-      </figure>
-
-      <figure class="slide">
-        <img loading="lazy" src="/images/camion11.png" alt="Camión en servicio 11">
-      </figure>
-
-      <figure class="slide">
-        <img loading="lazy" src="/images/camion8.jpeg" alt="Camión de mudanza 8">
-      </figure>
-
-      <figure class="slide">
-        <img loading="lazy" src="/images/camion9.jpeg" alt="Camión en servicio 9">
-      </figure>
-
-      <div class="controls" id="dots"></div>
-    </section>
-
-    <!-- Cards -->
-    <section class="cards">
-      <div class="card">
-        <h2>Nuestra capacidad</h2>
-        <ul class="features">
-          <li><span class="bullet"></span> Hasta 10 m³ de carga.</li>
-          <li><span class="bullet"></span> Hasta 1.2 toneladas.</li>
-        </ul>
+      <div class="hero-text">
+        <h1>Fletes Larga Distancia</h1>
+        <h2>Transporte seguro &bull; Todo el país</h2>
+        <p>Expertos en mudanzas y traslados punto a punto. Calidad, puntualidad y precios claros desde el primer
+          momento.</p>
+        <a href="/presupuesto" class="btn">Calcular Presupuesto</a>
       </div>
 
-      <div class="card">
-        <h2>Servicios</h2>
-        <ul class="features">
-          <li><span class="bullet"></span> Fletes y mudanzas locales o interurbanas.</li>
-          <li><span class="bullet"></span> Presupuesto fijo por viaje.</li>
-          <li><span class="bullet"></span> Tiempo estimado del traslado incluido.</li>
-        </ul>
+      <!-- Hero Image Wrapper (Static Illustration) -->
+      <div class="hero-image">
+        <img src="/images/animado.jpeg" alt="Mudanzas Fletes">
       </div>
+    </section>
 
-      <div class="card">
-        <h2>Compromiso</h2>
-        <ul class="features">
-          <li><span class="bullet"></span> Atención familiar y personalizada.</li>
-          <li><span class="bullet"></span> Confiabilidad y puntualidad garantizadas.</li>
-          <li><span class="bullet"></span> Presupuesto inmediato sin demoras.</li>
-        </ul>
+    <!-- Content Sections -->
+    <section class="cards-section">
+      <h2 class="section-title">Solución Integral de Transporte</h2>
+      <p class="section-desc">Nos especializamos en brindar un servicio de alta calidad, adaptado a las necesidades de
+        cada cliente, garantizando que su carga llegue a destino en perfectas condiciones.</p>
+
+      <div class="cards">
+        <article class="card">
+          <div class="card-img-placeholder"
+            style="background-image: url('/images/camion8.jpeg'); background-size: cover; background-position: center;">
+          </div>
+          <h2>Capacidad de Carga</h2>
+          <p style="color:#666; margin-bottom:12px">Vehículos modernos y equipados.</p>
+          <ul class="features">
+            <li>Hasta 10 metros cúbicos.</li>
+            <li>Soporte de 1.2 toneladas.</li>
+            <li>Rastreo y seguridad.</li>
+          </ul>
+        </article>
+
+        <article class="card">
+          <div class="card-img-placeholder"
+            style="background-image: url('/images/camion2.jpeg'); background-size: cover; background-position: center;">
+          </div>
+          <h2>Servicios</h2>
+          <p style="color:#666; margin-bottom:12px">Flexibilidad para tu comodidad.</p>
+          <ul class="features">
+            <li>Mudanzas de hogar y oficina.</li>
+            <li>Fletes puntuales.</li>
+            <li>Larga distancia a todo el país.</li>
+          </ul>
+        </article>
+
+        <article class="card">
+          <div class="card-img-placeholder"
+            style="background-image: url('/images/camion9.jpeg'); background-size: cover; background-position: center;">
+          </div>
+          <h2>Atención Premium</h2>
+          <p style="color:#666; margin-bottom:12px">El cliente es nuestra prioridad.</p>
+          <ul class="features">
+            <li>Presupuesto inmediato online.</li>
+            <li>Atención por WhatsApp 24/7.</li>
+            <li>Personal de confianza.</li>
+          </ul>
+        </article>
       </div>
     </section>
   </main>
@@ -120,339 +104,346 @@
   <footer>
     <div class="footer-title">Contactanos</div>
     <div class="social">
-      <!-- WhatsApp -->
-      <a href="https://wa.me/5493516678989" target="_blank" title="WhatsApp" aria-label="WhatsApp">
-        <svg viewBox="0 0 32 32" role="img" aria-hidden="true"><path d="M16 3C9.372 3 4 8.372 4 15c0 2.115.55 4.103 1.514 5.837L4 29l8.377-1.472A11.91 11.91 0 0 0 16 27c6.628 0 12-5.372 12-12S22.628 3 16 3zm0 2c5.523 0 10 4.477 10 10s-4.477 10-10 10a9.9 9.9 0 0 1-3.987-.832l-.284-.12-.298.052-4.2.738.748-4.104.053-.29-.143-.257A9.9 9.9 0 0 1 6 15c0-5.523 4.477-10 10-10zm5.053 13.873c-.275-.138-1.63-.806-1.875-.898-.244-.092-.422-.138-.6.138-.18.275-.694.956-.85 1.15-.156.193-.312.206-.575.07-.275-.138-1.158-.426-2.213-1.362-.818-.72-1.373-1.61-1.534-1.894-.162-.281-.02-.436.118-.593.122-.122.275-.318.412-.48.138-.162.18-.275.275-.468.092-.193.046-.35-.023-.504-.07-.156-.6-1.448-.825-1.984-.218-.52-.444-.448-.606-.456-.156-.008-.336-.01-.516-.01-.18 0-.47.068-.716.34-.244.275-.932.91-.932 2.222 0 1.312.956 2.58 1.09 2.758.138.18 2.01 3.07 4.85 4.284.68.296 1.21.472 1.63.604.686.218 1.312.187 1.81.114.552-.082 1.69-.69 1.944-1.355.244-.664.244-1.238.172-1.35-.07-.11-.26-.18-.55-.32z"/></svg>
+      <a href="https://wa.me/5493517552167?text=Hola%20Javier,%20necesito%20un%20presupuesto" target="_blank"
+        title="WhatsApp" aria-label="WhatsApp">
+        <svg viewBox="0 0 32 32" role="img" aria-hidden="true">
+          <path
+            d="M16 3C9.372 3 4 8.372 4 15c0 2.115.55 4.103 1.514 5.837L4 29l8.377-1.472A11.91 11.91 0 0 0 16 27c6.628 0 12-5.372 12-12S22.628 3 16 3zm0 2c5.523 0 10 4.477 10 10s-4.477 10-10 10a9.9 9.9 0 0 1-3.987-.832l-.284-.12-.298.052-4.2.738.748-4.104.053-.29-.143-.257A9.9 9.9 0 0 1 6 15c0-5.523 4.477-10 10-10zm5.053 13.873c-.275-.138-1.63-.806-1.875-.898-.244-.092-.422-.138-.6.138-.18.275-.694.956-.85 1.15-.156.193-.312.206-.575.07-.275-.138-1.158-.426-2.213-1.362-.818-.72-1.373-1.61-1.534-1.894-.162-.281-.02-.436.118-.593.122-.122.275-.318.412-.48.138-.162.18-.275.275-.468.092-.193.046-.35-.023-.504-.07-.156-.6-1.448-.825-1.984-.218-.52-.444-.448-.606-.456-.156-.008-.336-.01-.516-.01-.18 0-.47.068-.716.34-.244.275-.932.91-.932 2.222 0 1.312.956 2.58 1.09 2.758.138.18 2.01 3.07 4.85 4.284.68.296 1.21.472 1.63.604.686.218 1.312.187 1.81.114.552-.082 1.69-.69 1.944-1.355.244-.664.244-1.238.172-1.35-.07-.11-.26-.18-.55-.32z" />
+        </svg>
       </a>
-      <!-- Instagram -->
-      <a href="https://www.instagram.com/fletes_largadistancia" target="_blank" title="Instagram" aria-label="Instagram">
-        <svg viewBox="0 0 24 24" role="img" aria-hidden="true"><path d="M12 2.2c3.2 0 3.6 0 4.9.1 1.2.1 1.9.2 2.3.4.6.2 1 .4 1.5.9.5.5.7.9.9 1.5.2.4.3 1.1.4 2.3.1 1.3.1 1.7.1 4.9s0 3.6-.1 4.9c-.1 1.2-.2 1.9-.4 2.3-.2.6-.4 1-.9 1.5-.5.5-.9.7-1.5.9-.4.2-1.1.3-2.3.4-1.3.1-1.7.1-4.9.1s-3.6 0-4.9-.1c-1.2-.1-1.9-.2-2.3-.4-.6-.2-1-.4-1.5-.9-.5-.5-.7-.9-.9-1.5-.2-.4-.3-1.1-.4-2.3C2.2 15.6 2.2 15.2 2.2 12s0-3.6.1-4.9c.1-1.2.2-1.9.4-2.3.2-.6.4-1 .9-1.5.5-.5.9-.7 1.5-.9.4-.2 1.1-.3 2.3-.4C8.4 2.2 8.8 2.2 12 2.2m0-1.7C8.7.5 8.3.5 7 .6 5.7.7 4.8.9 4.1 1.2c-.8.3-1.5.7-2.2 1.4C1.3 3.2.9 3.9.6 4.7c-.3.7-.5 1.6-.6 2.9C0 8.8 0 9.3 0 12s0 3.2.1 4.5c.1 1.3.3 2.2.6 2.9.3.8.7 1.5 1.4 2.2.7.7 1.4 1.1 2.2 1.4.7.3 1.6.5 2.9.6 1.3.1 1.8.1 4.5.1s3.2 0 4.5-.1c1.3-.1 2.2-.3 2.9-.6.8-.3 1.5-.7 2.2-1.4.7-.7 1.1-1.4 1.4-2.2.3-.7.5-1.6.6-2.9.1-1.3.1-1.8.1-4.5s0-3.2-.1-4.5c-.1-1.3-.3-2.2-.6-2.9-.3-.8-.7-1.5-1.4-2.2-.7-.7-1.4-1.1-2.2-1.4-.7-.3-1.6-.5-2.9-.6C15.2.5 14.7.5 12 .5z"/><path d="M12 5.8A6.2 6.2 0 1 0 12 18.2 6.2 6.2 0 1 0 12 5.8zm0 10.2A4 4 0 1 1 12 8a4 4 0 0 1 0 8z"/><circle cx="18.4" cy="5.6" r="1.4"/></svg>
+      <a href="https://www.instagram.com/fletes_largadistancia" target="_blank" title="Instagram"
+        aria-label="Instagram">
+        <svg viewBox="0 0 24 24" role="img" aria-hidden="true">
+          <path
+            d="M12 2.2c3.2 0 3.6 0 4.9.1 1.2.1 1.9.2 2.3.4.6.2 1 .4 1.5.9.5.5.7.9.9 1.5.2.4.3 1.1.4 2.3.1 1.3.1 1.7.1 4.9s0 3.6-.1 4.9c-.1 1.2-.2 1.9-.4 2.3-.2.6-.4 1-.9 1.5-.5.5-.9.7-1.5.9-.4.2-1.1.3-2.3.4-1.3.1-1.7.1-4.9.1s-3.6 0-4.9-.1c-1.2-.1-1.9-.2-2.3-.4-.6-.2-1-.4-1.5-.9-.5-.5-.7-.9-.9-1.5-.2-.4-.3-1.1-.4-2.3C2.2 15.6 2.2 15.2 2.2 12s0-3.6.1-4.9c.1-1.2.2-1.9.4-2.3.2-.6.4-1 .9-1.5.5-.5.9-.7 1.5-.9.4-.2 1.1-.3 2.3-.4C8.4 2.2 8.8 2.2 12 2.2m0-1.7C8.7.5 8.3.5 7 .6 5.7.7 4.8.9 4.1 1.2c-.8.3-1.5.7-2.2 1.4C1.3 3.2.9 3.9.6 4.7c-.3.7-.5 1.6-.6 2.9C0 8.8 0 9.3 0 12s0 3.2.1 4.5c.1 1.3.3 2.2.6 2.9.3.8.7 1.5 1.4 2.2.7.7 1.4 1.1 2.2 1.4.7.3 1.6.5 2.9.6 1.3.1 1.8.1 4.5.1s3.2 0 4.5-.1c1.3-.1 2.2-.3 2.9-.6.8-.3 1.5-.7 2.2-1.4.7-.7 1.1-1.4 1.4-2.2.3-.7.5-1.6.6-2.9.1-1.3.1-1.8.1-4.5s0-3.2-.1-4.5c-.1-1.3-.3-2.2-.6-2.9-.3-.8-.7-1.5-1.4-2.2-.7-.7-1.4-1.1-2.2-1.4-.7-.3-1.6-.5-2.9-.6C15.2.5 14.7.5 12 .5z" />
+          <path d="M12 5.8A6.2 6.2 0 1 0 12 18.2 6.2 6.2 0 1 0 12 5.8zm0 10.2A4 4 0 1 1 12 8a4 4 0 0 1 0 8z" />
+          <circle cx="18.4" cy="5.6" r="1.4" />
+        </svg>
       </a>
-      <!-- Correo (compose Gmail) -->
-      <a href="https://mail.google.com/mail/?view=cm&fs=1&to=fletesjavier@gmail.com&su=Consulta%20desde%20la%20web&body=Hola%20Javier%2C%20quiero%20pedir%20un%20presupuesto%20para%20un%20flete."
-         target="_blank" rel="noopener" title="Correo" aria-label="Correo">
-        <svg viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4-8 5L4 8V6l8 5 8-5v2z"/></svg>
-      </a>
-      <!-- Teléfono -->
-      <a href="tel:+5493516678989" title="Llamar" aria-label="Teléfono">
-        <svg viewBox="0 0 24 24" role="img" aria-hidden="true"><path d="M6.6 10.8a15.1 15.1 0 0 0 6.6 6.6l2.2-2.2c.3-.3.8-.4 1.2-.2 1.3.5 2.7.8 4.1.8.7 0 1.2.5 1.2 1.2V21c0 .7-.5 1.2-1.2 1.2C10.4 22.2 1.8 13.6 1.8 2.4 1.8 1.7 2.3 1.2 3 1.2H6c.7 0 1.2.5 1.2 1.2 0 1.4.3 2.8.8 4.1.1.4 0 .9-.3 1.2L6.6 10.8z"/></svg>
+      <a href="tel:+5493517552167" title="Llamar" aria-label="Teléfono">
+        <svg viewBox="0 0 24 24" role="img" aria-hidden="true">
+          <path
+            d="M6.6 10.8a15.1 15.1 0 0 0 6.6 6.6l2.2-2.2c.3-.3.8-.4 1.2-.2 1.3.5 2.7.8 4.1.8.7 0 1.2.5 1.2 1.2V21c0 .7-.5 1.2-1.2 1.2C10.4 22.2 1.8 13.6 1.8 2.4 1.8 1.7 2.3 1.2 3 1.2H6c.7 0 1.2.5 1.2 1.2 0 1.4.3 2.8.8 4.1.1.4 0 .9-.3 1.2L6.6 10.8z" />
+        </svg>
       </a>
     </div>
     <div class="footer-info">
-      © 2025 Fletes Larga Distancia · Córdoba, Argentina <br/>
+      © 2025 Fletes Larga Distancia · Córdoba, Argentina<br />
       Atención rápida, confiable y con presupuesto inmediato.
     </div>
   </footer>
 
   <!-- CTA WhatsApp flotante -->
-  <a class="whatsapp-float"
-     href="https://wa.me/5493516678989?text=Hola%20Javier,%20necesito%20un%20presupuesto"
-     target="_blank" aria-label="WhatsApp">
-    <svg viewBox="0 0 32 32"><path d="M16 3C9.372 3 4 8.372 4 15c0 2.115.55 4.103 1.514 5.837L4 29l8.377-1.472A11.91 11.91 0 0 0 16 27c6.628 0 12-5.372 12-12S22.628 3 16 3zm0 2c5.523 0 10 4.477 10 10s-4.477 10-10 10a9.9 9.9 0 0 1-3.987-.832l-.284-.12-.298.052-4.2.738.748-4.104.053-.29-.143-.257A9.9 9.9 0 0 1 6 15c0-5.523 4.477-10 10-10zm5.053 13.873c-.275-.138-1.63-.806-1.875-.898-.244-.092-.422-.138-.6.138-.18.275-.694.956-.85 1.15-.156.193-.312.206-.575.07-.275-.138-1.158-.426-2.213-1.362-.818-.72-1.373-1.61-1.534-1.894-.162-.281-.02-.436.118-.593.122-.122.275-.318.412-.48.138-.162.18-.275.275-.468.092-.193.046-.35-.023-.504-.07-.156-.6-1.448-.825-1.984-.218-.52-.444-.448-.606-.456-.156-.008-.336-.01-.516-.01-.18 0-.47.068-.716.34-.244.275-.932.91-.932 2.222 0 1.312.956 2.58 1.09 2.758.138.18 2.01 3.07 4.85 4.284.68.296 1.21.472 1.63.604.686.218 1.312.187 1.81.114.552-.082 1.69-.69 1.944-1.355.244-.664.244-1.238.172-1.35-.07-.11-.26-.18-.55-.32z"/></svg>
+  <a class="whatsapp-float" href="https://wa.me/5493517552167?text=Hola%20Javier,%20necesito%20un%20presupuesto"
+    target="_blank" aria-label="WhatsApp">
+    <svg viewBox="0 0 32 32">
+      <path
+        d="M16 3C9.372 3 4 8.372 4 15c0 2.115.55 4.103 1.514 5.837L4 29l8.377-1.472A11.91 11.91 0 0 0 16 27c6.628 0 12-5.372 12-12S22.628 3 16 3zm0 2c5.523 0 10 4.477 10 10s-4.477 10-10 10a9.9 9.9 0 0 1-3.987-.832l-.284-.12-.298.052-4.2.738.748-4.104.053-.29-.143-.257A9.9 9.9 0 0 1 6 15c0-5.523 4.477-10 10-10zm5.053 13.873c-.275-.138-1.63-.806-1.875-.898-.244-.092-.422-.138-.6.138-.18.275-.694.956-.85 1.15-.156.193-.312.206-.575.07-.275-.138-1.158-.426-2.213-1.362-.818-.72-1.373-1.61-1.534-1.894-.162-.281-.02-.436.118-.593.122-.122.275-.318.412-.48.138-.162.18-.275.275-.468.092-.193.046-.35-.023-.504-.07-.156-.6-1.448-.825-1.984-.218-.52-.444-.448-.606-.456-.156-.008-.336-.01-.516-.01-.18 0-.47.068-.716.34-.244.275-.932.91-.932 2.222 0 1.312.956 2.58 1.09 2.758.138.18 2.01 3.07 4.85 4.284.68.296 1.21.472 1.63.604.686.218 1.312.187 1.81.114.552-.082 1.69-.69 1.944-1.355.244-.664.244-1.238.172-1.35-.07-.11-.26-.18-.55-.32z" />
+    </svg>
   </a>
 
   <!-- JS Carrusel -->
   <script>
-  (function () {
-    const root = document.getElementById('carousel');
-    if (!root) return;
+    (function () {
+      const root = document.getElementById('carousel');
+      if (!root) return;
 
-    const slides = Array.from(root.querySelectorAll('.slide'));
-    const dotsWrap = document.getElementById('dots');
-    if (!slides.length) return;
+      const slides = Array.from(root.querySelectorAll('.slide'));
+      const dotsWrap = document.getElementById('dots');
+      if (!slides.length) return;
 
-    let i = 0;
-    let timer = null;
+      let i = 0;
+      let timer = null;
 
-    // dots
-    if (dotsWrap) {
-      dotsWrap.innerHTML = '';
-      slides.forEach((_, idx) => {
-        const b = document.createElement('button');
-        b.type = 'button';
-        b.className = 'dot' + (idx === 0 ? ' active' : '');
-        b.addEventListener('click', () => go(idx, true));
-        dotsWrap.appendChild(b);
-      });
-    }
-
-    function setActive(idx) {
-      slides.forEach((s, k) => s.classList.toggle('active', k === idx));
+      // dots
       if (dotsWrap) {
-        dotsWrap.querySelectorAll('.dot').forEach((d, k) => d.classList.toggle('active', k === idx));
+        dotsWrap.innerHTML = '';
+        slides.forEach((_, idx) => {
+          const b = document.createElement('button');
+          b.type = 'button';
+          b.className = 'dot' + (idx === 0 ? ' active' : '');
+          b.addEventListener('click', () => go(idx, true));
+          dotsWrap.appendChild(b);
+        });
       }
-      i = idx;
-    }
 
-    function next() { setActive((i + 1) % slides.length); }
-    function go(idx, reset) { setActive(idx); if (reset) restart(); }
-    function restart() {
-      if (timer) clearInterval(timer);
-      timer = setInterval(next, 3500);
-    }
+      function setActive(idx) {
+        slides.forEach((s, k) => s.classList.toggle('active', k === idx));
+        if (dotsWrap) {
+          dotsWrap.querySelectorAll('.dot').forEach((d, k) => d.classList.toggle('active', k === idx));
+        }
+        i = idx;
+      }
 
-    // pausa hover
-    root.addEventListener('mouseenter', () => timer && clearInterval(timer));
-    root.addEventListener('mouseleave', restart);
+      function next() { setActive((i + 1) % slides.length); }
+      function go(idx, reset) { setActive(idx); if (reset) restart(); }
+      function restart() {
+        if (timer) clearInterval(timer);
+        timer = setInterval(next, 3500);
+      }
 
-    setActive(0);
-    restart();
-  })();
-</script>
+      // pausa hover
+      root.addEventListener('mouseenter', () => timer && clearInterval(timer));
+      root.addEventListener('mouseleave', restart);
+
+      setActive(0);
+      restart();
+    })();
+  </script>
 
   <script>
-  (function(){
-    // ✅ API_BASE sin redeclarar
-    globalThis.API_BASE = globalThis.API_BASE || (
-      (location.hostname === 'localhost' || location.hostname === '127.0.0.1')
-        ? 'http://127.0.0.1:8000'
-        : 'https://fletes-exus.onrender.com'
-    );
+    (function () {
+      // ✅ API_BASE sin redeclarar
+      globalThis.API_BASE = globalThis.API_BASE || (
+        (location.hostname === 'localhost' || location.hostname === '127.0.0.1')
+          ? 'http://127.0.0.1:8000'
+          : 'https://fletes-exus.onrender.com'
+      );
 
-    let token = null;
-    let solicitudes = [];
-    let selected = null;
-    let isAuth = false;
+      let token = null;
+      let solicitudes = [];
+      let selected = null;
+      let isAuth = false;
 
-    const q = (s)=>document.querySelector(s);
-    const toast = (msg)=>{const t=q('#toast'); if(!t) return; t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2200)};
-    const peso = (n)=> (n!=null ? ('$ ' + Number(n).toLocaleString('es-AR')) : '-');
+      const q = (s) => document.querySelector(s);
+      const toast = (msg) => { const t = q('#toast'); if (!t) return; t.textContent = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 2200) };
+      const peso = (n) => (n != null ? ('$ ' + Number(n).toLocaleString('es-AR')) : '-');
 
-    // 👇 NUEVO: gateo para saber si estamos en la vista Admin
-    function isAdminView(){
-      return !!(document.getElementById('loginForm')
-             && document.getElementById('authFlag')
-             && document.getElementById('tbody'));
-    }
-
-    function badge(estadoRaw){
-      const e = (estadoRaw || 'pendiente').toLowerCase();
-      const texto = e.charAt(0).toUpperCase() + e.slice(1);
-      const cls = e==='confirmado' ? 'aprobado' : (e==='rechazado' ? 'rechazado' : 'pendiente');
-      return `<span class="badge ${cls}">${texto}</span>`;
-    }
-
-    // ⬇️ CAMBIADO: null-safe y gateado
-    function setAuthUI(isOn){
-      if (!isAdminView()) return;
-      isAuth = !!isOn;
-      const flag = document.getElementById('authFlag');
-      if (flag){
-        flag.textContent = isOn ? 'Autenticado' : 'No autenticado';
-        flag.className   = 'tag ' + (isOn ? 'ok' : 'muted');
+      // 👇 NUEVO: gateo para saber si estamos en la vista Admin
+      function isAdminView() {
+        return !!(document.getElementById('loginForm')
+          && document.getElementById('authFlag')
+          && document.getElementById('tbody'));
       }
-      const btn = document.getElementById('btnLogout');
-      if (btn){
-        btn.style.display = isOn ? 'inline-flex' : 'none';
+
+      function badge(estadoRaw) {
+        const e = (estadoRaw || 'pendiente').toLowerCase();
+        const texto = e.charAt(0).toUpperCase() + e.slice(1);
+        const cls = e === 'confirmado' ? 'aprobado' : (e === 'rechazado' ? 'rechazado' : 'pendiente');
+        return `<span class="badge ${cls}">${texto}</span>`;
       }
-    }
 
-    async function login(){
-      if (!isAdminView()) return;
-      const username = document.getElementById('usr')?.value.trim();
-      const password = document.getElementById('pwd')?.value.trim();
-      if(!username || !password){ toast('Ingresá usuario y contraseña'); return; }
-      try{
-        const res = await fetch(`${API_BASE}/api/login`, {
-          method:'POST',
-          headers:{'Content-Type':'application/json'},
-          body: JSON.stringify({ username, password })
-        });
-        const data = await res.json();
-        if(!res.ok) throw new Error(data.detail || 'Credenciales inválidas');
-        token = data.token;
-        setAuthUI(true);
-        toast('Sesión iniciada');
-        await loadSolicitudes();
-      }catch(e){ toast(e.message || 'Error de login'); }
-    }
+      // ⬇️ CAMBIADO: null-safe y gateado
+      function setAuthUI(isOn) {
+        if (!isAdminView()) return;
+        isAuth = !!isOn;
+        const flag = document.getElementById('authFlag');
+        if (flag) {
+          flag.textContent = isOn ? 'Autenticado' : 'No autenticado';
+          flag.className = 'tag ' + (isOn ? 'ok' : 'muted');
+        }
+        const btn = document.getElementById('btnLogout');
+        if (btn) {
+          btn.style.display = isOn ? 'inline-flex' : 'none';
+        }
+      }
 
-    // ⬇️ CAMBIADO: limpia estado SIEMPRE y sólo toca DOM si es Admin
-    function logout(reason){
-      token = null; isAuth = false; selected = null; solicitudes = [];
-      if (!isAdminView()) return;
-      setAuthUI(false);
-      renderEmpty(reason || 'Iniciá sesión para ver las solicitudes de presupuesto.');
-      const usr = document.getElementById('usr');
-      const pwd = document.getElementById('pwd');
-      if (usr) usr.value = '';
-      if (pwd) pwd.value = '';
-      if (usr) usr.focus();
-    }
+      async function login() {
+        if (!isAdminView()) return;
+        const username = document.getElementById('usr')?.value.trim();
+        const password = document.getElementById('pwd')?.value.trim();
+        if (!username || !password) { toast('Ingresá usuario y contraseña'); return; }
+        try {
+          const res = await fetch(`${API_BASE}/api/login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, password })
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.detail || 'Credenciales inválidas');
+          token = data.token;
+          setAuthUI(true);
+          toast('Sesión iniciada');
+          await loadSolicitudes();
+        } catch (e) { toast(e.message || 'Error de login'); }
+      }
 
-    async function loadSolicitudes(){
-      if (!isAdminView()) return;
-      if(!token){ renderEmpty('Iniciá sesión para ver las solicitudes de presupuesto.'); return; }
-      try{
-        const res = await fetch(`${API_BASE}/api/requests`, { headers:{'Authorization':`Bearer ${token}`} });
-        const data = await res.json();
-        if(!res.ok) throw new Error(data.detail || 'No se pudieron cargar las solicitudes');
-        solicitudes = Array.isArray(data.items) ? data.items : [];
-        render();
-        if(solicitudes.length===0) renderEmpty('No hay solicitudes.');
-      }catch(e){ renderEmpty(e.message || 'No se pudieron cargar las solicitudes.'); }
-    }
+      // ⬇️ CAMBIADO: limpia estado SIEMPRE y sólo toca DOM si es Admin
+      function logout(reason) {
+        token = null; isAuth = false; selected = null; solicitudes = [];
+        if (!isAdminView()) return;
+        setAuthUI(false);
+        renderEmpty(reason || 'Iniciá sesión para ver las solicitudes de presupuesto.');
+        const usr = document.getElementById('usr');
+        const pwd = document.getElementById('pwd');
+        if (usr) usr.value = '';
+        if (pwd) pwd.value = '';
+        if (usr) usr.focus();
+      }
 
-    function render(){
-      if (!isAdminView()) return;
-      const tb = document.getElementById('tbody');
-      if (!tb) return;
-      tb.innerHTML = '';
-      for(const s of solicitudes){
-        const tr = document.createElement('tr');
-        tr.className = 'row';
-        tr.innerHTML = `
+      async function loadSolicitudes() {
+        if (!isAdminView()) return;
+        if (!token) { renderEmpty('Iniciá sesión para ver las solicitudes de presupuesto.'); return; }
+        try {
+          const res = await fetch(`${API_BASE}/api/requests`, { headers: { 'Authorization': `Bearer ${token}` } });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.detail || 'No se pudieron cargar las solicitudes');
+          solicitudes = Array.isArray(data.items) ? data.items : [];
+          render();
+          if (solicitudes.length === 0) renderEmpty('No hay solicitudes.');
+        } catch (e) { renderEmpty(e.message || 'No se pudieron cargar las solicitudes.'); }
+      }
+
+      function render() {
+        if (!isAdminView()) return;
+        const tb = document.getElementById('tbody');
+        if (!tb) return;
+        tb.innerHTML = '';
+        for (const s of solicitudes) {
+          const tr = document.createElement('tr');
+          tr.className = 'row';
+          tr.innerHTML = `
           <td><div class="client"><span class="name">${s.nombre_cliente || '-'}</span><span class="sub">${s.telefono || '-'}</span></div></td>
           <td>${s.tipo_carga || '-'}</td>
           <td>${s.fecha || '-'}</td>
           <td>${badge(s.estado)}</td>
           <td><div class="actions"><button class="btn-ghost" onclick="openModal('${s.id}')" type="button">Detalles</button></div></td>
         `;
-        tb.appendChild(tr);
+          tb.appendChild(tr);
+        }
       }
-    }
 
-    // ⬇️ CAMBIADO: gateado
-    function renderEmpty(msg){
-      if (!isAdminView()) return;
-      const tb = document.getElementById('tbody');
-      if (!tb) return;
-      tb.innerHTML = `<tr><td colspan="5" class="empty">${msg}</td></tr>`;
-    }
-
-    function coalesce(...vals){ for(const v of vals){ if(v!==undefined && v!==null) return v; } return null; }
-
-    // ⬇️ CAMBIADO: gateado
-    function openModal(id){
-      if (!isAdminView()) return;
-      if(!token){ logout(); return; }
-      selected = solicitudes.find(s => String(s.id) === String(id));
-      if(!selected) return;
-
-      const tiempo_viaje_min = coalesce(
-        selected.tiempo_viaje_min,
-        selected.tramo_base_origen_min && selected.tramo_origen_destino_min
-          ? Number(selected.tramo_base_origen_min) + Number(selected.tramo_origen_destino_min) + Number(selected.tramo_destino_base_min || 0)
-          : null
-      );
-      const tiempo_servicio_min = coalesce(selected.tiempo_servicio_min, null);
-      const tiempo_carga_desc_min = coalesce(selected.tiempo_carga_descarga_min, selected.tiempo_servicio_min);
-      const costo_tiempo = coalesce(
-        selected.costo_tiempo,
-        (selected.costo_tiempo_base!=null && selected.mantenimiento!=null)
-          ? (Number(selected.costo_tiempo_base) + Number(selected.mantenimiento))
-          : null
-      );
-
-      document.getElementById('#m_cliente')?.textContent;
-      (document.getElementById('m_cliente')||{}).textContent = selected.nombre_cliente || '-';
-      (document.getElementById('m_tel')||{}).textContent = selected.telefono || '-';
-      (document.getElementById('m_tipo')||{}).textContent = selected.tipo_carga || '-';
-      (document.getElementById('m_fecha')||{}).textContent = selected.fecha || '-';
-      (document.getElementById('m_ayudante')||{}).textContent = selected.ayudante ? 'Sí' : 'No';
-      (document.getElementById('m_estado')||{}).textContent = selected.estado || '-';
-      (document.getElementById('m_origen')||{}).textContent = selected.origen || '-';
-      (document.getElementById('m_destino')||{}).textContent = selected.destino || '-';
-
-      (document.getElementById('m_dist_km')||{}).textContent = (selected.dist_km!=null ? Number(selected.dist_km).toFixed(3).replace('.', ',') : '-');
-      (document.getElementById('m_tiempo_viaje')||{}).textContent = (tiempo_viaje_min!=null ? `${tiempo_viaje_min} min` : '-');
-      (document.getElementById('m_tiempo_servicio')||{}).textContent = (tiempo_servicio_min!=null ? `${tiempo_servicio_min} min` : '-');
-      (document.getElementById('m_tiempo_carga_desc')||{}).textContent = (tiempo_carga_desc_min!=null ? `${tiempo_carga_desc_min} min` : '-');
-
-      (document.getElementById('m_costo_tiempo')||{}).textContent = peso(costo_tiempo);
-      (document.getElementById('m_costo_combustible')||{}).textContent = peso(selected.costo_combustible);
-      (document.getElementById('m_costo_ayudante')||{}).textContent = peso(selected.costo_ayudante);
-      (document.getElementById('m_total')||{}).textContent = peso(selected.monto_estimado);
-
-      const ov = document.getElementById('overlay');
-      if (ov) ov.classList.add('open');
-    }
-
-    function closeModal(){ document.getElementById('overlay')?.classList.remove('open'); selected = null; }
-
-    async function aprobar(){
-      if(!selected || !token) return;
-      try{
-        const res = await fetch(`${API_BASE}/api/requests/${selected.id}/confirm`, {
-          method:'POST',
-          headers:{'Authorization':`Bearer ${token}`}
-        });
-        const data = await res.json();
-        if(!res.ok) throw new Error(data.detail || 'No se pudo confirmar');
-        toast('Solicitud confirmada ✅');
-        closeModal(); await loadSolicitudes();
-      }catch(e){toast(e.message || 'Error al confirmar')}
-    }
-
-    async function rechazar(){
-      if(!selected || !token) return;
-      try{
-        const res = await fetch(`${API_BASE}/api/requests/${selected.id}/reject`, {
-          method:'POST',
-          headers:{'Authorization':`Bearer ${token}`,'Content-Type':'application/json'}
-        });
-        const data = await res.json();
-        if(!res.ok) throw new Error(data.detail || 'No se pudo rechazar');
-        toast('Solicitud rechazada');
-        closeModal(); await loadSolicitudes();
-      }catch(e){toast(e.message || 'Error al rechazar')}
-    }
-
-    async function eliminar(){
-      if(!selected || !token) return;
-      if((selected.estado||'').toLowerCase() !== 'rechazado'){ toast('Solo se puede eliminar si está Rechazado'); return; }
-      if(!confirm(`¿Eliminar la solicitud de "${selected.nombre_cliente}"? Esta acción no se puede deshacer.`)) return;
-      try{
-        const res = await fetch(`${API_BASE}/api/requests/${selected.id}`, {
-          method:'DELETE',
-          headers:{'Authorization':`Bearer ${token}`}
-        });
-        const data = await res.json();
-        if(!res.ok) throw new Error(data.detail || 'No se pudo eliminar');
-        toast('Solicitud eliminada');
-        closeModal(); await loadSolicitudes();
-      }catch(e){toast(e.message || 'Error al eliminar')}
-    }
-
-    function forceLoginOnTabEnter(){
-      document.addEventListener('visibilitychange', () => {
-        if (document.visibilityState === 'visible') logout('Por seguridad, iniciá sesión nuevamente.');
-      });
-      window.addEventListener('pageshow', (ev) => { if (ev.persisted) logout('Por seguridad, iniciá sesión nuevamente.'); });
-      let armed = false;
-      window.addEventListener('blur', () => { armed = true; });
-      window.addEventListener('focus', () => { if (isAuth && armed) logout('Por seguridad, iniciá sesión nuevamente.'); armed = false; });
-      window.addEventListener('beforeunload', () => { token = null; isAuth = false; });
-      document.querySelectorAll('a[href]').forEach(a => { a.addEventListener('click', () => { token = null; isAuth = false; }); });
-    }
-
-    // ⬇️ CAMBIADO: sólo inicializa si la vista Admin existe
-    (function initAdmin(){
-      function ready(){
+      // ⬇️ CAMBIADO: gateado
+      function renderEmpty(msg) {
         if (!isAdminView()) return;
-        logout();
-        forceLoginOnTabEnter();
-        document.getElementById('loginForm')?.addEventListener('submit', (e) => { e.preventDefault(); login(); });
+        const tb = document.getElementById('tbody');
+        if (!tb) return;
+        tb.innerHTML = `<tr><td colspan="5" class="empty">${msg}</td></tr>`;
       }
-      if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', ready, { once: true });
-      } else {
-        ready();
-      }
-    })();
 
-    // 👇 Exponer SOLO lo que usan los onclick del HTML
-    Object.assign(window, { openModal, closeModal, aprobar, rechazar, eliminar, logout });
-  })();
+      function coalesce(...vals) { for (const v of vals) { if (v !== undefined && v !== null) return v; } return null; }
+
+      // ⬇️ CAMBIADO: gateado
+      function openModal(id) {
+        if (!isAdminView()) return;
+        if (!token) { logout(); return; }
+        selected = solicitudes.find(s => String(s.id) === String(id));
+        if (!selected) return;
+
+        const tiempo_viaje_min = coalesce(
+          selected.tiempo_viaje_min,
+          selected.tramo_base_origen_min && selected.tramo_origen_destino_min
+            ? Number(selected.tramo_base_origen_min) + Number(selected.tramo_origen_destino_min) + Number(selected.tramo_destino_base_min || 0)
+            : null
+        );
+        const tiempo_servicio_min = coalesce(selected.tiempo_servicio_min, null);
+        const tiempo_carga_desc_min = coalesce(selected.tiempo_carga_descarga_min, selected.tiempo_servicio_min);
+        const costo_tiempo = coalesce(
+          selected.costo_tiempo,
+          (selected.costo_tiempo_base != null && selected.mantenimiento != null)
+            ? (Number(selected.costo_tiempo_base) + Number(selected.mantenimiento))
+            : null
+        );
+
+        document.getElementById('#m_cliente')?.textContent;
+        (document.getElementById('m_cliente') || {}).textContent = selected.nombre_cliente || '-';
+        (document.getElementById('m_tel') || {}).textContent = selected.telefono || '-';
+        (document.getElementById('m_tipo') || {}).textContent = selected.tipo_carga || '-';
+        (document.getElementById('m_fecha') || {}).textContent = selected.fecha || '-';
+        (document.getElementById('m_ayudante') || {}).textContent = selected.ayudante ? 'Sí' : 'No';
+        (document.getElementById('m_estado') || {}).textContent = selected.estado || '-';
+        (document.getElementById('m_origen') || {}).textContent = selected.origen || '-';
+        (document.getElementById('m_destino') || {}).textContent = selected.destino || '-';
+
+        (document.getElementById('m_dist_km') || {}).textContent = (selected.dist_km != null ? Number(selected.dist_km).toFixed(3).replace('.', ',') : '-');
+        (document.getElementById('m_tiempo_viaje') || {}).textContent = (tiempo_viaje_min != null ? `${tiempo_viaje_min} min` : '-');
+        (document.getElementById('m_tiempo_servicio') || {}).textContent = (tiempo_servicio_min != null ? `${tiempo_servicio_min} min` : '-');
+        (document.getElementById('m_tiempo_carga_desc') || {}).textContent = (tiempo_carga_desc_min != null ? `${tiempo_carga_desc_min} min` : '-');
+
+        (document.getElementById('m_costo_tiempo') || {}).textContent = peso(costo_tiempo);
+        (document.getElementById('m_costo_combustible') || {}).textContent = peso(selected.costo_combustible);
+        (document.getElementById('m_costo_ayudante') || {}).textContent = peso(selected.costo_ayudante);
+        (document.getElementById('m_total') || {}).textContent = peso(selected.monto_estimado);
+
+        const ov = document.getElementById('overlay');
+        if (ov) ov.classList.add('open');
+      }
+
+      function closeModal() { document.getElementById('overlay')?.classList.remove('open'); selected = null; }
+
+      async function aprobar() {
+        if (!selected || !token) return;
+        try {
+          const res = await fetch(`${API_BASE}/api/requests/${selected.id}/confirm`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.detail || 'No se pudo confirmar');
+          toast('Solicitud confirmada ✅');
+          closeModal(); await loadSolicitudes();
+        } catch (e) { toast(e.message || 'Error al confirmar') }
+      }
+
+      async function rechazar() {
+        if (!selected || !token) return;
+        try {
+          const res = await fetch(`${API_BASE}/api/requests/${selected.id}/reject`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.detail || 'No se pudo rechazar');
+          toast('Solicitud rechazada');
+          closeModal(); await loadSolicitudes();
+        } catch (e) { toast(e.message || 'Error al rechazar') }
+      }
+
+      async function eliminar() {
+        if (!selected || !token) return;
+        if ((selected.estado || '').toLowerCase() !== 'rechazado') { toast('Solo se puede eliminar si está Rechazado'); return; }
+        if (!confirm(`¿Eliminar la solicitud de "${selected.nombre_cliente}"? Esta acción no se puede deshacer.`)) return;
+        try {
+          const res = await fetch(`${API_BASE}/api/requests/${selected.id}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.detail || 'No se pudo eliminar');
+          toast('Solicitud eliminada');
+          closeModal(); await loadSolicitudes();
+        } catch (e) { toast(e.message || 'Error al eliminar') }
+      }
+
+      function forceLoginOnTabEnter() {
+        document.addEventListener('visibilitychange', () => {
+          if (document.visibilityState === 'visible') logout('Por seguridad, iniciá sesión nuevamente.');
+        });
+        window.addEventListener('pageshow', (ev) => { if (ev.persisted) logout('Por seguridad, iniciá sesión nuevamente.'); });
+        let armed = false;
+        window.addEventListener('blur', () => { armed = true; });
+        window.addEventListener('focus', () => { if (isAuth && armed) logout('Por seguridad, iniciá sesión nuevamente.'); armed = false; });
+        window.addEventListener('beforeunload', () => { token = null; isAuth = false; });
+        document.querySelectorAll('a[href]').forEach(a => { a.addEventListener('click', () => { token = null; isAuth = false; }); });
+      }
+
+      // ⬇️ CAMBIADO: sólo inicializa si la vista Admin existe
+      (function initAdmin() {
+        function ready() {
+          if (!isAdminView()) return;
+          logout();
+          forceLoginOnTabEnter();
+          document.getElementById('loginForm')?.addEventListener('submit', (e) => { e.preventDefault(); login(); });
+        }
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', ready, { once: true });
+        } else {
+          ready();
+        }
+      })();
+
+      // 👇 Exponer SOLO lo que usan los onclick del HTML
+      Object.assign(window, { openModal, closeModal, aprobar, rechazar, eliminar, logout });
+    })();
   </script>
   <script>
-  (function () {
-    const page = document.body.dataset.page; // "inicio" | "presupuesto" | "admin"
+    (function () {
+      const page = document.body.dataset.page; // "inicio" | "presupuesto" | "admin"
 
-    document.querySelectorAll(".nav-links a").forEach(a => {
-      a.classList.toggle("active", a.dataset.view === page);
-    });
-  })();
+      document.querySelectorAll(".nav-links a").forEach(a => {
+        a.classList.toggle("active", a.dataset.view === page);
+      });
+    })();
   </script>
 
 
@@ -460,4 +451,5 @@
 
   <script defer src="/static/spa.js"></script>
 </body>
+
 </html>
