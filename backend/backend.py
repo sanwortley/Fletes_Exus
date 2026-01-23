@@ -187,7 +187,7 @@ INCLUIR_CHOFER_ADMIN_EN_TOTAL = (os.getenv("INCLUIR_CHOFER_ADMIN_EN_TOTAL", "0")
 MANTENIMIENTO_POR_KM = float(os.getenv("MANTENIMIENTO_POR_KM", "0"))
 
 # Contacto del profesional
-PRO_PHONE = os.getenv("PRO_PHONE", "+5493517552167")
+PRO_PHONE = os.getenv("PRO_PHONE", "+5493516678989")
 PRO_NAME = os.getenv("PRO_NAME", "Fletes Javier")
 
 # =========================
