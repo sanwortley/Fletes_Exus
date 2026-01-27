@@ -54,6 +54,16 @@
         <button id="tabReqHist" class="tab-btn" type="button">Históricos</button>
       </div>
 
+      <div class="hist-toolbar" id="histToolbar"
+        style="display:none; gap:10px; margin-bottom:15px; align-items:center;">
+        <select id="histFilter" class="input" style="padding:8px; width:auto;">
+          <option value="all">Todos</option>
+          <option value="completed">Completados</option>
+          <option value="voided">Anulados</option>
+        </select>
+        <input type="text" id="histSearch" class="input" placeholder="Buscar por nombre..." style="padding:8px;">
+      </div>
+
       <form id="loginForm" class="login-row" autocomplete="off">
         <input class="input" id="usr" type="text" placeholder="Usuario" autocomplete="username" />
         <input class="input" id="pwd" type="password" placeholder="Contraseña" autocomplete="current-password" />
@@ -152,9 +162,18 @@
         <div class="modal-foot">
           <button class="btn btn-danger" onclick="Admin.eliminar()" type="button">Eliminar</button>
           <div style="display:flex; gap:8px">
-            <button class="btn btn-reject" onclick="Admin.rechazar()" type="button">Rechazar</button>
-            <button class="btn btn-ok" onclick="Admin.aprobar()" type="button">Confirmar</button>
+            <!-- Acciones Pendientes -->
+            <button class="btn btn-reject" onclick="Admin.rechazar()" type="button"
+              style="display:none">Rechazar</button>
+            <button class="btn btn-ok" onclick="Admin.aprobar()" type="button" style="display:none">Confirmar</button>
+
+            <!-- Acciones Confirmados -->
+            <button class="btn btn-out btn-void" onclick="Admin.anular()" type="button"
+              style="display:none; color:var(--muted)">Anular</button>
+            <button class="btn btn-ok btn-complete" onclick="Admin.completar()" type="button"
+              style="display:none">Completar</button>
           </div>
+
         </div>
       </div>
     </div>
@@ -709,17 +728,33 @@
 
           solicitudes = Array.isArray(data.items) ? data.items : [];
 
-          // ✅ filtro solo si estás en Históricos (done)
+          // ✅ Si estamos en históricos, aplicar filtros de la UI si existen
           if (reqMode === "historicos") {
-            solicitudes = solicitudes.filter(s =>
-              String(s.estado || "").toLowerCase() === "realizado"
-            );
+            const hFilter = document.getElementById('histFilter');
+            const hSearch = document.getElementById('histSearch');
+
+            const type = hFilter?.value || "all";
+            const term = (hSearch?.value || "").toLowerCase();
+
+            if (type !== "all" || term) {
+              solicitudes = solicitudes.filter(x => {
+                const st = String(x.estado || "").toLowerCase();
+                const matchType = (type === "all") ||
+                  (type === "completed" && st === "realizado") ||
+                  (type === "voided" && st === "anulado");
+                const matchTerm = !term ||
+                  (x.nombre_cliente || "").toLowerCase().includes(term) ||
+                  (x.origen || "").toLowerCase().includes(term) ||
+                  (x.destino || "").toLowerCase().includes(term);
+                return matchType && matchTerm;
+              });
+            }
           }
 
           render();
 
           if (solicitudes.length === 0) {
-            renderEmpty(reqMode === "historicos" ? "No hay históricos." : "No hay pendientes.");
+            renderEmpty(reqMode === "historicos" ? "No hay históricos que coincidan." : "No hay pendientes.");
           }
 
         } catch (e) {
@@ -778,9 +813,13 @@
         let s = null;
         if (id != null) {
           const sid = String(id);
-          s = solicitudes.find(x => String(getId(x)) === sid);
+          // Buscar en tabla principal O en calendario
+          s = (solicitudes || []).find(x => String(getId(x)) === sid);
+          if (!s) {
+            s = (calendarSolicitudes || []).find(x => String(getId(x)) === sid);
+          }
         }
-        if (!s && Number.isInteger(idx) && idx >= 0 && idx < solicitudes.length) {
+        if (!s && Number.isInteger(idx) && idx >= 0 && idx < (solicitudes || []).length) {
           s = solicitudes[idx];
         }
         if (!s) { toast('No se encontró la solicitud'); return; }
@@ -899,6 +938,49 @@
         } catch (e) { toast(e.message || 'Error al eliminar'); }
       }
 
+      /* =================== NUEVAS FUNCIONES COMPLETAR / ANULAR =================== */
+      async function completar() {
+        if (!selected || !token || !isAdminView()) return;
+        if (!confirm(`¿Marcar este trabajo como COMPLETADO? Se moverá a históricos.`)) return;
+        try {
+          const sid = getId(selected);
+          await fetch(`${API_BASE}/api/requests/${sid}/complete`, { method: 'POST', headers: adminHeaders() });
+          toast('Trabajo completado exitosamente 🚀');
+          closeModal();
+
+          if (byId('tabCalendario')?.classList.contains('active')) {
+            await loadCalendarConfirmed();
+            renderCalendar();
+            byId("calDetailBody").innerHTML = "<div class='empty'>Seleccioná un día para ver detalles.</div>";
+            byId("calDetailTitle").innerHTML = "";
+          } else {
+            await loadSolicitudes();
+          }
+
+        } catch (e) { toast(e.message || 'Error al completar'); }
+      }
+
+      async function anular() {
+        if (!selected || !token || !isAdminView()) return;
+        if (!confirm(`¿ANULAR este trabajo? El horario quedará libre.`)) return;
+        try {
+          const sid = getId(selected);
+          await fetch(`${API_BASE}/api/requests/${sid}/void`, { method: 'POST', headers: adminHeaders() });
+          toast('Trabajo anulado');
+          closeModal();
+
+          if (byId('tabCalendario')?.classList.contains('active')) {
+            await loadCalendarConfirmed();
+            renderCalendar();
+            byId("calDetailBody").innerHTML = "<div class='empty'>Seleccioná un día para ver detalles.</div>";
+            byId("calDetailTitle").innerHTML = "";
+          } else {
+            await loadSolicitudes();
+          }
+
+        } catch (e) { toast(e.message || 'Error al anular'); }
+      }
+
       Object.assign(window.Admin, {
         login,
         logout: adminLogout,
@@ -907,11 +989,98 @@
         aprobar,
         rechazar,
         eliminar,
+        completar,
+        anular,
         loadDisponibilidad,
         guardarDisponibilidad,
         toggleDia,
         limpiarHorarios
       });
+
+      /* =================== MODAL LOGIC =================== */
+      function openModal(id, idx) {
+        if (!isAdminView()) return;
+        if (!token) { adminLogout(); return; }
+
+        let s = null;
+        if (id != null) {
+          const sid = String(id);
+          s = (solicitudes || []).find(x => String(getId(x)) === sid);
+          if (!s) {
+            s = (calendarSolicitudes || []).find(x => String(getId(x)) === sid);
+          }
+        }
+        if (!s && Number.isInteger(idx) && idx >= 0 && idx < (solicitudes || []).length) {
+          s = solicitudes[idx];
+        }
+        if (!s) { toast('No se encontró la solicitud'); return; }
+
+        selected = s;
+        const st = String(s.estado || "").toLowerCase();
+
+        const btnConfirm = document.querySelector(".btn-ok");
+        const btnReject = document.querySelector(".btn-reject");
+
+        // Nuevos botones
+        const btnComplete = document.querySelector(".btn-complete");
+        const btnVoid = document.querySelector(".btn-void");
+
+        // Reglas de visibilidad
+        let showCR = false; // Confirm/Reject
+        let showCA = false; // Complete/Anular
+
+        if (st === 'sent' || st === 'rechazado' || st === 'pending') {
+          showCR = true;
+        } else if (st === 'confirmado') {
+          showCA = true;
+        }
+
+        if (btnConfirm) btnConfirm.style.display = showCR ? "inline-flex" : "none";
+        if (btnReject) btnReject.style.display = showCR ? "inline-flex" : "none";
+
+        if (btnComplete) btnComplete.style.display = showCA ? "inline-flex" : "none";
+        if (btnVoid) btnVoid.style.display = showCA ? "inline-flex" : "none";
+
+
+        // Llenar datos (tu código existente...)
+        const tiempo_viaje_min = coalesce(
+          s.tiempo_viaje_min,
+          (s.tramo_base_origen_min && s.tramo_origen_destino_min)
+            ? Number(s.tramo_base_origen_min) + Number(s.tramo_origen_destino_min) + Number(s.tramo_destino_base_min || 0)
+            : null
+        );
+        const tiempo_servicio_min = coalesce(s.tiempo_servicio_min, null);
+        const tiempo_carga_desc_min = coalesce(s.tiempo_carga_descarga_min, s.tiempo_servicio_min);
+        const costo_tiempo = coalesce(
+          s.costo_tiempo,
+          (s.costo_tiempo_base != null && s.mantenimiento != null)
+            ? (Number(s.costo_tiempo_base) + Number(s.mantenimiento))
+            : null
+        );
+
+        const se = (id, val) => { const el = byId(id); if (el) el.textContent = val; };
+        se('m_cliente', s.nombre_cliente || '-');
+        se('m_tel', s.telefono || '-');
+        se('m_tipo', s.tipo_carga || '-');
+        se('m_fecha', s.fecha_turno || s.fecha || '-');
+        se('m_hora', s.hora_turno || '-');
+        se('m_ayudante', s.ayudante ? 'Sí' : 'No');
+        se('m_estado', s.estado || '-');
+        se('m_origen', s.origen || '-');
+        se('m_destino', s.destino || '-');
+
+        se('m_dist_km', (s.dist_km != null ? Number(s.dist_km).toFixed(3).replace('.', ',') : '-'));
+        se('m_tiempo_viaje', (tiempo_viaje_min != null ? `${tiempo_viaje_min} min` : '-'));
+        se('m_tiempo_servicio', (tiempo_servicio_min != null ? `${tiempo_servicio_min} min` : '-'));
+        se('m_tiempo_carga_desc', (tiempo_carga_desc_min != null ? `${tiempo_carga_desc_min} min` : '-'));
+
+        se('m_costo_tiempo', peso(costo_tiempo));
+        se('m_costo_combustible', peso(s.costo_combustible));
+        se('m_costo_ayudante', peso(s.costo_ayudante));
+        se('m_total', peso(s.monto_estimado));
+
+        byId('overlay')?.classList.add('open');
+      }
 
       (function initAdmin() {
         const NEED = ['authFlag', 'tbody', 'loginForm'];
@@ -931,7 +1100,6 @@
             startExpiryTimer();
             loadSolicitudes();
           }
-
 
           document.getElementById('loginForm')
             ?.addEventListener('submit', (e) => { e.preventDefault(); login(); });
@@ -976,17 +1144,42 @@
         const tabPend = byId('tabReqPend');
         const tabHist = byId('tabReqHist');
 
+        // Toolbar
+        const histToolbar = byId('histToolbar');
+        const histFilter = byId('histFilter');
+        const histSearch = byId('histSearch');
+
         tabPend?.addEventListener('click', async () => {
           tabPend.classList.add('active');
           tabHist?.classList.remove('active');
+          if (histToolbar) histToolbar.style.display = 'none';
           await loadSolicitudes("pending");
         });
 
         tabHist?.addEventListener('click', async () => {
           tabHist.classList.add('active');
           tabPend?.classList.remove('active');
+          if (histToolbar) histToolbar.style.display = 'flex';
           await loadSolicitudes("historicos");
         });
+
+        // Eventos de filtro
+        const applyHistFilters = () => {
+          if (reqMode !== "historicos") return;
+          // Re-filtrar sobre la lista original? 
+          // Ojo: loadSolicitudes ya trae todo. Mejor llamamos a render.
+          // Pero necesitamos la lista completa antes de filtrar.
+          // Lo ideal es llamar a loadSolicitudes("historicos") de nuevo o tener la lista en memoria.
+          // Como loadSolicitudes guarda en 'solicitudes', podemos filtrar sobre eso?
+          // WAIT: loadSolicitudes APLICA el filtro al cargar.
+          // Entonces mejor simplemente llamamos a render() o recargamos?
+          // Si filtramos en memoria, perdemos los originales.
+          // Mejor estratégia: loadSolicitudes se encarga.
+          loadSolicitudes("historicos");
+        };
+
+        histFilter?.addEventListener('change', applyHistFilters);
+        histSearch?.addEventListener('input', applyHistFilters);
 
         if (!tabSol || !tabDisp || !tabla || !panelDisp) return;
 

@@ -1172,8 +1172,8 @@ def listar_requests(
         }
 
     elif st == "historicos":
-        # ✅ Solo los ya realizados (o si querés también rechazados viejos, pero vos no)
-        base_filter = {"estado": "realizado"}
+        # Incluye realizados y anulados
+        base_filter = {"estado": {"$in": ["realizado", "anulado"]}}
 
     elif st == "all":
         base_filter = {}
@@ -1198,8 +1198,7 @@ def admin_confirmar(quote_id: str, background: BackgroundTasks, user=Depends(req
         raise HTTPException(status_code=404, detail="Presupuesto no encontrado")
 
     quotes.update_one({"_id": _id}, {"$set": {"estado": "confirmado", "confirmado_en": datetime.now(timezone.utc)}})
-    doc = quotes.find_one({"_id": _id})
-
+    
     # ✅ marcar booking como confirmado
     try:
         ft = doc.get("fecha_turno")
@@ -1213,9 +1212,65 @@ def admin_confirmar(quote_id: str, background: BackgroundTasks, user=Depends(req
     except Exception:
         pass
 
+    doc = quotes.find_one({"_id": _id})
     background.add_task(_notify_confirmed_quote, doc)
 
     return {"message": "Presupuesto confirmado"}
+
+@app.post("/api/requests/{quote_id}/complete")
+def admin_completar(quote_id: str, user=Depends(require_api_key)):
+    try:
+        _id = ObjectId(quote_id)
+    except Exception:
+        raise HTTPException(status_code=400, detail="ID inválido")
+
+    # Marcar quote como realizado
+    updated = quotes.update_one(
+        {"_id": _id},
+        {"$set": {"estado": "realizado", "completed_at": datetime.now(timezone.utc)}}
+    )
+    if updated.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Presupuesto no encontrado")
+        
+    # Actualizar booking a completed (para que quede registro pero no bloquee igual que active?) 
+    # En realidad completed sigue "ocupando" el slot histórico, está bien.
+    bookings.update_many({"quote_id": quote_id}, {"$set": {"status": "completed"}})
+
+    return {"message": "Trabajo completado"}
+
+@app.post("/api/requests/{quote_id}/void")
+def admin_anular(quote_id: str, user=Depends(require_api_key)):
+    try:
+        _id = ObjectId(quote_id)
+    except Exception:
+        raise HTTPException(status_code=400, detail="ID inválido")
+
+    doc = quotes.find_one({"_id": _id})
+    if not doc:
+        raise HTTPException(status_code=404, detail="Presupuesto no encontrado")
+
+    # Marcar quote como anulado
+    quotes.update_one(
+        {"_id": _id},
+        {"$set": {"estado": "anulado", "voided_at": datetime.now(timezone.utc)}}
+    )
+
+    # LIBERAR el slot del calendario (borrar booking)
+    # Porque "Anulado" implica que el viaje no se hizo, entonces el slot "se liberó" (aunque sea en el pasado o futuro)
+    bookings.delete_many({"quote_id": quote_id})
+    
+    # Si había override manual en availability, devolver el slot
+    ft = doc.get("fecha_turno")
+    ht = doc.get("hora_turno")
+    if ft and ht:
+        day_ovr = availability.find_one({"date": ft})
+        if day_ovr and "slots" in day_ovr:
+            availability.update_one(
+                {"date": ft},
+                {"$addToSet": {"slots": ht}}
+            )
+
+    return {"message": "Presupuesto anulado y horario liberado"}
 
 @app.post("/api/requests/{quote_id}/reject")
 def admin_rechazar(quote_id: str, user=Depends(require_api_key)):
