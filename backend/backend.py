@@ -131,10 +131,16 @@ users = db["users"]
 availability = db["availability"]
 bookings = db["bookings"]
 
+DEFAULT_SLOTS = [
+    "08:00", "09:00", "10:00", "11:00", "12:00",
+    "13:00", "14:00", "15:00", "16:00", "17:00",
+    "18:00", "19:00", "20:00", "21:00", "22:00"
+]
+
 # ✅ índices útiles
 try:
     availability.create_index("date", unique=True)
-    bookings.create_index([("date", 1), ("time", 1)])
+    bookings.create_index([("date", 1), ("time", 1)], unique=True)
 except Exception:
     pass
 
@@ -654,8 +660,8 @@ def _notify_confirmed_quote(doc: dict):
 @app.get("/api/availability")
 def get_availability(month: str = Query(..., description="YYYY-MM")):
     """
-    Público: devuelve SOLO días habilitados (enabled=true)
-    { days: { 'YYYY-MM-DD': ['09:00','10:00'] } }
+    Público: devuelve disponibilidad real (Merge de DEFAULT_SLOTS + Disponibilidad Admin + Bookings)
+    { days: { 'YYYY-MM-DD': ['08:00', '09:00', ...] } }
     """
     try:
         year, mon = map(int, month.split("-"))
@@ -666,9 +672,40 @@ def get_availability(month: str = Query(..., description="YYYY-MM")):
     start = f"{year:04d}-{mon:02d}-01"
     end   = f"{year:04d}-{mon:02d}-{last_day:02d}"
 
+    # 1) Obtener overrides del admin
+    overrides = {d["date"]: d for d in availability.find({"date": {"$gte": start, "$lte": end}})}
+    
+    # 2) Obtener bookings (reservados o confirmados)
+    booked = {}
+    for b in bookings.find({"date": {"$gte": start, "$lte": end}, "status": {"$in": ["reserved", "confirmed"]}}):
+        d_key = b["date"]
+        booked.setdefault(d_key, set()).add(b["time"])
+
+    # 3) Construir respuesta (solo devolvemos días que tengan algún cambio respecto al default)
+    #    Si no está en la respuesta, el frontend usa defaultSlots.
     days: Dict[str, List[str]] = {}
-    for doc in availability.find({"date": {"$gte": start, "$lte": end}, "enabled": True}, {"_id": 0, "date": 1, "slots": 1}):
-        days[doc["date"]] = doc.get("slots", [])
+    
+    # Iteramos todos los días del mes para asegurar consistencia
+    for d in range(1, last_day + 1):
+        date_str = f"{year:04d}-{mon:02d}-{d:02d}"
+        
+        # Base: lo que el admin configuró o el default
+        day_ovr = overrides.get(date_str)
+        if day_ovr and not day_ovr.get("enabled", True):
+            # Día deshabilitado completamente
+            days[date_str] = []
+            continue
+            
+        base_slots = day_ovr.get("slots") if (day_ovr and "slots" in day_ovr) else DEFAULT_SLOTS
+        
+        # Restar bookings
+        day_booked = booked.get(date_str, set())
+        final_slots = [s for s in base_slots if s not in day_booked]
+        
+        # Si el resultado es distinto al DEFAULT_SLOTS original, lo enviamos
+        # (O si preferís enviar todo para ser explícito, también vale)
+        if sorted(final_slots) != sorted(DEFAULT_SLOTS):
+            days[date_str] = final_slots
 
     return {"ok": True, "month": month, "days": days}
 
@@ -855,40 +892,77 @@ def preview_quote(body: QuoteIn):
 # ✅ Nuevo: enviar y guardar (sin ID previo) + RESERVA ATÓMICA
 @app.post("/api/quote/send")
 def send_quote_nuevo(body: QuoteIn, background: BackgroundTasks, debug: bool = Query(default=False)):
-
-    # ✅ exige fecha/hora de turno para poder reservar
+    """
+    Guarda el presupuesto y RESERVA el horario de forma atómica.
+    Válido para horarios por defecto o configurados por admin.
+    """
+    # 1) Requisitos básicos
     if not body.fecha_turno or not body.hora_turno:
-        raise HTTPException(status_code=422, detail="Tenés que elegir fecha_turno y hora_turno")
+        raise HTTPException(status_code=422, detail="Tenés que elegir fecha y horario")
 
-    # ✅ reservar ATÓMICO: exige enabled=true y que el slot exista
-    updated = availability.find_one_and_update(
-        {"date": body.fecha_turno, "enabled": True, "slots": body.hora_turno},
-        {"$pull": {"slots": body.hora_turno}, "$set": {"updated_at": datetime.now(timezone.utc)}},
-        return_document=ReturnDocument.AFTER
-    )
-    if not updated:
-        raise HTTPException(status_code=409, detail="Ese día/horario no está disponible")
+    # 2) Validar que no sea en el pasado (Hoy o Futuro)
+    hoy_ar = datetime.now(AR_TZ)
+    try:
+        req_dt = datetime.strptime(f"{body.fecha_turno} {body.hora_turno}", "%Y-%m-%d %H:%M").replace(tzinfo=AR_TZ)
+        if req_dt < hoy_ar - timedelta(minutes=5): # Margen de 5 min
+            raise HTTPException(status_code=409, detail="Ese horario ya pasó")
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Formato de fecha/hora inválido")
 
-    # ✅ calcular y guardar quote
-    doc = _calcular_desde_body(body)
-    doc["estado"] = "sent"
-    doc["created_at"] = datetime.now(timezone.utc)
+    # 3) Validar contra overrides del admin (Habilitado/Deshabilitado o slots específicos)
+    day_ovr = availability.find_one({"date": body.fecha_turno})
+    if day_ovr:
+        if not day_ovr.get("enabled", True):
+            raise HTTPException(status_code=409, detail="El día seleccionado no está habilitado")
+        
+        # Si el admin definió un set específico de slots para ese día
+        if "slots" in day_ovr:
+            if body.hora_turno not in day_ovr["slots"]:
+                raise HTTPException(status_code=409, detail="El horario ya no está disponible (cambio del admin)")
+    else:
+        # Si no hay override, validamos contra los defaults globales
+        if body.hora_turno not in DEFAULT_SLOTS:
+            raise HTTPException(status_code=409, detail="Horario no válido para este servicio")
 
-    _id = quotes.insert_one(doc).inserted_id
-    doc["_id"] = _id
-
-    # ✅ guardar booking (para auditoría / admin)
+    # 4) RESERVA ATÓMICA en la colección bookings (gracias al índice único)
     try:
         bookings.insert_one({
-            "quote_id": str(_id),
+            "quote_id": "PENDING", # Se actualizará luego
             "date": body.fecha_turno,
             "time": body.hora_turno,
             "status": "reserved",
             "created_at": datetime.now(timezone.utc),
         })
-    except Exception:
-        pass
+    except Exception: # Puede ser DuplicateKeyError
+        raise HTTPException(status_code=409, detail="Ese horario ya fue reservado por otra persona")
 
+    # 5) Sincronizar 'availability' (si el admin puso slots específicos, lo sacamos de la lista)
+    if day_ovr and "slots" in day_ovr:
+         availability.update_one(
+            {"date": body.fecha_turno},
+            {"$pull": {"slots": body.hora_turno}}
+        )
+
+    # 6) Calcular y guardar presupuesto
+    try:
+        doc = _calcular_desde_body(body)
+        doc["estado"] = "sent"
+        doc["created_at"] = datetime.now(timezone.utc)
+        
+        _id = quotes.insert_one(doc).inserted_id
+        doc["_id"] = _id
+        
+        # Actualizar el booking con el ID real
+        bookings.update_one(
+            {"date": body.fecha_turno, "time": body.hora_turno, "quote_id": "PENDING"},
+            {"$set": {"quote_id": str(_id)}}
+        )
+    except Exception as e:
+        # Rollback del booking en caso de error catastrófico al guardar el quote
+        bookings.delete_one({"date": body.fecha_turno, "time": body.hora_turno, "quote_id": "PENDING"})
+        raise HTTPException(status_code=500, detail=f"Error al procesar presupuesto: {str(e)}")
+
+    # 7) Notificar
     if debug:
         res = _notify_new_quote(doc)
     else:
@@ -1178,21 +1252,20 @@ def admin_eliminar(quote_id: str, user=Depends(require_api_key)):
     # ✅ borrar quote
     quotes.delete_one({"_id": _id})
 
-    # ✅ liberar horario: devolver slot a availability
+    # ✅ Liberar horario
     if ft and ht:
-        availability.update_one(
-            {"date": ft},
-            {
-                "$setOnInsert": {"date": ft},
-                "$addToSet": {"slots": ht},
-                "$set": {"updated_at": datetime.now(timezone.utc)},
-            },
-            upsert=True
-        )
-
-        # ✅ borrar booking asociado (limpieza)
+        # 1) Borrar booking (esto ya libera el slot para los días "por defecto")
         bookings.delete_many({"quote_id": quote_id})
-        bookings.delete_many({"date": ft, "time": ht, "status": {"$in": ["reserved", "confirmed"]}})
+        bookings.delete_many({"date": ft, "time": ht})
+
+        # 2) Devolver a 'availability' SOLO si el día ya tenía configuración custom
+        # (Si el día no existe en 'availability', usa DEFAULT_SLOTS - bookings automáticamente)
+        day_ovr = availability.find_one({"date": ft})
+        if day_ovr and "slots" in day_ovr:
+            availability.update_one(
+                {"date": ft},
+                {"$addToSet": {"slots": ht}, "$set": {"updated_at": datetime.now(timezone.utc)}}
+            )
 
     return {"message": "Eliminado y turno liberado" if (ft and ht) else "Eliminado"}
 

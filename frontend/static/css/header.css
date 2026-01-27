@@ -1,120 +1,171 @@
 /* =========================================
-   HEADER MINIMALISTA (Vector Style)
+   HEADER PREMIUM (Vector Style)
    /static/css/header.css
    ========================================= */
 
-/* Reset básico compartido */
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
-
-html,
-body {
-  height: 100%;
-}
-
-a {
-  color: inherit;
-  text-decoration: none;
-}
-
 header.nav {
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   align-items: center;
-  padding: 40px 5%;
-  /* Mucho aire arriba y a los lados */
-  max-width: 1400px;
-  margin: 0 auto;
-  position: relative;
-  background: white;
-  /* seamless */
-  z-index: 100;
+  padding: 15px 5%;
+  position: sticky;
+  top: 0;
+  background: rgba(255, 255, 255, 0.98);
+  backdrop-filter: blur(15px);
+  z-index: 1000;
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.03);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.02);
 }
 
 .nav-inner {
-  display: contents;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  max-width: 1300px;
+  margin: 0 auto;
 }
 
-/* Logo icon style */
 .brand {
-  font-family: 'Montserrat', sans-serif;
-  font-weight: 800;
-  /* Bold clean font */
-  font-size: 1.4rem;
-  color: #333;
   display: flex;
   align-items: center;
-  gap: 12px;
-  text-transform: capitalize;
-  letter-spacing: -0.5px;
+  transition: transform 0.3s ease;
+  flex-shrink: 0;
 }
 
-/* Gold crown icon */
-.brand::before {
-  content: '';
-  display: inline-block;
-  width: 35px;
-  height: 35px;
-  background-image: url('/images/animado.jpeg');
-  background-size: contain;
-  background-repeat: no-repeat;
-  background-position: center;
-  mix-blend-mode: multiply;
-  /* Para que funda el blanco */
+.brand:hover {
+  transform: scale(1.02);
+}
+
+.brand img {
+  display: block;
+  height: 90px;
+  width: auto;
+  object-fit: contain;
 }
 
 .nav-links {
   display: flex;
-  gap: 40px;
+  gap: 30px;
   align-items: center;
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
 
 .nav-links a {
   text-decoration: none;
-  font-family: 'Inter', sans-serif;
-  font-size: 1rem;
-  color: #999;
-  /* Light grey links */
-  font-weight: 500;
-  transition: color 0.2s;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 0.9rem;
+  color: #666;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  transition: all 0.3s ease;
+  position: relative;
+  padding: 8px 0;
+  white-space: nowrap;
 }
 
-.nav-links a:hover,
+.nav-links a::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: #D3A129;
+  transition: width 0.3s ease;
+}
+
+.nav-links a:hover {
+  color: #D3A129;
+}
+
+.nav-links a:hover::after,
+.nav-links a.active::after {
+  width: 100%;
+}
+
 .nav-links a.active {
   color: #D3A129;
-  /* Gold hover */
+  font-weight: 700;
 }
 
-/* Auth button */
 .btn-out {
-  padding: 0;
-  background: transparent;
+  padding: 10px 20px;
+  background: #f5f5f5;
+  border-radius: 50px;
   border: none;
-  color: #999;
-  font-family: 'Inter', sans-serif;
+  color: #666;
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 700;
+  text-transform: uppercase;
+  font-size: 0.75rem;
   cursor: pointer;
-  font-size: 0.9rem;
+  transition: all 0.3s ease;
+  margin-left: 10px;
+  white-space: nowrap;
 }
 
 .btn-out:hover {
-  text-decoration: underline;
-  color: #333;
+  background: #2F4858;
+  color: #fff;
 }
 
-/* Responsive */
+/* =========================================
+   RESPONSIVE HEADER
+   ========================================= */
+@media (max-width: 900px) {
+  .nav-links {
+    gap: 15px;
+  }
+}
+
 @media (max-width: 768px) {
   header.nav {
+    padding: 10px 3%;
+  }
+
+  .nav-inner {
     flex-direction: column;
-    gap: 20px;
-    padding: 20px;
+    gap: 12px;
+    padding-top: 5px;
   }
 
   .nav-links {
-    gap: 20px;
-    flex-wrap: wrap;
+    gap: 12px;
+    width: 100%;
     justify-content: center;
+    border-top: 1px solid #f0f0f0;
+    padding: 12px 5px 0;
+    flex-wrap: wrap;
+    /* Permite que el botón de cerrar sesión baje si no entra */
+  }
+
+  .nav-links a {
+    font-size: 0.8rem;
+    letter-spacing: 0.5px;
+  }
+
+  .btn-out {
+    margin-left: 0;
+    padding: 8px 15px;
+    font-size: 0.7rem;
+  }
+
+  .brand img {
+    height: 55px;
+  }
+}
+
+@media (max-width: 480px) {
+  .nav-links {
+    gap: 8px;
+  }
+
+  .nav-links a {
+    font-size: 0.7rem;
+    padding: 5px 0;
   }
 }

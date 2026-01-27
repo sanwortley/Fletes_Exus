@@ -17,11 +17,16 @@
   /* Softer radius */
 }
 
+* {
+  box-sizing: border-box;
+}
+
 /* Reset basics */
 html,
 body {
   height: 100%;
   scroll-padding-top: 100px;
+  margin: 0;
 }
 
 body {
@@ -34,8 +39,9 @@ body {
 /* Container */
 .container {
   max-width: 1200px;
-  margin: 40px auto;
-  padding: 0 5%;
+  margin: 0 auto;
+  padding: 100px 5% 40px;
+  /* Agregado 100px arriba para el header sticky */
 }
 
 /* Hero Section */
@@ -82,12 +88,12 @@ body {
 .grid {
   display: grid;
   grid-template-columns: repeat(12, 1fr);
-  gap: 32px;
-  /* More breathable */
+  gap: 70px;
 }
 
 .grid>div {
   grid-column: span 6;
+  margin-bottom: 25px;
 }
 
 .full {
@@ -106,12 +112,13 @@ body {
 label {
   display: block;
   font-weight: 700;
-  margin-bottom: 10px;
+  margin-bottom: 12px;
+  /* Aumentado de 10 a 12 */
   font-size: 0.85rem;
   color: #c68e17;
   /* Gold label text */
   text-transform: uppercase;
-  letter-spacing: 1px;
+  letter-spacing: 1.2px;
   font-family: 'Montserrat', sans-serif;
 }
 
@@ -186,6 +193,32 @@ select:focus {
   background: #1a2b36;
   transform: translateY(-2px);
   box-shadow: 0 10px 20px rgba(47, 72, 88, 0.15);
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--accent);
+  font-weight: 700;
+  border: 2px solid var(--border);
+  padding: 16px 36px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  border-radius: 50px;
+  /* Pill shape */
+  font-family: 'Montserrat', sans-serif;
+}
+
+.btn-ghost:hover {
+  border-color: var(--accent);
+  background: #fdfdfd;
+}
+
+.row {
+  display: flex;
+  align-items: center;
 }
 
 /* Helpers */
@@ -350,8 +383,42 @@ select:focus {
   background: #fff;
   border-radius: 24px;
   padding: 50px;
-  text-align: center;
+  text-align: left;
+  /* Cambiado a Izquierda para mejor lectura de condiciones */
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+}
+
+.modal-title {
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 800;
+  font-size: 1.5rem;
+  color: var(--accent);
+  text-transform: uppercase;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.conds {
+  list-style: none;
+  padding: 0;
+  margin: 25px 0;
+}
+
+.conds li {
+  position: relative;
+  padding-left: 25px;
+  margin-bottom: 12px;
+  font-size: 0.95rem;
+  color: #555;
+  line-height: 1.4;
+}
+
+.conds li::before {
+  content: '✓';
+  position: absolute;
+  left: 0;
+  color: var(--primary);
+  font-weight: 800;
 }
 
 /* Responsive */
@@ -365,28 +432,67 @@ select:focus {
     gap: 40px;
   }
 
+  .grid {
+    gap: 30px;
+    /* Reducir el gap de 70px a 30px en tablets */
+  }
+
   .grid>div,
   .grid>.full:has(#origen),
   .grid>.full:has(#destino) {
     grid-column: span 12;
+    margin-bottom: 10px;
   }
 }
 
 @media (max-width: 480px) {
   .hero h1 {
     font-size: 1.8rem;
+    margin-top: 10px;
+    margin-bottom: 15px;
+    padding: 0 10px;
+  }
+
+  .hero p {
+    font-size: 1rem;
+    line-height: 1.5;
+    padding: 0 10px;
   }
 
   .container {
-    padding: 0 20px;
-    margin: 20px auto;
+    padding: 120px 10px 20px;
+    margin: 0 auto;
+    max-width: 100vw;
+    overflow-x: hidden;
+  }
+
+  .grid {
+    gap: 15px;
+    /* Aún más compacto para ganar espacio */
+  }
+
+  .card {
+    padding: 15px;
+    /* Menos padding lateral para que los inputs sean más anchos */
+    background: #fafafa;
+    border-radius: 12px;
+    width: 100%;
+  }
+
+  input,
+  select {
+    font-size: 16px;
+    /* Evita zoom automático en iPhone */
+    height: 52px;
+    padding: 0 15px;
   }
 
   .actions-row {
     flex-direction: column;
-    gap: 20px;
+    gap: 25px;
     align-items: stretch;
     text-align: center;
+    padding-top: 25px;
   }
 
   .actions-row .left {
@@ -396,6 +502,39 @@ select:focus {
 
   .actions-row .btn {
     width: 100%;
+    padding: 20px;
+  }
+
+  .modal-box div[style*="display:flex"] {
+    flex-direction: column;
+    gap: 15px !important;
+  }
+
+  .modal-box .btn,
+  .modal-box .btn-ghost {
+    width: 100%;
+    padding: 18px;
+  }
+
+  .modal-box {
+    padding: 30px 20px;
+  }
+
+  .result {
+    padding: 24px 15px;
+    margin-top: 30px;
+  }
+
+  .result .row {
+    flex-direction: column;
+    gap: 15px;
+    align-items: stretch;
+  }
+
+  .result .row .btn,
+  .result .row .btn-ghost {
+    width: 100%;
+    padding: 18px;
   }
 }
 
