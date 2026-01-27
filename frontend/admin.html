@@ -54,14 +54,21 @@
         <button id="tabReqHist" class="tab-btn" type="button">Históricos</button>
       </div>
 
-      <div class="hist-toolbar" id="histToolbar"
-        style="display:none; gap:10px; margin-bottom:15px; align-items:center;">
-        <select id="histFilter" class="input" style="padding:8px; width:auto;">
-          <option value="all">Todos</option>
+      <div class="hist-toolbar" id="histToolbar" style="display:none;">
+        <select id="histFilter" class="hist-select">
+          <option value="all">Mostrar: Todos</option>
           <option value="completed">Completados</option>
           <option value="voided">Anulados</option>
         </select>
-        <input type="text" id="histSearch" class="input" placeholder="Buscar por nombre..." style="padding:8px;">
+
+        <div class="hist-search">
+          <svg class="hist-search-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+            stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+          <input type="text" id="histSearch" placeholder="Buscar por cliente, origen..." autocomplete="off">
+        </div>
       </div>
 
       <form id="loginForm" class="login-row" autocomplete="off">

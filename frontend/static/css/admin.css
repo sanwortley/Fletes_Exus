@@ -884,3 +884,100 @@ h1 .accent {
     justify-content: center;
   }
 }
+
+/* HISTORICAL TOOLBAR */
+.hist-toolbar {
+  background: transparent;
+  margin-bottom: 25px;
+  display: flex;
+  gap: 15px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.hist-select {
+  border: 1px solid var(--stroke);
+  border-radius: 10px;
+  /* More rounded */
+  padding: 12px 40px 12px 18px;
+  /* Bigger padding */
+  font-size: 0.95rem;
+  font-family: 'Inter', sans-serif;
+  font-weight: 500;
+  color: var(--accent);
+  background-color: #fff;
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23D3A129' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+  /* Gold arrow */
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  background-size: 14px;
+  transition: all 0.3s ease;
+  min-width: 180px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.03);
+  /* Subtle lift */
+}
+
+.hist-select:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.06);
+}
+
+.hist-select:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(211, 161, 41, 0.15);
+}
+
+.hist-search {
+  position: relative;
+  flex: 1;
+  min-width: 250px;
+}
+
+.hist-search input {
+  width: 100%;
+  padding: 12px 18px 12px 44px;
+  /* Matches select height */
+  border: 1px solid var(--stroke);
+  border-radius: 10px;
+  font-size: 0.95rem;
+  font-family: 'Inter', sans-serif;
+  transition: all 0.3s ease;
+  background-color: #fff;
+  color: var(--ink);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.03);
+}
+
+.hist-search input::placeholder {
+  color: #94a3b8;
+}
+
+.hist-search input:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.06);
+}
+
+.hist-search input:focus {
+  border-color: var(--primary);
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(211, 161, 41, 0.15);
+}
+
+.hist-search-icon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 20px;
+  height: 20px;
+  color: var(--muted);
+  pointer-events: none;
+  transition: color 0.3s;
+}
+
+.hist-search input:focus+.hist-search-icon {
+  color: var(--primary);
+  /* Icon activates on focus */
+}
