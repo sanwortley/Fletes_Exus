@@ -598,3 +598,57 @@ footer {
   font-size: 0.9rem;
   line-height: 1.6;
 }
+
+/* =========================================
+   GOOGLE MAPS AUTOCOMPLETE PREMIUM STYLING
+   ========================================= */
+.pac-container {
+  background-color: #ffffff;
+  border: none;
+  border-radius: 12px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.12);
+  font-family: 'Inter', sans-serif !important;
+  margin-top: 8px;
+  overflow: hidden;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  z-index: 10000 !important;
+}
+
+.pac-item {
+  padding: 14px 20px;
+  cursor: pointer;
+  border-top: 1px solid #f0f0f0;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+}
+
+.pac-item:hover {
+  background-color: #f9f9f9;
+}
+
+.pac-item:first-child {
+  border-top: none;
+}
+
+.pac-icon {
+  margin-right: 12px;
+  margin-top: 0;
+  background-size: 16px;
+}
+
+.pac-item-query {
+  font-size: 15px;
+  color: #2F4858;
+  font-weight: 600;
+  padding-right: 5px;
+}
+
+.pac-matched {
+  color: #D3A129;
+}
+
+.pac-item span:last-child {
+  color: #888;
+  font-size: 13px;
+}

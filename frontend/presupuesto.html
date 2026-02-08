@@ -63,13 +63,13 @@
 
           <div class="full">
             <label for="origen">Origen (dirección completa)</label>
-            <input id="origen" placeholder="Calle y número" required>
+            <input id="origen" placeholder="Calle y número" required autocomplete="off">
             <div class="help">Ej: Colón 100, Córdoba</div>
           </div>
 
           <div class="full">
             <label for="destino">Destino (dirección completa)</label>
-            <input id="destino" placeholder="Calle y número" required>
+            <input id="destino" placeholder="Calle y número" required autocomplete="off">
           </div>
 
           <div>
@@ -179,6 +179,63 @@
 
       let cleanupTimer = null;
       let cleanupInterval = null;
+
+      // --- AUTOCOMPLETE GOOGLE MAPS ---
+      async function initMaps() {
+        try {
+          const res = await fetch(`${API_BASE}/api/config`);
+          if (!res.ok) return;
+          const config = await res.json();
+
+          if (!config.google_maps_api_key) return;
+
+          if (!window.google || !window.google.maps) {
+            if (!document.getElementById('gmaps-script')) {
+              const script = document.createElement('script');
+              script.id = 'gmaps-script';
+              script.src = `https://maps.googleapis.com/maps/api/js?key=${config.google_maps_api_key}&libraries=places&language=${config.maps_language || 'es'}&region=${config.maps_region || 'AR'}`;
+              script.async = true;
+              script.onload = () => setupAutocomplete();
+              document.head.appendChild(script);
+            }
+          } else {
+            setupAutocomplete();
+          }
+        } catch (e) {
+          console.error("Error en initMaps:", e);
+        }
+      }
+
+      function setupAutocomplete() {
+        if (!window.google || !window.google.maps || !window.google.maps.places) return;
+
+        const options = {
+          componentRestrictions: { country: "ar" },
+          fields: ["formatted_address", "geometry"]
+        };
+
+        const ori = document.getElementById("origen");
+        const des = document.getElementById("destino");
+
+        if (ori) {
+          const autoOri = new google.maps.places.Autocomplete(ori, options);
+          autoOri.addListener("place_changed", () => {
+            const place = autoOri.getPlace();
+            if (place.formatted_address) ori.value = place.formatted_address;
+            clearMsg();
+          });
+        }
+        if (des) {
+          const autoDes = new google.maps.places.Autocomplete(des, options);
+          autoDes.addListener("place_changed", () => {
+            const place = autoDes.getPlace();
+            if (place.formatted_address) des.value = place.formatted_address;
+            clearMsg();
+          });
+        }
+      }
+
+      initMaps();
 
       // ✅ Evitar fechas pasadas
       const todayVal = new Date().toISOString().split("T")[0];

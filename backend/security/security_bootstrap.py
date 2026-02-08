@@ -31,21 +31,17 @@ def harden_app(app: FastAPI):
     # ================================
     # 🧱 3) Security headers (manual)
     # ================================
-    CSP = (
-        "default-src 'self'; "
-        "img-src 'self' data:; "
-        "font-src 'self'; "
-        "connect-src 'self' https:; "
-        "frame-ancestors 'none';"
-    )
+    CSP = "default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://maps.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; script-src 'self' 'unsafe-inline' https://maps.googleapis.com; img-src 'self' data: blob: https://maps.gstatic.com https://maps.googleapis.com; connect-src 'self' https: https://maps.googleapis.com; base-uri 'self'; frame-ancestors 'self';"
+
     FORCE_HSTS = os.getenv("FORCE_HSTS", "0") in ("1", "true", "True")
 
     @app.middleware("http")
     async def set_security_headers(request: Request, call_next):
         resp = await call_next(request)
-
-        # Solo si no están ya seteados por otro middleware/proxy:
-        resp.headers.setdefault("Content-Security-Policy", CSP)
+        # Solo para debug/verificar que se aplica el CSP correcto
+        # print(f"[Security] CSP applied to {request.url.path}")
+        
+        resp.headers["Content-Security-Policy"] = CSP
         resp.headers.setdefault("X-Frame-Options", "DENY")
         resp.headers.setdefault("X-Content-Type-Options", "nosniff")
         resp.headers.setdefault("Referrer-Policy", "no-referrer")

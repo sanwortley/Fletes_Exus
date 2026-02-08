@@ -33,7 +33,6 @@
       normalizedPath = normalizedPath.slice(0, -1);
     }
 
-    console.log("[SPA] Setting active link for:", normalizedPath);
 
     const links = document.querySelectorAll(".nav-links a");
     links.forEach(a => {
@@ -103,7 +102,6 @@
       const newPageValue = doc.body.dataset.page;
       if (newPageValue) {
         document.body.dataset.page = newPageValue;
-        console.log("[SPA] Body page updated to:", newPageValue);
       }
 
       // 3. Reemplazar Header y Main

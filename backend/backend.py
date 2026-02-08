@@ -17,11 +17,10 @@ from .security.rate_limit import install_rate_limit, limiter
 from .security.security_auth import hash_password, verify_password, check_lock, register_fail, reset_fail
 
 import requests
-from fastapi import FastAPI, HTTPException, Depends, Body, BackgroundTasks, Request, Response, APIRouter, Query
+from fastapi import FastAPI, HTTPException, Depends, Body, BackgroundTasks, Request, Query
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from pymongo import MongoClient
-from pymongo.collection import ReturnDocument  # ✅ AÑADIDO (para update atómico y devolver doc)
 from bson import ObjectId
 from dotenv import load_dotenv
 load_dotenv(override=True)
@@ -46,23 +45,6 @@ app = FastAPI(title="Fletes Javier API")
 harden_app(app)
 install_rate_limit(app)
 
-# --- CSP relajado SOLO para HTML estático (dev) ---
-@app.middleware("http")
-async def relax_csp_for_static(request: Request, call_next):
-    resp = await call_next(request)
-    ctype = resp.headers.get("content-type", "")
-    if ctype.startswith("text/html"):
-        resp.headers["Content-Security-Policy"] = (
-            "default-src 'self'; "
-            "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
-            "font-src 'self' data: https://fonts.gstatic.com; "
-            "script-src 'self' 'unsafe-inline'; "
-            "img-src 'self' data: blob:; "
-            # ✅ IMPORTANTÍSIMO: permitir fetch a localhost + Render
-            "connect-src 'self' http://127.0.0.1:8000 https://fletes-exus.onrender.com; "
-            "base-uri 'self'; frame-ancestors 'self'"
-        )
-    return resp
 
 # =========================
 # Frontend estático
@@ -173,9 +155,7 @@ FACTOR_PONDERACION = float(os.getenv("FACTOR_PONDERACION", "1.5"))
 FACTOR_TRAZADO = float(os.getenv("FACTOR_TRAZADO", "1.25"))
 VEL_KMH = float(os.getenv("VEL_KMH", "35"))
 
-# Reglas adicionales
 MANTENIMIENTO_POR_KM = float(os.getenv("MANTENIMIENTO_POR_KM", "0"))
-
 MANTENIMIENTO_PCT = float(os.getenv("MANTENIMIENTO_PCT", "0.20"))
 COSTO_PEAJE = float(os.getenv("COSTO_PEAJE", "2000"))
 COSTO_CHOFER_HORA = float(os.getenv("COSTO_CHOFER_HORA", "7500"))
@@ -190,7 +170,6 @@ EXCEL_MODE = (os.getenv("EXCEL_MODE", "0") == "1")
 CARGA_DESC_H = float(os.getenv("CARGA_DESC_H", "0"))
 COSTO_COMBUSTIBLE_KM = float(os.getenv("COSTO_COMBUSTIBLE_KM", "0"))
 INCLUIR_CHOFER_ADMIN_EN_TOTAL = (os.getenv("INCLUIR_CHOFER_ADMIN_EN_TOTAL", "0") == "1")
-MANTENIMIENTO_POR_KM = float(os.getenv("MANTENIMIENTO_POR_KM", "0"))
 
 # Contacto del profesional
 PRO_PHONE = os.getenv("PRO_PHONE", "+5493516678989")
@@ -785,6 +764,15 @@ def admin_get_bookings_day(date: str = Query(..., description="YYYY-MM-DD"), use
 # =========================
 # Rutas core
 # =========================
+@app.get("/api/config")
+def get_config():
+    return {
+        "google_maps_api_key": GOOGLE_MAPS_API_KEY,
+        "default_locality": DEFAULT_LOCALITY,
+        "maps_region": MAPS_REGION,
+        "maps_language": MAPS_LANGUAGE
+    }
+
 @app.get("/api/health")
 def health():
     return {"status": "ok", "service": "Fletes Javier API"}
@@ -834,12 +822,20 @@ def _calcular_desde_body(body: QuoteIn) -> dict:
         extra_servicio_min=extra_servicio_min
     )
 
+    # Geocodificación para mayor precisión en mapas/notificaciones
+    orig_geo = _geocode_google(origen_norm)
+    dest_geo = _geocode_google(destino_norm)
+
     doc = {
         "nombre_cliente": nombre,
         "telefono": body.telefono,
         "tipo_carga": body.tipo_carga,
         "origen": body.origen,
+        "origen_lat": orig_geo["lat"] if orig_geo else None,
+        "origen_lng": orig_geo["lng"] if orig_geo else None,
         "destino": body.destino,
+        "destino_lat": dest_geo["lat"] if dest_geo else None,
+        "destino_lng": dest_geo["lng"] if dest_geo else None,
         "fecha": body.fecha,
         "ayudante": body.ayudante,
         "regreso_base": regreso_flag,
@@ -1060,15 +1056,6 @@ def confirmar_quote(quote_id: str, body: ConfirmPayload = Body(default=None), ba
 
 
     return {"ok": True, "quote": _quote_public(doc)}
-
-from fastapi import APIRouter
-router_debug = APIRouter()
-
-@router_debug.post("/debug/whatsapp")
-def debug_whatsapp():
-    return send_whatsapp_to_javier("🔧 Prueba WhatsApp desde backend (Render).")
-
-app.include_router(router_debug, prefix="/api", tags=["debug"])
 
 
 # =========================

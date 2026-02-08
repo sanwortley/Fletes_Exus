@@ -1,83 +1,73 @@
-# 🚚 Fletes Exus - Logistics Management Platform
+# 🚚 Fletes Exus - Plataforma de Gestión Logística Express
 
-A comprehensive full-stack solution designed for "Fletes Larga Distancia" (Long Distance Freight), streamlining the quoting, booking, and management process for logistics services.
+Una solución integral Full-Stack diseñada para "Fletes Javier", optimizando el proceso de cotización, reserva y administración de servicios de transporte y mudanzas con una experiencia de usuario premium.
 
-![Admin Dashboard](https://via.placeholder.com/800x400?text=Admin+Dashboard+Preview)
+## 🌟 Características Principales
 
-## 🌟 Key Features
+### 1. **Motor de Cotización Inteligente**
+- **Sugerencias de Direcciones**: Integración total con **Google Maps Autocomplete** para una selección de direcciones rápida y sin errores.
+- **Geocodificación de Precisión**: Los puntos de origen y destino se guardan con coordenadas exactas (`lat`/`lng`) para evitar ambigüedades.
+- **Ruta Circular Exacta**: El sistema calcula automáticamente el costo basándose en el recorrido total: `Base → Origen → Destino → Base`.
+- **Precios en Tiempo Real**: Métricas de distancia y duración obtenidas mediante **Google Maps Distance Matrix API**.
 
-### 1. **Automated Quoting Engine**
-- Calculates estimated costs in real-time based on origin, destination, and load type.
-- Integrates with **Google Maps API** / **OpenRouteService** for precise distance and duration metrics.
-- Accounts for variable costs like fuel, toll roads, driver hours, and helper fees.
+### 2. **Panel de Administración Pro**
+- **Gestión de Solicitudes**: Vista estilo Kanban para administrar pedidos Pendientes, Confirmados e Históricos.
+- **Calendario Interactivo**: Resumen visual de todos los fletes confirmados y programados.
+- **Control de Agenda**: Posibilidad de bloquear/habilitar fechas y horarios específicos directamente desde el panel.
+- **Seguridad Robusta**: Login administrativo con protección contra fuerza bruta y sesiones seguras.
 
-### 2. **Admin Dashboard**
-- **Kanban-style Request Management**: View Pending, Confirmed, and Historical requests.
-- **Interactive Calendar**: Visual overview of confirmed bookings.
-- **Availability Control**: Block/Unblock specific dates and times directly from the UI.
-- **Role-Based Access**: Secure login for administrators.
+### 3. **Notificaciones Automatizadas**
+- **WhatsApp Directo**: Uso de UltraMsg API para enviar alertas instantáneas a Javier con cada nuevo presupuesto o confirmación.
+- **Mapas de un clic**: Los mensajes de WhatsApp incluyen enlaces dinámicos a Google Maps con las coordenadas exactas de la carga y descarga.
 
-### 3. **Smart Notifications**
-- Automated **WhatsApp** messages via UltraMsg API to alert admins of new quotes and confirmations.
-- Status update notifications for clients.
+### 4. **Interfaz de Usuario de Alta Gama**
+- **Diseño Glassmorphism**: Estética moderna con transparencias, gradientes y animaciones fluidas.
+- **Single Page Application (SPA)**: Navegación instantánea gracias a un sistema de ruteo personalizado en JavaScript vanila.
+- **Totalmente Responsive**: Optimizado para que el cliente pida su flete desde el celular o la computadora con la misma facilidad.
 
-### 4. **Modern UI/UX**
-- Fully responsive design built with **Vanilla CSS** (no heavy frameworks).
-- Premium "Glassmorphism" aesthetic with intuitive navigation.
-- Optimized for mobile and desktop use.
-
-## 🛠️ Tech Stack
+## 🛠️ Stack Tecnológico
 
 - **Backend**: Python (FastAPI), Pydantic, Uvicorn.
-- **Database**: MongoDB (Atlas) for flexible document storage.
-- **Frontend**: HTML5, CSS3, JavaScript (ES6+).
-- **APIs**: Google Maps, OpenRouteService, UltraMsg (WhatsApp).
-- **Deployment**: Render / Railway ready (`render.yaml` included).
+- **Base de Datos**: MongoDB (Atlas) para almacenamiento flexible de documentos.
+- **Frontend**: HTML5 Semántico, CSS3 Personalizado, JavaScript (ES6+).
+- **Servicios Externos**: Google Maps (Places, Geocoding, Distance Matrix), UltraMsg (WhatsApp).
+- **Deployment**: Configuración lista para Render (`render.yaml`).
 
-## 🚀 Getting Started
+## 🚀 Instalación y Configuración
 
-### Prerequisites
+### Requisitos Previos
 - Python 3.10+
-- MongoDB Instance
-- API Keys for Google Maps/ORS and WhatsApp service.
+- Instancia de MongoDB (Local o Atlas).
+- Claves de API de Google Maps con facturación habilitada.
 
-### Installation
-
-1. **Clone the repository**
+### Pasos
+1. **Clonar y entrar**:
    ```bash
    git clone https://github.com/sanwortley/Fletes_Exus.git
    cd Fletes_Exus
    ```
-
-2. **Set up Virtual Environment**
+2. **Entorno Virtual**:
    ```bash
    python -m venv .venv
-   source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+   # Windows: .venv\Scripts\activate | Mac/Linux: source .venv/bin/activate
    ```
-
-3. **Install Dependencies**
+3. **Dependencias**:
    ```bash
    pip install -r requirements.txt
    ```
+4. **Variables de Entorno**:
+   Copia `.env.example` a `.env` y carga tus claves:
+   - `GOOGLE_MAPS_API_KEY`: Tu clave de Google Cloud.
+   - `MONGO_URI`: Tu conexión a MongoDB Atlas.
+   - Otros costos operativos (Nafta, Hora Chofer, Peajes).
 
-4. **Configuration**
-   Rename `.env.example` to `.env` and fill in your keys:
-   ```bash
-   cp .env.example .env
-   # Edit .env with your specific API keys and database URI
-   ```
-
-5. **Run the Server**
+5. **Lanzar**:
    ```bash
    uvicorn backend.backend:app --reload
    ```
-   Visit `http://localhost:8000` for the app.
-   Visit `http://localhost:8000/admin` for the admin panel.
 
-## 📸 Portfolio Note
+## 📸 Nota de Portafolio
+Este proyecto demuestra la capacidad de integrar servicios complejos de terceros (Google Maps API) con lógica de negocio personalizada, priorizando siempre la simplicidad para el usuario final y la robustez para el administrador.
 
-This project demonstrates a real-world application of full-stack development, focusing on business logic integration, API consumption, and user experience. It solves a tangible problem for logistics providers by automating manual pricing and scheduling tasks.
-
-## 📄 License
-
-This project is open-sourced under the MIT License - see the [LICENSE](LICENSE) file for details.
+## 📄 Licencia
+Este proyecto es de código abierto bajo la Licencia MIT.
