@@ -146,30 +146,14 @@ ORS_API_KEY = os.getenv("ORS_API_KEY")
 BASE_DIRECCION = os.getenv("BASE_DIRECCION", "Córdoba, Argentina")
 DEFAULT_LOCALITY = os.getenv("DEFAULT_LOCALITY", "Córdoba, Argentina")
 
-KM_POR_LITRO = float(os.getenv("KM_POR_LITRO", "8"))
-COSTO_LITRO = float(os.getenv("COSTO_LITRO", "1600"))
-COSTO_HORA = float(os.getenv("COSTO_HORA", "25000"))
-COSTO_HORA_AYUDANTE = float(os.getenv("COSTO_HORA_AYUDANTE", "10000"))
-FACTOR_PONDERACION = float(os.getenv("FACTOR_PONDERACION", "1.5"))
+# =========================
+# Config de cálculo (Dynamic + .env fallback)
+# =========================
+from .config_manager import DynamicConfig
 
-FACTOR_TRAZADO = float(os.getenv("FACTOR_TRAZADO", "1.25"))
-VEL_KMH = float(os.getenv("VEL_KMH", "35"))
+# Las variables globales se han eliminado para usar DynamicConfig.get_values(db) en tiempo de ejecución.
+# Se mantienen solo las estáticas que no cambian (API Keys, etc).
 
-MANTENIMIENTO_POR_KM = float(os.getenv("MANTENIMIENTO_POR_KM", "0"))
-MANTENIMIENTO_PCT = float(os.getenv("MANTENIMIENTO_PCT", "0.20"))
-COSTO_PEAJE = float(os.getenv("COSTO_PEAJE", "2000"))
-COSTO_CHOFER_HORA = float(os.getenv("COSTO_CHOFER_HORA", "7500"))
-COSTO_ADMIN_HORA = float(os.getenv("COSTO_ADMIN_HORA", "3500"))
-
-REDONDEO_MIN = int(os.getenv("REDONDEO_MIN", "30"))
-BASE_FIJA = float(os.getenv("BASE_FIJA", "0"))
-MIN_TOTAL = float(os.getenv("MIN_TOTAL", "0"))
-INCLUIR_AYUDANTE_EN_TOTAL = (os.getenv("INCLUIR_AYUDANTE_EN_TOTAL", "1") == "1")
-RETURN_TO_BASE_DEFAULT = (os.getenv("RETURN_TO_BASE_DEFAULT", "0") == "1")
-EXCEL_MODE = (os.getenv("EXCEL_MODE", "0") == "1")
-CARGA_DESC_H = float(os.getenv("CARGA_DESC_H", "0"))
-COSTO_COMBUSTIBLE_KM = float(os.getenv("COSTO_COMBUSTIBLE_KM", "0"))
-INCLUIR_CHOFER_ADMIN_EN_TOTAL = (os.getenv("INCLUIR_CHOFER_ADMIN_EN_TOTAL", "0") == "1")
 
 # Contacto del profesional
 PRO_PHONE = os.getenv("PRO_PHONE", "+5493516678989")
@@ -332,6 +316,11 @@ def _distance_time_ors(origen: str, destino: str) -> Optional[Dict[str, Any]]:
         return None
 
 def _distance_time_fallback(origen: str, destino: str) -> Dict[str, Any]:
+    # Obtener config actual
+    conf = DynamicConfig.get_values(db)
+    FACTOR_TRAZADO = conf["FACTOR_TRAZADO"]
+    VEL_KMH = conf["VEL_KMH"]
+
     o = _geocode_google(origen) if GOOGLE_MAPS_API_KEY else None
     d = _geocode_google(destino) if GOOGLE_MAPS_API_KEY else None
     if o and d:
@@ -400,6 +389,9 @@ def calcular_ruta(origen: str, destino: str) -> Dict[str, Any]:
 # =========================
 # Cálculo de costos
 # =========================
+# =========================
+# Cálculo de costos
+# =========================
 def calcular_costos(
     dist_km: float,
     tiempo_viaje_min: int,
@@ -410,60 +402,91 @@ def calcular_costos(
     extra_servicio_min: int = 0,
 ) -> Dict[str, float]:
 
-    # 1) Horas base (manejo)
-    horas_manejo = (horas_reales if horas_reales and horas_reales > 0 else (tiempo_viaje_min / 60.0))
+    # 1) Obtener configuración dinámica
+    conf = DynamicConfig.get_values(db)
+    
+    FACTOR_PONDERACION = conf.get("FACTOR_PONDERACION", 1.5)
+    COSTO_HORA = conf.get("COSTO_HORA", 0.0)
+    COSTO_HORA_AYUDANTE = conf.get("COSTO_HORA_AYUDANTE", 0.0)
+    COSTO_CHOFER_HORA = conf.get("COSTO_CHOFER_HORA", 0.0)
+    COSTO_ADMIN_HORA = conf.get("COSTO_ADMIN_HORA", 0.0)
+    KM_POR_LITRO = max(conf.get("KM_POR_LITRO", 8.0), 0.1)
+    COSTO_LITRO = conf.get("COSTO_LITRO", 0.0)
+    MANTENIMIENTO_PCT = conf.get("MANTENIMIENTO_PCT", 0.0)
+    COSTO_PEAJE = conf.get("COSTO_PEAJE", 0.0)
+    CARGA_DESC_H = conf.get("CARGA_DESC_H", 0.0)
+    BASE_FIJA = conf.get("BASE_FIJA", 0.0)
+    MIN_TOTAL = conf.get("MIN_TOTAL", 0.0)
+    REDONDEO_MIN = conf.get("REDONDEO_MIN", 0)
+    
+    # Flags de comportamiento
+    INCLUIR_CHOFER_ADMIN = conf.get("INCLUIR_CHOFER_ADMIN_EN_TOTAL", False)
 
-    # 2) Tiempo total estilo Excel:
-    #    (horas + min/60) * ponderación + carga/descarga(extra)
-    horas_total = (horas_manejo * FACTOR_PONDERACION) + (extra_servicio_min / 60.0)
+    # 2) Tiempo de viaje base (manejo)
+    # Si el tiempo es 0 o muy bajo, puede haber un error de API o velocidad 0
+    horas_manejo = (horas_reales if (horas_reales and horas_reales > 0) else (tiempo_viaje_min / 60.0))
+    if horas_manejo < 0.01 and dist_km > 0:
+        # Fallback de velocidad si algo falló (35km/h)
+        horas_manejo = dist_km / 35.0
 
-    # 3) Redondeo por bloques (si querés que sea igual que la planilla, lo podés dejar)
+    # 3) Tiempo Total (Según Excel: (Manejo_Total * Ponderación) + Carga/Descarga)
+    # Ya no sumamos extra_servicio_min por fuera para evitar duplicación
+    tiempo_total_h = (horas_manejo * FACTOR_PONDERACION) + CARGA_DESC_H
+
+    # 4) Redondeo opcional
     if REDONDEO_MIN > 0:
         import math
         bloque_h = REDONDEO_MIN / 60.0
-        horas_total = bloque_h * math.ceil(horas_total / bloque_h)
+        tiempo_total_h = bloque_h * math.ceil(tiempo_total_h / bloque_h)
 
-    # 4) Costos por tiempo
-    costo_tiempo = horas_total * COSTO_HORA
-    costo_chofer_parcial = horas_total * COSTO_CHOFER_HORA
-    costo_admin_parcial = horas_total * COSTO_ADMIN_HORA
-    costo_ayudante = horas_total * COSTO_HORA_AYUDANTE if ayudante else 0.0
+    # 5) Cálculos de costos basados en TIEMPO
+    costo_tiempo_base = tiempo_total_h * COSTO_HORA
+    
+    # Mantenimiento como % del costo de tiempo (Javier Excel: 20%)
+    pct_dec = MANTENIMIENTO_PCT / 100.0 if MANTENIMIENTO_PCT >= 1 else MANTENIMIENTO_PCT
+    mantenimiento = costo_tiempo_base * pct_dec
+    
+    # Ayudante (solo si el cliente lo pide)
+    costo_ayudante = (tiempo_total_h * COSTO_HORA_AYUDANTE) if ayudante else 0.0
+    
+    # Costos parciales internos (informativos)
+    costo_chofer = tiempo_total_h * COSTO_CHOFER_HORA
+    costo_admin = tiempo_total_h * COSTO_ADMIN_HORA
 
-    # 5) Combustible + mantenimiento (para que te dé como el Excel)
-    costo_combustible = (dist_km / max(KM_POR_LITRO, 0.1)) * COSTO_LITRO
+    # 6) Cálculos de costos basados en DISTANCIA
+    costo_combustible = (dist_km / KM_POR_LITRO) * COSTO_LITRO
+    costo_peajes = peajes * COSTO_PEAJE
+    
+    costo_distancia_total = costo_combustible + costo_peajes + viaticos
 
-    # ✅ IMPORTANTE: tu Excel está metiendo mantenimiento como “$ por km”
-    mantenimiento = dist_km * MANTENIMIENTO_POR_KM
-
-    peajes_total = peajes * COSTO_PEAJE
-
-    # 6) Total
+    # 7) MONTO TOTAL ESTIMADO
+    # Suma exacta de Javier: Costo Tiempo + Mantenimiento + Ayudante + Costo Distancia
     monto_estimado = (
         BASE_FIJA
-        + costo_tiempo
-        + costo_combustible
+        + costo_tiempo_base
         + mantenimiento
-        + peajes_total
-        + viaticos
+        + costo_ayudante
+        + costo_distancia_total
     )
-
-    if INCLUIR_AYUDANTE_EN_TOTAL and ayudante:
-        monto_estimado += costo_ayudante
+    
+    # Si el admin activó incluir costos internos en el precio al cliente
+    if INCLUIR_CHOFER_ADMIN:
+        monto_estimado += (costo_chofer + costo_admin)
 
     monto_estimado = max(monto_estimado, MIN_TOTAL)
 
     return {
-        "horas_base": round(horas_total, 2),
-        "tiempo_servicio_min": int(round(horas_total * 60)),
-        "costo_tiempo_base": round(costo_tiempo, 2),
+        "horas_base": round(tiempo_total_h, 2),
+        "tiempo_servicio_min": int(round(tiempo_total_h * 60)),
+        "costo_tiempo_base": round(costo_tiempo_base, 2),
         "mantenimiento": round(mantenimiento, 2),
-        "costo_tiempo": round(costo_tiempo, 2),
+        "costo_tiempo": round(costo_tiempo_base + mantenimiento + costo_ayudante, 2),
         "costo_combustible": round(costo_combustible, 2),
-        "peajes_total": round(peajes_total, 2),
+        "peajes_total": round(costo_peajes, 2),
         "viaticos": round(viaticos, 2),
         "costo_ayudante": round(costo_ayudante, 2),
-        "costo_chofer_parcial": round(costo_chofer_parcial, 2),
-        "costo_admin_parcial": round(costo_admin_parcial, 2),
+        "costo_chofer_parcial": round(costo_chofer, 2),
+        "costo_admin_parcial": round(costo_admin, 2),
         "monto_estimado": round(monto_estimado, 2),
     }
 
@@ -773,6 +796,19 @@ def get_config():
         "maps_language": MAPS_LANGUAGE
     }
 
+# ✅ NUEVO: Endpoints de variables de presupuesto (Admin)
+@app.get("/api/admin/config-vars")
+def get_admin_config_vars(user=Depends(require_api_key)):
+    return DynamicConfig.get_values(db)
+
+@app.post("/api/admin/config-vars")
+def update_admin_config_vars(payload: dict = Body(...), user=Depends(require_api_key)):
+    try:
+        updated = DynamicConfig.update_values(db, payload)
+        return {"ok": True, "config": updated}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
 @app.get("/api/health")
 def health():
     return {"status": "ok", "service": "Fletes Javier API"}
@@ -812,13 +848,16 @@ def _calcular_desde_body(body: QuoteIn) -> dict:
         except Exception:
             horas_reales = None
 
-    # Buffer por tipo
-    is_mudanza = "mudanza" in (body.tipo_carga or "").lower()
-    extra_servicio_min = 60 if is_mudanza else 30
+    # Buffer por tipo (Si es mudanza puede requerir más, pero lo manejamos con CARGA_DESC_H)
+    extra_servicio_min = 0 # Eliminamos el buffer automático para que coincida con Excel
 
     costos = calcular_costos(
-        dist_total, tiempo_total_min, body.ayudante,
-        horas_reales=horas_reales, peajes=body.peajes, viaticos=body.viaticos,
+        dist_km=dist_total,
+        tiempo_viaje_min=tiempo_total_min,
+        ayudante=body.ayudante,
+        horas_reales=horas_reales,
+        peajes=body.peajes,
+        viaticos=float(body.viaticos or 0),
         extra_servicio_min=extra_servicio_min
     )
 

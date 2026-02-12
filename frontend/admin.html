@@ -15,6 +15,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/static/css/admin.css?v=2">
+  <link rel="stylesheet" href="/static/css/admin_vars.css">
   <link rel="stylesheet" href="/static/css/header.css?v=2">
 </head>
 
@@ -46,6 +47,7 @@
       <button class="view-tab active" id="tabSolicitudes" type="button">Solicitudes</button>
       <button class="view-tab" id="tabCalendario">Calendario</button>
       <button class="view-tab" id="tabDisponibilidad" type="button">Disponibilidad</button>
+      <button class="view-tab" id="tabVariables" type="button">Variables</button>
     </div>
 
     <section class="panel" id="panelSolicitudes" style="display:none">
@@ -132,6 +134,55 @@
       <div class="disp-hint">
         Tip: tocá un horario para prender/apagar. Si el día está deshabilitado, los horarios quedan bloqueados.
       </div>
+    </section>
+
+    <!-- ====== PANEL VARIABLES (Config) ====== -->
+    <section class="panel" id="panelVariables" style="display:none">
+      <div class="top-bar">
+        <h2>Variables de Presupuesto</h2>
+        <button id="btnGuardarVars" class="mini-btn primary" type="button">Guardar cambios</button>
+      </div>
+
+      <p class="help">Modificá los valores base para el cálculo automático.</p>
+
+      <form id="formVars" class="vars-grid">
+        <div class="vars-group">
+          <h3>Combustible y Vehículo</h3>
+          <label>Km por Litro <input type="number" step="0.1" name="KM_POR_LITRO" placeholder="Ej: 8"></label>
+          <label>Costo Litro ($) <input type="number" step="1" name="COSTO_LITRO"></label>
+          <label>% Mantenimiento <input type="number" step="0.1" name="MANTENIMIENTO_PCT" placeholder="Ej: 20"></label>
+        </div>
+
+        <div class="vars-group">
+          <h3>Tiempo y Labor</h3>
+          <label>Costo Hora (Cliente) <input type="number" step="1" name="COSTO_HORA"></label>
+          <label>Costo Hora Ayudante <input type="number" step="1" name="COSTO_HORA_AYUDANTE"></label>
+          <label>Costo Hora Chofer (Interno) <input type="number" step="1" name="COSTO_CHOFER_HORA"></label>
+          <label>Costo Hora Admin (Interno) <input type="number" step="1" name="COSTO_ADMIN_HORA"></label>
+        </div>
+
+        <div class="vars-group">
+          <h3>Factores y Ajustes</h3>
+          <label>Factor Ponderación (Tiempo) <input type="number" step="0.1" name="FACTOR_PONDERACION"
+              placeholder="Ej: 1.5"></label>
+          <label>Carga/Descarga (h) <input type="number" step="0.1" name="CARGA_DESC_H" placeholder="Ej: 0.5"></label>
+          <label>Redondeo Minutos <input type="number" step="1" name="REDONDEO_MIN"></label>
+        </div>
+
+        <div class="vars-group">
+          <h3>Precios Fijos</h3>
+          <label>Mínimo Total ($) <input type="number" step="1" name="MIN_TOTAL"></label>
+          <label>Costo Peaje ($) <input type="number" step="1" name="COSTO_PEAJE"></label>
+        </div>
+
+        <div class="vars-group full">
+          <h3>Opciones (Sí/No)</h3>
+          <div class="chk-row"><input type="checkbox" name="RETURN_TO_BASE_DEFAULT"> <label>Retorno a Base
+              (Default)</label></div>
+          <div class="chk-row"><input type="checkbox" name="INCLUIR_CHOFER_ADMIN_EN_TOTAL"> <label>Incluir Chofer/Admin
+              en Total</label></div>
+        </div>
+      </form>
     </section>
 
     <div class="overlay" id="overlay" onclick="if(event.target===this) Admin.closeModal()">
@@ -599,6 +650,66 @@
           toast(e.message || "Error guardando disponibilidad");
         }
       }
+
+      /* =================== VARIABLES LOGIC =================== */
+      async function loadVariables() {
+        if (!isAdminView()) return;
+        try {
+          const res = await fetch(`${API_BASE}/api/admin/config-vars`, { headers: adminHeaders() });
+          if (!res.ok) throw new Error("Error cargando variables");
+          const data = await res.json();
+
+          const form = byId('formVars');
+          if (!form) return;
+
+          form.reset();
+          Object.keys(data).forEach(key => {
+            const input = form.elements[key];
+            if (input) {
+              if (input.type === 'checkbox') {
+                input.checked = !!data[key];
+              } else {
+                input.value = data[key];
+              }
+            }
+          });
+        } catch (e) {
+          toast(e.message || "Error al cargar configuración");
+        }
+      }
+
+      async function guardarVariables() {
+        if (!isAdminView()) return;
+        const form = byId('formVars');
+        if (!form) return;
+
+        const payload = {};
+        Array.from(form.elements).forEach(el => {
+          if (!el.name) return;
+          if (el.type === 'checkbox') {
+            payload[el.name] = el.checked;
+          } else if (el.type === 'number') {
+            payload[el.name] = el.value === "" ? null : Number(el.value);
+          } else {
+            payload[el.name] = el.value;
+          }
+        });
+
+        try {
+          const res = await fetch(`${API_BASE}/api/admin/config-vars`, {
+            method: 'POST',
+            headers: adminHeaders({ 'Content-Type': 'application/json' }),
+            body: JSON.stringify(payload)
+          });
+          if (!res.ok) {
+            const err = await res.json();
+            throw new Error(err.detail || "Error al guardar");
+          }
+          toast("Variables guardadas correctamente ✅");
+        } catch (e) {
+          toast(e.message || "Error al guardar");
+        }
+      }
       async function fetchLockedSlots(dateStr) {
         try {
           const res = await fetch(`${API_BASE}/api/admin/bookings/day?date=${encodeURIComponent(dateStr)}`, {
@@ -625,6 +736,7 @@
         const thead = document.querySelector('.thead');
         const viewSwitch = byId('viewSwitch');
         const reqSwitch = byId('reqSwitch');
+        const pSol = byId('panelSolicitudes');
 
         if (loginForm) loginForm.style.display = isOn ? 'none' : 'flex';
         if (btnLogout) {
@@ -643,15 +755,20 @@
         if (reqSwitch) reqSwitch.style.display = isOn ? 'flex' : 'none';
 
         // Asegurar que el panel principal se vea (contiene login o tabla)
-        const pSol = byId('panelSolicitudes');
         if (pSol) pSol.style.display = 'block';
 
-        byId('panelDisponibilidad')?.style.setProperty('display', 'none');
-        byId('panelCalendario')?.style.setProperty('display', 'none');
+        const pDisp = byId('panelDisponibilidad');
+        const pCal = byId('panelCalendario');
+        const pVars = byId('panelVariables');
+
+        if (pDisp) pDisp.style.display = 'none';
+        if (pCal) pCal.style.display = 'none';
+        if (pVars) pVars.style.display = 'none';
 
         byId('tabSolicitudes')?.classList.add('active');
         byId('tabCalendario')?.classList.remove('active');
         byId('tabDisponibilidad')?.classList.remove('active');
+        byId('tabVariables')?.classList.remove('active');
       }
 
       function renderEmpty(msg) {
@@ -1001,7 +1118,9 @@
         loadDisponibilidad,
         guardarDisponibilidad,
         toggleDia,
-        limpiarHorarios
+        limpiarHorarios,
+        loadVariables,
+        guardarVariables
       });
 
       /* =================== MODAL LOGIC =================== */
@@ -1132,6 +1251,10 @@
             if (!d) return toast("Elegí una fecha");
             Admin.guardarDisponibilidad(d);
           });
+
+          byId('btnGuardarVars')?.addEventListener('click', () => {
+            Admin.guardarVariables();
+          });
         }
 
         safeInit();
@@ -1141,100 +1264,75 @@
         const stop = setInterval(() => { if (inited) { mo.disconnect(); clearInterval(stop); } }, 300);
       })();
 
-      (function initViewSwitch() {
-        const tabSol = document.getElementById('tabSolicitudes');
-        const tabDisp = document.getElementById('tabDisponibilidad');
-        const tabla = document.getElementById('tabla');
-        const panelDisp = document.getElementById('panelDisponibilidad');
-        const tabCal = document.getElementById('tabCalendario');
-        const panelCal = document.getElementById('panelCalendario');
-        const tabPend = byId('tabReqPend');
-        const tabHist = byId('tabReqHist');
 
-        // Toolbar
-        const histToolbar = byId('histToolbar');
-        const histFilter = byId('histFilter');
-        const histSearch = byId('histSearch');
+      // ✅ LOGICA DE PESTAÑAS UNIFICADA
 
-        tabPend?.addEventListener('click', async () => {
-          tabPend.classList.add('active');
-          tabHist?.classList.remove('active');
-          if (histToolbar) histToolbar.style.display = 'none';
-          await loadSolicitudes("pending");
+      function switchTab(panelId, tabId) {
+        const panels = ['panelSolicitudes', 'panelCalendario', 'panelDisponibilidad', 'panelVariables'];
+        const tabs = ['tabSolicitudes', 'tabCalendario', 'tabDisponibilidad', 'tabVariables'];
+
+        panels.forEach(pId => {
+          const el = document.getElementById(pId);
+          if (el) el.style.display = (pId === panelId) ? 'block' : 'none';
         });
 
-        tabHist?.addEventListener('click', async () => {
-          tabHist.classList.add('active');
-          tabPend?.classList.remove('active');
-          if (histToolbar) histToolbar.style.display = 'flex';
-          await loadSolicitudes("historicos");
+        tabs.forEach(tId => {
+          const el = document.getElementById(tId);
+          if (el) el.classList.toggle('active', tId === tabId);
+        });
+      }
+      (function initTabs() {
+        const tSol = byId('tabSolicitudes');
+        const tCal = byId('tabCalendario');
+        const tDisp = byId('tabDisponibilidad');
+        const tVars = byId('tabVariables');
+
+        tSol?.addEventListener('click', () => {
+          switchTab('panelSolicitudes', 'tabSolicitudes');
+          // Cargar datos si hace falta
+          loadSolicitudes();
         });
 
-        // Eventos de filtro
-        const applyHistFilters = () => {
-          if (reqMode !== "historicos") return;
-          // Re-filtrar sobre la lista original? 
-          // Ojo: loadSolicitudes ya trae todo. Mejor llamamos a render.
-          // Pero necesitamos la lista completa antes de filtrar.
-          // Lo ideal es llamar a loadSolicitudes("historicos") de nuevo o tener la lista en memoria.
-          // Como loadSolicitudes guarda en 'solicitudes', podemos filtrar sobre eso?
-          // WAIT: loadSolicitudes APLICA el filtro al cargar.
-          // Entonces mejor simplemente llamamos a render() o recargamos?
-          // Si filtramos en memoria, perdemos los originales.
-          // Mejor estratégia: loadSolicitudes se encarga.
-          loadSolicitudes("historicos");
-        };
+        tCal?.addEventListener('click', async () => {
+          switchTab('panelCalendario', 'tabCalendario');
+          await loadCalendarConfirmed();
+          renderCalendar();
+        });
 
-        histFilter?.addEventListener('change', applyHistFilters);
-        histSearch?.addEventListener('input', applyHistFilters);
-
-        if (!tabSol || !tabDisp || !tabla || !panelDisp) return;
-
-        const setActive = async (which) => {
-          const rs = byId('reqSwitch');
-          if (rs) rs.style.display = (token && which === 'sol') ? 'flex' : 'none';
-
-          const setTab = (active) => {
-            tabSol?.classList.toggle('active', active === 'sol');
-            tabCal?.classList.toggle('active', active === 'cal');
-            tabDisp?.classList.toggle('active', active === 'disp');
-          };
-
-          const setPanel = (active) => {
-            const pSol = document.getElementById('panelSolicitudes');
-            if (pSol) pSol.style.display = (active === 'sol') ? 'block' : 'none';
-            if (panelCal) panelCal.style.display = (active === 'cal') ? 'block' : 'none';
-            if (panelDisp) panelDisp.style.display = (active === 'disp') ? 'block' : 'none';
-          };
-
-          setTab(which);
-          setPanel(which);
-
-          if (which === 'cal') {
-            await loadCalendarConfirmed();
-            renderCalendar();
-            if (selectedDayKey) selectDay(selectedDayKey);
-            return;
+        tDisp?.addEventListener('click', async () => {
+          switchTab('panelDisponibilidad', 'tabDisponibilidad');
+          const df = byId('dispFecha');
+          if (df && !df.value) {
+            const now = new Date();
+            df.value = now.toISOString().slice(0, 10);
           }
+          if (df?.value) loadDisponibilidad(df.value);
+        });
 
-          if (which === 'disp') {
-            const df = byId('dispFecha');
-            if (df && !df.value) {
-              const today = new Date();
-              const yyyy = today.getFullYear();
-              const mm = String(today.getMonth() + 1).padStart(2, '0');
-              const dd = String(today.getDate()).padStart(2, '0');
-              df.value = `${yyyy}-${mm}-${dd}`;
-            }
-            if (df?.value) await Admin.loadDisponibilidad(df.value);
-            return;
-          }
-        };
+        tVars?.addEventListener('click', () => {
+          switchTab('panelVariables', 'tabVariables');
+          loadVariables();
+        });
 
-        tabSol.addEventListener('click', () => setActive('sol'));
-        tabCal.addEventListener('click', () => setActive('cal'));
-        tabDisp.addEventListener('click', () => setActive('disp'));
-        setActive('sol');
+        // Sub-tabs de solicitudes (Pendientes / Historicos)
+        const tPend = byId('tabReqPend');
+        const tHist = byId('tabReqHist');
+        const hTool = byId('histToolbar');
+
+        tPend?.addEventListener('click', () => {
+          tPend.classList.add('active');
+          tHist?.classList.remove('active');
+          if (hTool) hTool.style.display = 'none';
+          loadSolicitudes('pending');
+        });
+
+        tHist?.addEventListener('click', () => {
+          tHist.classList.add('active');
+          tPend?.classList.remove('active');
+          if (hTool) hTool.style.display = 'flex';
+          loadSolicitudes('historicos');
+        });
+
       })();
 
     })();
