@@ -114,8 +114,8 @@ def send_email_to_admin(subject: str, body_text: str, body_html: str = None) -> 
     """
     smtp_host = os.getenv("SMTP_HOST")
     smtp_port = int(os.getenv("SMTP_PORT", "587"))
-    smtp_user = os.getenv("SMTP_USER")
-    smtp_pass = os.getenv("SMTP_PASS")
+    smtp_user = os.getenv("SMTP_USER", "").strip()
+    smtp_pass = os.getenv("SMTP_PASS", "").strip()
     email_from = os.getenv("EMAIL_FROM", smtp_user)
     email_to_str = os.getenv("EMAIL_TO_JAVIER", "")
 
