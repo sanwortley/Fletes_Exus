@@ -1,0 +1,11 @@
+{
+    "name": "fletes-javier",
+    "version": "1.0.0",
+    "description": "Fletes Javier - Frontend + Backend Runner",
+    "scripts": {
+        "dev": "uvicorn backend.backend:app --reload"
+    },
+    "keywords": [],
+    "author": "",
+    "license": "ISC"
+}
