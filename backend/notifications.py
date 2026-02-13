@@ -2,7 +2,10 @@
 
 import os
 import time
-from typing import Dict
+from typing import Dict, List
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 from twilio.rest import Client as TwilioClient
 from twilio.base.exceptions import TwilioRestException
 
@@ -103,4 +106,44 @@ def send_whatsapp_to_javier(text: str) -> Dict[str, str]:
         return {"ok": "false", "code": str(getattr(e, "code", "")), "error": e.msg}
     except Exception as e:
         print("[Twilio] ⚠️ ERROR:", e)
+        return {"ok": "false", "error": str(e)}
+
+def send_email_to_admin(subject: str, body_text: str, body_html: str = None) -> Dict[str, str]:
+    """
+    Envía un correo electrónico al administrador usando SMTP.
+    """
+    smtp_host = os.getenv("SMTP_HOST")
+    smtp_port = int(os.getenv("SMTP_PORT", "587"))
+    smtp_user = os.getenv("SMTP_USER")
+    smtp_pass = os.getenv("SMTP_PASS")
+    email_from = os.getenv("EMAIL_FROM", smtp_user)
+    email_to_str = os.getenv("EMAIL_TO_JAVIER", "")
+
+    if not all([smtp_host, smtp_user, smtp_pass, email_to_str]):
+        print("[SMTP] ❌ Faltan variables de entorno para el envío de email.")
+        return {"ok": "false", "error": "missing_email_config"}
+
+    # Lista de destinatarios (puede haber varios separados por coma)
+    recipients = [r.strip() for r in email_to_str.split(",") if r.strip()]
+
+    try:
+        msg = MIMEMultipart("alternative")
+        msg["Subject"] = subject
+        msg["From"] = email_from
+        msg["To"] = ", ".join(recipients)
+
+        msg.attach(MIMEText(body_text, "plain"))
+        if body_html:
+            msg.attach(MIMEText(body_html, "html"))
+
+        with smtplib.SMTP(smtp_host, smtp_port) as server:
+            server.starttls()
+            server.login(smtp_user, smtp_pass)
+            server.sendmail(email_from, recipients, msg.as_string())
+
+        print(f"[SMTP] ✅ Email enviado a: {email_to_str}")
+        return {"ok": "true", "recipients": email_to_str}
+
+    except Exception as e:
+        print(f"[SMTP] ⚠️ ERROR al enviar email: {e}")
         return {"ok": "false", "error": str(e)}

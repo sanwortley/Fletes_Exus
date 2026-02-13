@@ -31,7 +31,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, RedirectResponse
 
 # Notificaciones (tu módulo existente)
-from .notifications import send_whatsapp_to_javier
+from .notifications import send_whatsapp_to_javier, send_email_to_admin
 
 from urllib.parse import quote_plus
 
@@ -528,12 +528,24 @@ def _contact_urls(quote_id: str) -> dict:
 # =========================
 def _notify_new_quote(doc: dict):
     wa_res = None
+    email_res = None
     try:
-        text = format_whatsapp_quote(doc)
-        wa_res = send_whatsapp_to_javier(text)
+        # 1) WhatsApp
+        text_wa = format_whatsapp_quote(doc)
+        wa_res = send_whatsapp_to_javier(text_wa)
+        
+        # 2) Email
+        subject = f"Nuevo Presupuesto - {doc.get('nombre_cliente', 'Cliente')}"
+        body_text = format_whatsapp_quote(doc) # Reusamos texto plano para el email plain
+        body_html = format_email_quote_html(doc)
+        email_res = send_email_to_admin(subject, body_text, body_html)
+        
     except Exception as e:
-        wa_res = {"ok": "false", "error": str(e)}
-    return {"whatsapp": wa_res}
+        print(f"[_notify_new_quote] Error: {e}")
+        if wa_res is None: wa_res = {"ok": "false", "error": str(e)}
+        if email_res is None: email_res = {"ok": "false", "error": str(e)}
+        
+    return {"whatsapp": wa_res, "email": email_res}
 
 def _yn(v):
     return "Sí" if bool(v) else "No"
@@ -618,6 +630,54 @@ def format_whatsapp_quote(doc: dict) -> str:
         "—\n"
         f"ID: `{_id}`"
     )
+
+def format_email_quote_html(doc: dict) -> str:
+    nombre  = doc.get("nombre_cliente", "-")
+    tel     = doc.get("telefono", "-")
+    tipo    = doc.get("tipo_carga", "-")
+    fecha   = doc.get("fecha", "-")
+    ayud    = _yn(doc.get("ayudante"))
+    origen  = doc.get("origen", "-")
+    destino = doc.get("destino", "-")
+    _id     = str(doc.get("_id") or doc.get("id") or "-")
+    
+    ft = doc.get("fecha_turno")
+    ht = doc.get("hora_turno")
+    turno_html = f"<li><strong>Turno reservado:</strong> {ft} {ht}</li>" if ft and ht else ""
+
+    total = doc.get("monto_estimado", 0) or 0
+    dist_km = doc.get("dist_km", 0) or 0
+    
+    admin_url = os.getenv("ADMIN_URL", "https://alquilerfletes.com.ar/admin")
+
+    return f"""
+    <div style="font-family: sans-serif; max-width: 600px; border: 1px solid #eee; padding: 20px; border-radius: 10px;">
+        <h2 style="color: #D3A129;">NUEVO PRESUPUESTO RECIBIDO</h2>
+        <p>Se ha generado una nueva solicitud desde la web:</p>
+        <ul style="list-style: none; padding: 0;">
+            <li><strong>Cliente:</strong> {nombre}</li>
+            <li><strong>Teléfono:</strong> {tel}</li>
+            <li><strong>Tipo de Carga:</strong> {tipo}</li>
+            <li><strong>Fecha sugerida:</strong> {fecha}</li>
+            {turno_html}
+            <li><strong>Origen:</strong> {origen}</li>
+            <li><strong>Destino:</strong> {destino}</li>
+            <li><strong>Distancia:</strong> {dist_km:.2f} km</li>
+            <li><strong>Ayudante:</strong> {ayud}</li>
+        </ul>
+        <div style="background: #f9f9f9; padding: 15px; border-radius: 5px; margin-top: 20px;">
+            <p style="margin: 0; font-size: 1.2rem;">Total Estimado: <strong>{_money(total)}</strong></p>
+        </div>
+        <p style="margin-top: 30px;">
+            <a href="{admin_url}" 
+               style="background: #2F4858; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">
+               IR AL PANEL DE CONTROL
+            </a>
+        </p>
+        <hr style="border: 0; border-top: 1px solid #eee; margin: 30px 0;">
+        <small style="color: #999;">ID de referencia: {_id}</small>
+    </div>
+    """
 
 def format_whatsapp_confirmed(doc: dict) -> str:
     nombre = doc.get("nombre_cliente", "-")
