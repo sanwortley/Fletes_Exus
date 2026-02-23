@@ -674,8 +674,12 @@ def format_email_quote_html(doc: dict) -> str:
         </div>
         <p style="margin-top: 30px;">
             <a href="{admin_url}" 
-               style="background: #2F4858; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">
+               style="background: #2F4858; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block; margin-right: 10px;">
                IR AL PANEL DE CONTROL
+            </a>
+            <a href="https://wa.me/549{(''.join(c for c in str(tel) if c.isdigit()))[-10:]}" 
+               style="background: #25D366; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">
+               CONTACTAR POR WHATSAPP
             </a>
         </p>
         <hr style="border: 0; border-top: 1px solid #eee; margin: 30px 0;">
