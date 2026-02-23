@@ -695,17 +695,17 @@ def format_email_quote_html(doc: dict) -> str:
         <div style="background: #f9f9f9; padding: 15px; border-radius: 5px; margin-top: 20px;">
             <p style="margin: 0; font-size: 1.2rem;">Total Estimado: <strong>{_money(total)}</strong></p>
         </div>
-        <p style="margin-top: 30px; display: flex; flex-wrap: wrap; gap: 10px;">
+        <p style="margin-top: 25px; margin-bottom: 10px;">
             <a href="{admin_url}" 
-               style="background: #2F4858; color: white; padding: 12px 20px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">
+               style="background: #2F4858; color: white; padding: 12px 18px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block; margin-right: 8px; margin-bottom: 8px; font-size: 14px;">
                PANEL
             </a>
             <a href="https://wa.me/549{(''.join(c for c in str(tel) if c.isdigit()))[-10:]}" 
-               style="background: #25D366; color: white; padding: 12px 20px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">
+               style="background: #25D366; color: white; padding: 12px 18px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block; margin-right: 8px; margin-bottom: 8px; font-size: 14px;">
                WHATSAPP
             </a>
             <a href="{route_url}" 
-               style="background: #4285F4; color: white; padding: 12px 20px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">
+               style="background: #4285F4; color: white; padding: 12px 18px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block; margin-bottom: 8px; font-size: 14px;">
                VER RUTA
             </a>
         </p>
