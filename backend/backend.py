@@ -653,6 +653,10 @@ def format_email_quote_html(doc: dict) -> str:
     dist_km = doc.get("dist_km", 0) or 0
     
     admin_url = os.getenv("ADMIN_URL", "https://alquilerfletes.com.ar/admin")
+    
+    # Construir URL de ruta completa: Base -> Origen -> Destino -> Base
+    base_addr = os.getenv("BASE_DIRECCION", "Córdoba, Argentina")
+    route_url = f"https://www.google.com/maps/dir/?api=1&origin={quote_plus(base_addr)}&destination={quote_plus(base_addr)}&waypoints={quote_plus(origen)}|{quote_plus(destino)}"
 
     return f"""
     <div style="font-family: sans-serif; max-width: 600px; border: 1px solid #eee; padding: 20px; border-radius: 10px;">
@@ -672,14 +676,18 @@ def format_email_quote_html(doc: dict) -> str:
         <div style="background: #f9f9f9; padding: 15px; border-radius: 5px; margin-top: 20px;">
             <p style="margin: 0; font-size: 1.2rem;">Total Estimado: <strong>{_money(total)}</strong></p>
         </div>
-        <p style="margin-top: 30px;">
+        <p style="margin-top: 30px; display: flex; flex-wrap: wrap; gap: 10px;">
             <a href="{admin_url}" 
-               style="background: #2F4858; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block; margin-right: 10px;">
-               IR AL PANEL DE CONTROL
+               style="background: #2F4858; color: white; padding: 12px 20px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">
+               PANEL
             </a>
             <a href="https://wa.me/549{(''.join(c for c in str(tel) if c.isdigit()))[-10:]}" 
-               style="background: #25D366; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">
-               CONTACTAR POR WHATSAPP
+               style="background: #25D366; color: white; padding: 12px 20px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">
+               WHATSAPP
+            </a>
+            <a href="{route_url}" 
+               style="background: #4285F4; color: white; padding: 12px 20px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">
+               VER RUTA
             </a>
         </p>
         <hr style="border: 0; border-top: 1px solid #eee; margin: 30px 0;">
