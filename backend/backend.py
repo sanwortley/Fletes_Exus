@@ -658,6 +658,17 @@ def format_email_quote_html(doc: dict) -> str:
     base_addr = os.getenv("BASE_DIRECCION", "Córdoba, Argentina")
     route_url = f"https://www.google.com/maps/dir/?api=1&origin={quote_plus(base_addr)}&destination={quote_plus(base_addr)}&waypoints={quote_plus(origen)}|{quote_plus(destino)}"
 
+    # Generar imagen estática del Mapa
+    # Marcadores: B (Base), 1 (Origen), 2 (Destino)
+    static_map_url = (
+        f"https://maps.googleapis.com/maps/api/staticmap?"
+        f"size=600x300&scale=2&maptype=roadmap"
+        f"&markers=color:red|label:B|{quote_plus(base_addr)}"
+        f"&markers=color:blue|label:1|{quote_plus(origen)}"
+        f"&markers=color:green|label:2|{quote_plus(destino)}"
+        f"&key={GOOGLE_MAPS_API_KEY}"
+    )
+
     return f"""
     <div style="font-family: sans-serif; max-width: 600px; border: 1px solid #eee; padding: 20px; border-radius: 10px;">
         <h2 style="color: #D3A129;">NUEVO PRESUPUESTO RECIBIDO</h2>
@@ -673,6 +684,14 @@ def format_email_quote_html(doc: dict) -> str:
             <li><strong>Distancia:</strong> {dist_km:.2f} km</li>
             <li><strong>Ayudante:</strong> {ayud}</li>
         </ul>
+
+        <!-- Vista previa del mapa -->
+        <div style="margin-top: 20px; border-radius: 8px; overflow: hidden; border: 1px solid #ddd;">
+            <a href="{route_url}" target="_blank">
+                <img src="{static_map_url}" alt="Mapa de Ruta" style="width: 100%; height: auto; display: block;">
+            </a>
+        </div>
+
         <div style="background: #f9f9f9; padding: 15px; border-radius: 5px; margin-top: 20px;">
             <p style="margin: 0; font-size: 1.2rem;">Total Estimado: <strong>{_money(total)}</strong></p>
         </div>
