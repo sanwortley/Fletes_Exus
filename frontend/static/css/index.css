@@ -186,7 +186,8 @@ a {
   padding: 0;
 }
 
-.card-img-container {
+.card-img-container,
+.card-img-placeholder {
   width: 100%;
   height: 260px;
   background: #f0f0f0;
@@ -196,14 +197,18 @@ a {
   position: relative;
 }
 
-.card-img-container img {
+.card-img-container img,
+.card-img-placeholder img {
   width: 100%;
   height: 100%;
+  max-width: 100%;
   object-fit: cover;
+  display: block;
   transition: transform 0.6s cubic-bezier(0.165, 0.84, 0.44, 1);
 }
 
-.card:hover .card-img-container img {
+.card:hover .card-img-container img,
+.card:hover .card-img-placeholder img {
   transform: scale(1.08);
 }
 
