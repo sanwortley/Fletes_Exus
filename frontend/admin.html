@@ -146,7 +146,7 @@
         </div>
       </div>
 
-      <form id="loginForm" class="login-row" autocomplete="off">
+      <form id="loginForm" class="login-row" style="display:none" autocomplete="off">
         <input class="input" id="usr" type="text" placeholder="Usuario" autocomplete="username" />
         <input class="input" id="pwd" type="password" placeholder="Contraseña" autocomplete="current-password" />
         <button class="btn btn-primary" type="submit">INGRESAR AL PANEL</button>
@@ -258,7 +258,7 @@
       </form>
     </section>
 
-    <div class="overlay" id="overlay" onclick="if(event.target===this) Admin.closeModal()">
+    <div class="overlay" id="overlay" style="display:none" onclick="if(event.target===this) Admin.closeModal()">
       <div class="modal" role="dialog" aria-modal="true">
         <div class="modal-head">
           <h2 class="modal-title">Detalles del presupuesto</h2>
