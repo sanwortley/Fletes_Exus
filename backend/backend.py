@@ -52,9 +52,13 @@ install_rate_limit(app)
 BASE_DIR = Path(__file__).resolve().parents[1]   # .../Exus
 FRONT_DIR = BASE_DIR / "frontend"
 
-# SOLO assets
+# SOLO assets con cache de 1 hora para fluidez
 app.mount("/static", StaticFiles(directory=FRONT_DIR / "static"), name="static")
 app.mount("/images", StaticFiles(directory=FRONT_DIR / "images"), name="images")
+
+@app.get("/api/ping", include_in_schema=False)
+def ping():
+    return {"ok": True}
 
 
 # ======= FRONTEND ROUTES =======

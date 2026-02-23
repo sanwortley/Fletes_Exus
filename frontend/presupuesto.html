@@ -182,23 +182,30 @@
 
       // --- AUTOCOMPLETE GOOGLE MAPS ---
       async function initMaps() {
+        if (window.google?.maps?.places) {
+          setupAutocomplete();
+          return;
+        }
+
         try {
-          const res = await fetch(`${API_BASE}/api/config`);
-          if (!res.ok) return;
-          const config = await res.json();
+          // Reutilizar config si ya existe globalmente
+          if (!globalThis.MAPS_CONFIG) {
+            const res = await fetch(`${API_BASE}/api/config`);
+            if (!res.ok) return;
+            globalThis.MAPS_CONFIG = await res.json();
+          }
+          const config = globalThis.MAPS_CONFIG;
 
           if (!config.google_maps_api_key) return;
 
-          if (!window.google || !window.google.maps) {
-            if (!document.getElementById('gmaps-script')) {
-              const script = document.createElement('script');
-              script.id = 'gmaps-script';
-              script.src = `https://maps.googleapis.com/maps/api/js?key=${config.google_maps_api_key}&libraries=places&language=${config.maps_language || 'es'}&region=${config.maps_region || 'AR'}`;
-              script.async = true;
-              script.onload = () => setupAutocomplete();
-              document.head.appendChild(script);
-            }
-          } else {
+          if (!document.getElementById('gmaps-script')) {
+            const script = document.createElement('script');
+            script.id = 'gmaps-script';
+            script.src = `https://maps.googleapis.com/maps/api/js?key=${config.google_maps_api_key}&libraries=places&language=${config.maps_language || 'es'}&region=${config.maps_region || 'AR'}`;
+            script.async = true;
+            script.onload = () => setupAutocomplete();
+            document.head.appendChild(script);
+          } else if (window.google?.maps) {
             setupAutocomplete();
           }
         } catch (e) {

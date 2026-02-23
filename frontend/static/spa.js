@@ -21,6 +21,14 @@
         ev.preventDefault();
         loadView(view);
       });
+
+      // Prefetch on hover
+      a.addEventListener("mouseenter", () => {
+        const view = a.getAttribute("href");
+        if (view && view.startsWith("/")) {
+          fetchView(view).catch(() => { }); // prefetch background
+        }
+      });
     });
   }
 
@@ -53,10 +61,17 @@
     });
   }
 
+  const viewCache = {};
+
   async function fetchView(viewPath) {
-    const res = await fetch(viewPath, { cache: "no-store" });
+    if (viewCache[viewPath]) return viewCache[viewPath];
+
+    // Si es la primera vez, cargamos (con cache del browser permitida para mayor rapidez)
+    const res = await fetch(viewPath);
     if (!res.ok) throw new Error(`No se pudo cargar ${viewPath}`);
-    return await res.text();
+    const html = await res.text();
+    viewCache[viewPath] = html;
+    return html;
   }
 
   function wrapInlineScript(code) {
@@ -83,9 +98,27 @@
     });
   }
 
+  function showLoading(show) {
+    let loader = document.getElementById("spa-loader");
+    if (!loader) {
+      loader = document.createElement("div");
+      loader.id = "spa-loader";
+      loader.style = "position:fixed;top:0;left:0;height:3px;background:var(--primary,#D3A129);z-index:9999;transition:width 0.4s ease;width:0;";
+      document.body.appendChild(loader);
+    }
+    if (show) {
+      loader.style.width = "40%";
+      loader.style.opacity = "1";
+    } else {
+      loader.style.width = "100%";
+      setTimeout(() => { loader.style.opacity = "0"; setTimeout(() => { loader.style.width = "0"; }, 400); }, 200);
+    }
+  }
+
   // ========= core =========
   async function loadView(viewPath) {
     try {
+      showLoading(true);
       if (viewPath !== "/" && viewPath !== "/index") {
         cleanupHomeOnly();
       }
@@ -138,9 +171,11 @@
       runViewScripts(doc);
 
       window.scrollTo({ top: 0, behavior: "smooth" });
+      showLoading(false);
 
     } catch (e) {
       console.error("SPA error:", e);
+      showLoading(false);
     }
   }
 
