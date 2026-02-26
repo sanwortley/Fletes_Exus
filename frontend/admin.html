@@ -315,7 +315,8 @@
 
         <div class="disp-actions">
           <button id="btnToggleDia" class="mini-btn" type="button">Habilitar día</button>
-          <button id="btnLimpiarDia" class="mini-btn" type="button">Limpiar</button>
+          <button id="btnLimpiarDia" class="mini-btn danger" type="button"
+            title="Volver a los horarios por defecto">Resetear</button>
           <button id="btnGuardarDia" class="mini-btn primary" type="button">Guardar cambios</button>
         </div>
       </div>
@@ -962,11 +963,23 @@
         setDispUIEnabled(dateStr);
       }
 
-      function limpiarHorarios(dateStr) {
+      async function limpiarHorarios(dateStr) {
         if (!dateStr) return;
-        const model = ensureDateModel(dateStr);
-        model.slots = {};
-        renderSlots(dateStr);
+        if (!confirm(`¿Resetear disponibilidad para el ${dateStr}? Se borrarán los bloqueos manuales y volverá al horario estándar.`)) return;
+
+        try {
+          const res = await fetch(`${API_BASE}/api/availability/day/${dateStr}`, {
+            method: 'DELETE', headers: adminHeaders()
+          });
+          if (!res.ok) throw new Error("Error al resetear");
+          toast("Día reseteado a valores default ✅");
+
+          // Forzar recarga total de ese mes para ver los DEFAULT_SLOTS
+          dispState.loadedMonth = "";
+          await loadDisponibilidad(dateStr);
+        } catch (e) {
+          toast(e.message || "Error al resetear");
+        }
       }
 
       async function guardarDisponibilidad(dateStr) {

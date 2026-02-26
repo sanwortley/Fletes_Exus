@@ -940,6 +940,16 @@ def upsert_availability_day(body: AvailabilityDayIn, user=Depends(require_api_ke
         "slots_guardados": slots_validos
     }
 
+@app.delete("/api/availability/day/{date_str}")
+def delete_availability_day(date_str: str, user=Depends(require_api_key)):
+    """
+    Elimina cualquier override manual para un día, volviendo a DEFAULT_SLOTS.
+    """
+    if len(date_str) != 10:
+        raise HTTPException(400, "Formato YYYY-MM-DD requerido")
+    availability.delete_one({"date": date_str})
+    return {"ok": True}
+
 
 @app.get("/api/admin/bookings/day")
 def admin_get_bookings_day(date: str = Query(..., description="YYYY-MM-DD"), user=Depends(require_api_key)):
