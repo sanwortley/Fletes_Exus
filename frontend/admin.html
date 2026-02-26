@@ -323,16 +323,21 @@
 
       <!-- Zona de Reseteo Global -->
       <div
-        style="background: #fff5f5; border: 1px solid #feb2b2; border-radius: 12px; padding: 15px; margin-top: 20px; display: flex; align-items: center; justify-content: space-between; gap: 15px;">
-        <div>
-          <strong style="color: #c53030; font-size: 0.9rem; display: block; margin-bottom: 2px;">⚠️ Zona Peligrosa:
-            Limpieza Total</strong>
-          <p class="disp-hint" style="margin:0; color: #742a2a;">Si usaste bloqueos manuales por fuera de las reglas y
-            querés que <strong>todo</strong> vuelva al horario estándar (08:00 a 22:00).</p>
+        style="background: #FFF5F5; border: 1px solid #FECACA; border-radius: 12px; padding: 16px 20px; margin-top: 24px; display: flex; align-items: center; justify-content: space-between; gap: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+        <div style="flex: 1;">
+          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+            <span style="font-size: 1.2rem;">⚠️</span>
+            <strong style="color: #991B1B; font-size: 0.95rem;">Zona Peligrosa: Limpieza Total</strong>
+          </div>
+          <p style="margin: 0; color: #7F1D1D; font-size: 0.85rem; line-height: 1.5; font-style: normal;">
+            Si usaste bloqueos manuales por fuera de las reglas y querés que <strong>todo</strong> el calendario vuelva
+            a los horarios estándar (08:00 a 22:00) de forma automática.
+          </p>
         </div>
         <button onclick="Admin.resetearTodo()" class="mini-btn danger"
-          style="background: #f56565; white-space: nowrap;">Resetear TODO el Calendario</button>
-      </div>
+          style="background: #EF4444; color: white; border: none; padding: 10px 18px; font-weight: 700; border-radius: 8px; cursor: pointer; white-space: nowrap; transition: background 0.2s;">
+          Resetear TODO el Calendario
+        </button>
       </div>
 
       <div id="slots" class="slots"></div>
