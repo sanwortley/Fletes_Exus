@@ -205,6 +205,122 @@
       visibility: visible;
       opacity: 1;
     }
+
+    /* --- RESPONSIVE MOBILE TABS & FIXES --- */
+    .hamburger-btn {
+      display: none;
+      align-items: center;
+      gap: 12px;
+      background: #fff;
+      border: 2.5px solid var(--stroke);
+      padding: 12px 18px;
+      border-radius: 14px;
+      cursor: pointer;
+      width: 100%;
+      color: var(--accent);
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+      margin-bottom: 12px;
+      outline: none;
+    }
+
+    .hamburger-btn:active {
+      transform: scale(0.98);
+      background: #f8fafb;
+    }
+
+    .hamburger-icon {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .hamburger-icon span {
+      display: block;
+      width: 22px;
+      height: 3px;
+      background: var(--primary);
+      border-radius: 4px;
+    }
+
+    .hamburger-text {
+      font-weight: 800;
+      font-size: 0.9rem;
+      letter-spacing: 0.5px;
+      font-family: 'Montserrat', sans-serif;
+      text-transform: uppercase;
+    }
+
+    @media (max-width: 768px) {
+      .container {
+        padding: 100px 15px 40px !important;
+      }
+
+      h1 {
+        font-size: 1.6rem;
+        line-height: 1.2;
+        margin-bottom: 25px;
+      }
+
+      .hamburger-btn {
+        display: inline-flex;
+      }
+
+      .view-switch {
+        display: none !important;
+        /* Toggle via JS class */
+        flex-direction: column !important;
+        width: 100% !important;
+        gap: 2px !important;
+        padding: 8px !important;
+        background: #fff !important;
+        border: 1.5px solid var(--stroke) !important;
+        border-radius: 12px !important;
+        margin-bottom: 25px !important;
+        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.12) !important;
+      }
+
+      .view-switch.open {
+        display: flex !important;
+      }
+
+      .view-tab {
+        width: 100% !important;
+        text-align: left !important;
+        padding: 14px 18px !important;
+        font-size: 0.95rem !important;
+        border-radius: 8px !important;
+      }
+
+      .view-tab.active {
+        background: #f1f5f9 !important;
+        color: var(--primary) !important;
+      }
+
+      /* Fix de cajas peligrosas y forms */
+      .danger-box-resp {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        text-align: center !important;
+        gap: 18px !important;
+        padding: 24px 18px !important;
+      }
+
+      .danger-box-resp button {
+        width: 100% !important;
+        white-space: normal !important;
+        padding: 14px !important;
+      }
+
+      .mini-btn {
+        padding: 12px 16px !important;
+        font-size: 0.95rem !important;
+      }
+
+      .top-bar {
+        padding: 15px !important;
+      }
+    }
   </style>
 </head>
 
@@ -232,12 +348,23 @@
   <main class="container">
     <h1>Panel de <span class="accent">Administración</span></h1>
 
-    <div class="view-switch" id="viewSwitch" style="display:none">
-      <button class="view-tab active" id="tabSolicitudes" type="button">Solicitudes</button>
-      <button class="view-tab" id="tabCalendario">Calendario</button>
-      <button class="view-tab" id="tabDisponibilidad" type="button">Disponibilidad</button>
-      <button class="view-tab" id="tabVariables" type="button">Variables</button>
-      <button class="view-tab" id="tabCredenciales" type="button">Credenciales</button>
+    <div id="tabsWrapper" style="display:none">
+      <button id="hamburgerTabs" class="hamburger-btn" type="button" onclick="Admin.toggleTabsMenu()">
+        <div class="hamburger-icon">
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
+        <span class="hamburger-text">Menú de Opciones</span>
+      </button>
+
+      <div class="view-switch" id="viewSwitch">
+        <button class="view-tab active" id="tabSolicitudes" type="button">Solicitudes</button>
+        <button class="view-tab" id="tabCalendario">Calendario</button>
+        <button class="view-tab" id="tabDisponibilidad" type="button">Disponibilidad</button>
+        <button class="view-tab" id="tabVariables" type="button">Variables</button>
+        <button class="view-tab" id="tabCredenciales" type="button">Credenciales</button>
+      </div>
     </div>
 
     <section class="panel" id="panelSolicitudes" style="display:none">
@@ -322,7 +449,7 @@
       </div>
 
       <!-- Zona de Reseteo Global -->
-      <div
+      <div class="danger-box-resp"
         style="background: #FFF5F5; border: 1px solid #FECACA; border-radius: 12px; padding: 16px 20px; margin-top: 24px; display: flex; align-items: center; justify-content: space-between; gap: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
         <div style="flex: 1;">
           <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
@@ -1140,9 +1267,10 @@
         const pDisp = byId('panelDisponibilidad');
         const pCal = byId('panelCalendario');
         const pVars = byId('panelVariables');
+        const tabsWrapper = byId('tabsWrapper');
         const pCreds = byId('panelCredenciales');
 
-        if (viewSwitch) viewSwitch.style.display = isOn ? 'flex' : 'none';
+        if (tabsWrapper) tabsWrapper.style.display = isOn ? 'block' : 'none';
         if (tabla) tabla.style.display = 'table'; // Siempre visible para mostrar el mensaje de "Iniciá sesión"
         if (thead) thead.style.display = isOn ? 'table-header-group' : 'none';
         if (reqSwitch) reqSwitch.style.display = isOn ? 'flex' : 'none';
@@ -1720,6 +1848,11 @@
         }
       }
 
+      function toggleTabsMenu() {
+        const vs = byId('viewSwitch');
+        if (vs) vs.classList.toggle('open');
+      }
+
       Object.assign(window.Admin, {
         login,
         logout: adminLogout,
@@ -1744,6 +1877,7 @@
         agregarReglaBloqueo,
         eliminarReglaBloqueo,
         cambiarCredenciales,
+        toggleTabsMenu,
       });
 
       /* =================== MODAL LOGIC =================== */
@@ -1908,6 +2042,10 @@
           const el = document.getElementById(tId);
           if (el) el.classList.toggle('active', tId === tabId);
         });
+
+        // Cerrar menú mobile al elegir
+        const vs = byId('viewSwitch');
+        if (vs && vs.classList.contains('open')) vs.classList.remove('open');
       }
       (function initTabs() {
         const tSol = byId('tabSolicitudes');
