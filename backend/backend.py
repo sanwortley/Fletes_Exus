@@ -209,6 +209,17 @@ class AvailabilityDayIn(BaseModel):
     enabled: bool = True
     slots: List[str] = []
 
+class BlockRangeIn(BaseModel):
+    """
+    Bloquea un rango de horarios (desde/hasta) aplicado a:
+    - Un rango de fechas (date_from + date_to)
+    - O todos los días desde hoy en adelante (apply_all=True)
+    """
+    hour_from: str           # HH:MM  ej: "07:00"
+    hour_to: str             # HH:MM  ej: "09:00"  (inclusive)
+    apply_all: bool = False  # True → aplica a todos los días futuros
+    date_from: Optional[str] = None   # YYYY-MM-DD (requerido si apply_all=False)
+    date_to: Optional[str] = None     # YYYY-MM-DD (requerido si apply_all=False)
 
 # (lo dejamos por compat si después lo querés usar)
 class ReserveIn(BaseModel):
@@ -858,6 +869,98 @@ def upsert_availability_day(body: AvailabilityDayIn, user=Depends(require_api_ke
         "ok": True,
         "bloqueados": list(ocupados),
         "slots_guardados": slots_validos
+    }
+
+
+@app.post("/api/availability/block-range")
+def block_time_range(body: BlockRangeIn, user=Depends(require_api_key)):
+    """
+    Bloquea un rango de horarios (hour_from → hour_to inclusive) en:
+    - Un rango de fechas (date_from..date_to), o
+    - Todos los días desde hoy en adelante si apply_all=True.
+    
+    Funciona quitando esos horarios del slot list de cada día afectado,
+    respetando los bookings existentes (no los toca).
+    """
+    import re
+    hh_re = re.compile(r"^\d{2}:\d{2}$")
+    if not hh_re.match(body.hour_from) or not hh_re.match(body.hour_to):
+        raise HTTPException(status_code=400, detail="hour_from y hour_to deben tener formato HH:MM")
+
+    # Determinar qué horarios del DEFAULT_SLOTS quedan dentro del rango a bloquear
+    def in_range(h: str) -> bool:
+        return body.hour_from <= h <= body.hour_to
+
+    slots_to_block = [h for h in DEFAULT_SLOTS if in_range(h)]
+    if not slots_to_block:
+        raise HTTPException(status_code=400, detail="El rango no incluye ningún horario válido")
+
+    # Determinar fechas afectadas
+    today_str = _today_ar_str()
+
+    if body.apply_all:
+        # Aplicar a los próximos 365 días desde hoy
+        start_dt = datetime.strptime(today_str, "%Y-%m-%d")
+        end_dt = start_dt + timedelta(days=365)
+        date_list = []
+        cur = start_dt
+        while cur <= end_dt:
+            date_list.append(cur.strftime("%Y-%m-%d"))
+            cur += timedelta(days=1)
+    else:
+        if not body.date_from or not body.date_to:
+            raise HTTPException(status_code=400, detail="Especificá date_from y date_to, o activá apply_all")
+        try:
+            start_dt = datetime.strptime(body.date_from, "%Y-%m-%d")
+            end_dt = datetime.strptime(body.date_to, "%Y-%m-%d")
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Fechas inválidas. Usar YYYY-MM-DD")
+        if start_dt > end_dt:
+            raise HTTPException(status_code=400, detail="date_from no puede ser posterior a date_to")
+        date_list = []
+        cur = start_dt
+        while cur <= end_dt:
+            date_list.append(cur.strftime("%Y-%m-%d"))
+            cur += timedelta(days=1)
+
+    updated = 0
+    for date_str in date_list:
+        # Obtener override existente (si lo hay) o construir uno nuevo con default slots
+        existing = availability.find_one({"date": date_str})
+        if existing:
+            current_slots = existing.get("slots", DEFAULT_SLOTS[:])
+            enabled = existing.get("enabled", True)
+        else:
+            current_slots = DEFAULT_SLOTS[:]
+            enabled = True
+
+        # Quitar los slots bloqueados (respetando ocupados con booking real)
+        occupied = set(
+            b["time"] for b in bookings.find(
+                {"date": date_str, "status": {"$in": ["reserved", "confirmed"]}},
+                {"_id": 0, "time": 1}
+            )
+            if b.get("time")
+        )
+        new_slots = [s for s in current_slots if s not in slots_to_block or s in occupied]
+
+        availability.update_one(
+            {"date": date_str},
+            {"$set": {
+                "date": date_str,
+                "enabled": enabled,
+                "slots": sorted(new_slots),
+                "updated_at": datetime.now(timezone.utc),
+            }},
+            upsert=True
+        )
+        updated += 1
+
+    return {
+        "ok": True,
+        "dates_updated": updated,
+        "slots_blocked": slots_to_block,
+        "apply_all": body.apply_all,
     }
 
 
