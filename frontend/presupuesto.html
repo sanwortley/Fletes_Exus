@@ -509,7 +509,7 @@
         const d = new Date(dateStr);
         const month = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
 
-        const res = await fetch(`${API_BASE}/api/availability?month=${month}`);
+        const res = await fetch(`${API_BASE}/api/availability?month=${month}&t=${Date.now()}`);
         const js = await res.json().catch(() => ({}));
         if (!res.ok) throw new Error(js.detail || "No se pudo cargar disponibilidad");
         return js.days || {};

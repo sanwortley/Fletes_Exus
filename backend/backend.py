@@ -360,7 +360,12 @@ def _get_blocked_slots_for_date(date_str: str) -> set:
     Devuelve el conjunto de horarios bloqueados por las reglas activas para una fecha dada.
     Si blocks_enabled es False, devuelve set vacío (sin bloqueos).
     """
-    cfg = block_config.find_one({}) or {}
+    # Usar un filtro específico para asegurar que siempre leemos el mismo documento
+    cfg = block_config.find_one({"_id": "global_config"})
+    if not cfg:
+        # Fallback por si existe uno viejo sin ese ID específico
+        cfg = block_config.find_one({}) or {}
+    
     if not cfg.get("blocks_enabled", True):
         return set()
 
@@ -940,7 +945,7 @@ def get_block_rules(user=Depends(require_api_key)):
     Devuelve la lista de reglas de bloqueo y el estado global (blocks_enabled).
     """
     import re
-    cfg = block_config.find_one({}) or {}
+    cfg = block_config.find_one({"_id": "global_config"}) or block_config.find_one({}) or {}
     rules = []
     for r in block_rules.find({}):
         rules.append({
@@ -1004,9 +1009,15 @@ def toggle_block_rules(user=Depends(require_api_key)):
     """
     Alterna el estado global de los bloqueos (activo/inactivo).
     """
-    cfg = block_config.find_one({}) or {}
+    cfg = block_config.find_one({"_id": "global_config"}) or block_config.find_one({}) or {}
     new_val = not cfg.get("blocks_enabled", True)
-    block_config.update_one({}, {"$set": {"blocks_enabled": new_val}}, upsert=True)
+    
+    # Forzamos el uso de un ID único para evitar duplicados
+    block_config.update_one(
+        {"_id": "global_config"}, 
+        {"$set": {"blocks_enabled": new_val}}, 
+        upsert=True
+    )
     return {"ok": True, "blocks_enabled": new_val}
 
 

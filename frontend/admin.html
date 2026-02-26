@@ -160,6 +160,7 @@
       <button class="view-tab" id="tabCalendario">Calendario</button>
       <button class="view-tab" id="tabDisponibilidad" type="button">Disponibilidad</button>
       <button class="view-tab" id="tabVariables" type="button">Variables</button>
+      <button class="view-tab" id="tabCredenciales" type="button">Credenciales</button>
     </div>
 
     <section class="panel" id="panelSolicitudes" style="display:none">
@@ -409,29 +410,36 @@
           <div class="chk-row"><input type="checkbox" name="INCLUIR_CHOFER_ADMIN_EN_TOTAL"> <label>Incluir Chofer/Admin
               en Total</label></div>
         </div>
-
-        <div class="vars-group full" style="margin-top:15px; border-top:1px solid #eff2f5; padding-top:20px;">
-          <h3>Seguridad del Panel</h3>
-          <p class="disp-hint">Cambiá tu usuario y contraseña de acceso aquí.</p>
-          <div style="display:flex; flex-wrap:wrap; gap:16px; align-items:flex-end; margin-top:10px;">
-            <div style="display:flex; flex-direction:column; gap:5px;">
-              <label style="font-size:.78rem; font-weight:600; color:var(--muted);">Nuevo Usuario / Email</label>
-              <input id="newAdminUser" type="text" class="date-input" placeholder="Usuario actual"
-                style="width:220px;" />
-            </div>
-            <div style="display:flex; flex-direction:column; gap:5px;">
-              <label style="font-size:.78rem; font-weight:600; color:var(--muted);">Nueva Contraseña</label>
-              <input id="newAdminPass" type="password" class="date-input" placeholder="Nueva contraseña"
-                style="width:220px;" />
-            </div>
-            <button class="mini-btn danger" type="button" style="height:40px; padding:0 18px;"
-              onclick="Admin.cambiarCredenciales()">
-              Guardar nuevas credenciales
-            </button>
-          </div>
-          <div id="credsMsg" style="margin-top:10px; font-size:.82rem;"></div>
-        </div>
       </form>
+    </section>
+
+    <!-- ====== PANEL CREDENCIALES ====== -->
+    <section class="panel" id="panelCredenciales" style="display:none">
+      <div class="card" style="max-width: 600px; margin: 0 auto; padding: 30px;">
+        <h2 style="margin-top:0; color: var(--primary);">Seguridad del Acceso</h2>
+        <p class="disp-hint" style="margin-bottom: 25px;">Personalizá tu usuario y contraseña aquí. Recordá que se
+          aplicarán en tu próximo inicio de sesión.</p>
+
+        <div style="display:flex; flex-direction:column; gap:20px;">
+          <div style="display:flex; flex-direction:column; gap:8px;">
+            <label style="font-weight:600; color:var(--dark);">Nuevo Usuario / Email</label>
+            <input id="newAdminUser" type="text" class="input" placeholder="Ej: admin@ejemplo.com"
+              style="background:#f8fafc;" />
+          </div>
+
+          <div style="display:flex; flex-direction:column; gap:8px;">
+            <label style="font-weight:600; color:var(--dark);">Nueva Contraseña</label>
+            <input id="newAdminPass" type="password" class="input" placeholder="Nuevos caracteres..."
+              style="background:#f8fafc;" />
+          </div>
+
+          <div id="credsMsg" style="min-height: 24px; font-weight: 500;"></div>
+
+          <button class="btn btn-primary" type="button" style="width:100%;" onclick="Admin.cambiarCredenciales()">
+            GUARDAR NUEVAS CREDENCIALES
+          </button>
+        </div>
+      </div>
     </section>
 
     <div class="overlay" id="overlay" style="display:none" onclick="if(event.target===this) Admin.closeModal()">
@@ -985,7 +993,6 @@
         const thead = document.querySelector('.thead');
         const viewSwitch = byId('viewSwitch');
         const reqSwitch = byId('reqSwitch');
-        const pSol = byId('panelSolicitudes');
 
         if (loginForm) loginForm.style.display = isOn ? 'none' : 'flex';
         if (btnLogout) {
@@ -998,6 +1005,12 @@
           flag.className = 'tag ' + (isOn ? 'ok' : 'muted');
         }
 
+        const pSol = byId('panelSolicitudes');
+        const pDisp = byId('panelDisponibilidad');
+        const pCal = byId('panelCalendario');
+        const pVars = byId('panelVariables');
+        const pCreds = byId('panelCredenciales');
+
         if (viewSwitch) viewSwitch.style.display = isOn ? 'flex' : 'none';
         if (tabla) tabla.style.display = 'table'; // Siempre visible para mostrar el mensaje de "Iniciá sesión"
         if (thead) thead.style.display = isOn ? 'table-header-group' : 'none';
@@ -1006,18 +1019,16 @@
         // Asegurar que el panel principal se vea (contiene login o tabla)
         if (pSol) pSol.style.display = 'block';
 
-        const pDisp = byId('panelDisponibilidad');
-        const pCal = byId('panelCalendario');
-        const pVars = byId('panelVariables');
-
         if (pDisp) pDisp.style.display = 'none';
         if (pCal) pCal.style.display = 'none';
         if (pVars) pVars.style.display = 'none';
+        if (pCreds) pCreds.style.display = 'none';
 
         byId('tabSolicitudes')?.classList.add('active');
         byId('tabCalendario')?.classList.remove('active');
         byId('tabDisponibilidad')?.classList.remove('active');
         byId('tabVariables')?.classList.remove('active');
+        byId('tabCredenciales')?.classList.remove('active');
       }
 
       function renderEmpty(msg) {
@@ -1728,8 +1739,8 @@
       // ✅ LOGICA DE PESTAÑAS UNIFICADA
 
       function switchTab(panelId, tabId) {
-        const panels = ['panelSolicitudes', 'panelCalendario', 'panelDisponibilidad', 'panelVariables'];
-        const tabs = ['tabSolicitudes', 'tabCalendario', 'tabDisponibilidad', 'tabVariables'];
+        const panels = ['panelSolicitudes', 'panelCalendario', 'panelDisponibilidad', 'panelVariables', 'panelCredenciales'];
+        const tabs = ['tabSolicitudes', 'tabCalendario', 'tabDisponibilidad', 'tabVariables', 'tabCredenciales'];
 
         panels.forEach(pId => {
           const el = document.getElementById(pId);
@@ -1774,6 +1785,10 @@
         tVars?.addEventListener('click', () => {
           switchTab('panelVariables', 'tabVariables');
           loadVariables();
+        });
+
+        byId('tabCredenciales')?.addEventListener('click', () => {
+          switchTab('panelCredenciales', 'tabCredenciales');
         });
 
         // Sub-tabs de solicitudes (Pendientes / Historicos)
