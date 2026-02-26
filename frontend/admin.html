@@ -12,12 +12,105 @@
   <meta http-equiv="Expires" content="0" />
   <meta name="referrer" content="no-referrer" />
 
+  <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Montserrat:wght@400;600;700;800&display=swap"
+    rel="stylesheet">
   <link rel="stylesheet" href="/static/css/admin.css?v=3">
   <link rel="stylesheet" href="/static/css/header.css?v=2">
 
   <style>
+    /* CRITICAL CSS - Prevent FOUC */
+    :root {
+      --primary: #D3A129;
+      --accent: #2F4858;
+      --bg: #F8FAFB;
+      --card: #FFFFFF;
+      --ink: #1A1A1B;
+      --muted: #64748B;
+      --stroke: #E2E8F0;
+      --radius: 12px;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: 'Inter', sans-serif;
+      /* Hide body content until basic layout is ready if needed, 
+         but here we just ensure critical sections are styled */
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 60px 4%;
+      opacity: 0;
+      /* Fade in once script runs */
+      transition: opacity 0.2s ease-in;
+    }
+
+    .container.ready {
+      opacity: 1;
+    }
+
+    h1 {
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 800;
+      color: var(--accent);
+      text-transform: uppercase;
+    }
+
+    .panel {
+      background: var(--card);
+      border: 1px solid var(--stroke);
+      border-radius: var(--radius);
+      padding: 30px;
+      display: none;
+      /* Hidden by default */
+    }
+
+    /* Critical Login Styles (Directly in HTML to avoid FOUC) */
+    .login-row {
+      max-width: 420px;
+      margin: 60px auto;
+      display: flex !important;
+      /* Force flex if shown */
+      flex-direction: column;
+      gap: 20px;
+      padding: 40px;
+      background: #fff;
+      border-radius: 20px;
+      border: 1px solid var(--stroke);
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.03);
+      align-items: center;
+    }
+
+    .input {
+      width: 100% !important;
+      padding: 16px 20px !important;
+      border: 1.5px solid var(--stroke) !important;
+      border-radius: 12px !important;
+      font-size: 1rem !important;
+      outline: none;
+      background: #fdfdfd;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-primary:hover {
+      background: var(--primary);
+    }
+
     /* VARIABLES CONFIG PANEL - INJECTED TO BYPASS CACHE */
     .vars-grid {
       display: grid;
@@ -2050,10 +2143,11 @@
             Admin.guardarVariables();
           });
 
-          // Inicializar fechas mínimas del formulario de reglas de bloqueo
           const todayIso = new Date().toISOString().split('T')[0];
           const bdf = byId('newBlockDateFrom'); if (bdf) { bdf.min = todayIso; bdf.value = todayIso; }
           const bdt = byId('newBlockDateTo'); if (bdt) { bdt.min = todayIso; bdt.value = todayIso; }
+
+          document.querySelector('.container')?.classList.add('ready');
         }
 
         safeInit();
@@ -2083,6 +2177,9 @@
         // Cerrar menú mobile al elegir
         const vs = byId('viewSwitch');
         if (vs && vs.classList.contains('open')) vs.classList.remove('open');
+
+        // Asegurar que el contenedor sea visible
+        document.querySelector('.container')?.classList.add('ready');
       }
       (function initTabs() {
         const tSol = byId('tabSolicitudes');
