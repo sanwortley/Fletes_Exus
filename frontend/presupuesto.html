@@ -402,11 +402,11 @@
             <p><b>Origen:</b> ${origenShow} &nbsp;→&nbsp; <b>Destino:</b> ${destinoShow}</p>
             <div class="total">Total estimado: $ ${fmt(totalVal)}</div>
             <div class="pill">Estado: ${estadoVal.toUpperCase()}</div>
-            <p class="help" style="margin-top:8px">Zona de prueba: esto <b>no se guarda</b> hasta que presiones "Enviar al profesional".</p>
+            <p class="help" style="margin-top:8px">Zona de prueba: esto <b>no se guarda</b> hasta que presiones "Confirmar flete".</p>
 
             <div class="row" style="margin-top:12px; gap:10px; flex-wrap:wrap">
-              <button class="btn" id="btnEnviar">Enviar al profesional</button>
-              <button class="btn-ghost" id="btnCancelarDraft">Cancelar presupuesto</button>
+              <button class="btn" id="btnEnviar">Confirmar flete</button>
+              <button class="btn-ghost" id="btnCancelarDraft">Cancelar flete</button>
             </div>
 
             <div id="contactWrap" style="margin-top:12px"></div>
@@ -455,7 +455,7 @@
               const out = document.getElementById('out');
               if (out) out.style.display = 'none';
               resetForm();
-              alert('Presupuesto cancelado.');
+              alert('Flete cancelado.');
             } catch (e) {
               alert('No se pudo cancelar: ' + e.message);
             } finally {
