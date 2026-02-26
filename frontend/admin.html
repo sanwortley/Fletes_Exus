@@ -313,12 +313,26 @@
           </div>
         </div>
 
-        <div class="disp-actions">
+        <div class="disp-actions" style="display:flex; gap:8px;">
           <button id="btnToggleDia" class="mini-btn" type="button">Habilitar día</button>
           <button id="btnLimpiarDia" class="mini-btn danger" type="button"
-            title="Volver a los horarios por defecto">Resetear</button>
+            title="Borrar bloqueos manuales del día seleccionado">Resetear Día</button>
           <button id="btnGuardarDia" class="mini-btn primary" type="button">Guardar cambios</button>
         </div>
+      </div>
+
+      <!-- Zona de Reseteo Global -->
+      <div
+        style="background: #fff5f5; border: 1px solid #feb2b2; border-radius: 12px; padding: 15px; margin-top: 20px; display: flex; align-items: center; justify-content: space-between; gap: 15px;">
+        <div>
+          <strong style="color: #c53030; font-size: 0.9rem; display: block; margin-bottom: 2px;">⚠️ Zona Peligrosa:
+            Limpieza Total</strong>
+          <p class="disp-hint" style="margin:0; color: #742a2a;">Si usaste bloqueos manuales por fuera de las reglas y
+            querés que <strong>todo</strong> vuelva al horario estándar (08:00 a 22:00).</p>
+        </div>
+        <button onclick="Admin.resetearTodo()" class="mini-btn danger"
+          style="background: #f56565; white-space: nowrap;">Resetear TODO el Calendario</button>
+      </div>
       </div>
 
       <div id="slots" class="slots"></div>
@@ -339,7 +353,7 @@
             <p class="disp-hint" style="margin:0;">Bloqueá automáticamente franjas horarias en múltiples días.</p>
           </div>
 
-          <div <div
+          <div
             style="display:flex; align-items:center; gap:14px; background: #f1f5f9; padding: 8px 16px; border-radius: 40px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.03);">
             <span id="blockEnabledLabel"
               style="font-size:.85rem; font-weight:700; color: #64748b; min-width: 140px; text-align:right;">—</span>
@@ -1680,6 +1694,27 @@
         }
       }
 
+      async function resetearTodo() {
+        if (!confirm("⚠️ ¡ADVERTENCIA CRÍTICA!\n\nEsto borrará TODOS los bloqueos manuales que hayas hecho día por día en el pasado.\n\nTodo el calendario volverá a los horarios estándar por defecto. Esta acción no se puede deshacer.\n\n¿Estás absolutamente seguro?")) return;
+
+        try {
+          const res = await fetch(`${API_BASE}/api/availability/all`, {
+            method: 'DELETE', headers: adminHeaders()
+          });
+          if (!res.ok) throw new Error("Error al resetear todo");
+          toast("¡Calendario reseteado por completo! 🧹");
+
+          // Recargar vista actual
+          const df = byId('dispFecha');
+          if (df?.value) {
+            dispState.loadedMonth = "";
+            await loadDisponibilidad(df.value);
+          }
+        } catch (e) {
+          toast(e.message || "Error al resetear");
+        }
+      }
+
       Object.assign(window.Admin, {
         login,
         logout: adminLogout,
@@ -1694,6 +1729,7 @@
         guardarDisponibilidad,
         toggleDia,
         limpiarHorarios,
+        resetearTodo,
         loadVariables,
         guardarVariables,
         // Reglas de bloqueo

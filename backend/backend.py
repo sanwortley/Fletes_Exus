@@ -940,6 +940,15 @@ def upsert_availability_day(body: AvailabilityDayIn, user=Depends(require_api_ke
         "slots_guardados": slots_validos
     }
 
+@app.delete("/api/availability/all")
+def delete_all_availability(user=Depends(require_api_key)):
+    """
+    Borra ABSOLUTAMENTE TODOS los overrides manuales de disponibilidad.
+    El calendario volverá a responder basándose solo en DEFAULT_SLOTS y Reglas Dinámicas.
+    """
+    availability.delete_many({})
+    return {"ok": True, "message": "Toda la disponibilidad manual ha sido reseteada"}
+
 @app.delete("/api/availability/day/{date_str}")
 def delete_availability_day(date_str: str, user=Depends(require_api_key)):
     """
