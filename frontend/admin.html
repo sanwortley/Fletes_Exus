@@ -89,6 +89,45 @@
       color: var(--ink);
       display: inline-block !important;
     }
+
+    .rule-card {
+      transition: all 0.2s ease;
+    }
+
+    .rule-card:hover {
+      border-color: var(--primary) !important;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+      transform: translateY(-2px);
+    }
+
+    .tooltip-hint {
+      position: relative;
+      cursor: help;
+    }
+
+    .tooltip-hint:after {
+      content: attr(data-tooltip);
+      position: absolute;
+      bottom: 125%;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #1e293b;
+      color: #fff;
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      white-space: nowrap;
+      visibility: hidden;
+      opacity: 0;
+      transition: opacity 0.2s;
+      z-index: 100;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .tooltip-hint:hover:after {
+      visibility: visible;
+      opacity: 1;
+    }
   </style>
 </head>
 
@@ -208,87 +247,119 @@
         Tip: tocá un horario para prender/apagar. Si el día está deshabilitado, los horarios quedan bloqueados.
       </div>
 
-      <!-- ====== BLOQUEO POR RANGO ====== -->
-      <div id="blockRangePanel" style="margin-top:28px; border-top:2px solid #f1f5f9; padding-top:24px;">
-        <h3 style="margin:0 0 6px; font-size:1rem; color:var(--accent);">🔒 Bloqueo de horarios por rango</h3>
-        <p class="disp-hint" style="margin:0 0 18px;">Bloqueá franjas horarias en múltiples días a la vez.</p>
+      <!-- ====== REGLAS DE BLOQUEO HORARIO ====== -->
+      <div id="blockRulesPanel" style="margin-top:28px; border-top:2px solid #f1f5f9; padding-top:24px;">
 
-        <div style="display:flex; flex-wrap:wrap; gap:16px; align-items:flex-end;">
-          <!-- Hora desde -->
-          <div style="display:flex; flex-direction:column; gap:6px;">
-            <label style="font-size:.8rem; font-weight:600; color:var(--muted);">Desde</label>
-            <select id="blockFrom" class="date-input" style="width:110px;">
-              <option value="07:00">07:00</option>
-              <option value="08:00">08:00</option>
-              <option value="09:00">09:00</option>
-              <option value="10:00">10:00</option>
-              <option value="11:00">11:00</option>
-              <option value="12:00">12:00</option>
-              <option value="13:00">13:00</option>
-              <option value="14:00">14:00</option>
-              <option value="15:00">15:00</option>
-              <option value="16:00">16:00</option>
-              <option value="17:00">17:00</option>
-              <option value="18:00">18:00</option>
-              <option value="19:00">19:00</option>
-              <option value="20:00">20:00</option>
-              <option value="21:00">21:00</option>
-              <option value="22:00">22:00</option>
-            </select>
+        <!-- Encabezado con toggle global -->
+        <div
+          style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; margin-bottom:18px;">
+          <div>
+            <h3 style="margin:0 0 4px; font-size:1rem; color:var(--accent);">🔒 Reglas de bloqueo horario</h3>
+            <p class="disp-hint" style="margin:0;">Bloqueá automáticamente franjas horarias en múltiples días. Podés
+              agregar varias reglas.</p>
           </div>
-
-          <!-- Hora hasta -->
-          <div style="display:flex; flex-direction:column; gap:6px;">
-            <label style="font-size:.8rem; font-weight:600; color:var(--muted);">Hasta</label>
-            <select id="blockTo" class="date-input" style="width:110px;">
-              <option value="07:00">07:00</option>
-              <option value="08:00">08:00</option>
-              <option value="09:00" selected>09:00</option>
-              <option value="10:00">10:00</option>
-              <option value="11:00">11:00</option>
-              <option value="12:00">12:00</option>
-              <option value="13:00">13:00</option>
-              <option value="14:00">14:00</option>
-              <option value="15:00">15:00</option>
-              <option value="16:00">16:00</option>
-              <option value="17:00">17:00</option>
-              <option value="18:00">18:00</option>
-              <option value="19:00">19:00</option>
-              <option value="20:00">20:00</option>
-              <option value="21:00">21:00</option>
-              <option value="22:00">22:00</option>
-            </select>
-          </div>
-
-          <!-- Modo replicación -->
-          <div style="display:flex; flex-direction:column; gap:6px;">
-            <label style="font-size:.8rem; font-weight:600; color:var(--muted);">Aplicar en</label>
-            <select id="blockMode" class="date-input" style="width:200px;" onchange="Admin.onBlockModeChange()">
-              <option value="range">Rango de fechas</option>
-              <option value="all">Todos los días futuros</option>
-            </select>
-          </div>
-
-          <!-- Fechas (solo si es rango) -->
-          <div id="blockDateRange" style="display:flex; gap:10px; align-items:flex-end;">
-            <div style="display:flex; flex-direction:column; gap:6px;">
-              <label style="font-size:.8rem; font-weight:600; color:var(--muted);">Fecha desde</label>
-              <input id="blockDateFrom" type="date" class="date-input" style="width:150px;" />
+          <div style="display:flex; align-items:center; gap:10px;">
+            <div class="tooltip-hint"
+              data-tooltip="Si desactivás esto, se ignorarán todas las reglas de bloqueo (los horarios volverán a estar disponibles).">
+              <span id="blockEnabledLabel"
+                style="font-size:.85rem; font-weight:600; color:var(--muted);">Cargando…</span>
             </div>
-            <div style="display:flex; flex-direction:column; gap:6px;">
-              <label style="font-size:.8rem; font-weight:600; color:var(--muted);">Fecha hasta</label>
-              <input id="blockDateTo" type="date" class="date-input" style="width:150px;" />
-            </div>
+            <button id="btnToggleBlocks" class="mini-btn" type="button" onclick="Admin.toggleBlockRules()"
+              style="min-width:140px;">—</button>
           </div>
-
-          <!-- Botón aplicar -->
-          <button id="btnAplicarBloqueo" class="mini-btn primary" type="button" style="height:40px; padding: 0 20px;"
-            onclick="Admin.aplicarBloqueoRango()">
-            Aplicar bloqueo
-          </button>
         </div>
 
-        <div id="blockRangeMsg" style="margin-top:12px; font-size:.85rem;"></div>
+        <!-- Lista de reglas existentes -->
+        <div id="blockRulesList" style="margin-bottom:20px;">
+          <p class="disp-hint" style="font-style:italic;">Cargando reglas…</p>
+        </div>
+
+        <!-- Formulario para agregar nueva regla -->
+        <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:16px;">
+          <p style="margin:0 0 14px; font-size:.875rem; font-weight:600; color:var(--ink);">➕ Agregar nueva regla</p>
+
+          <div style="display:flex; flex-wrap:wrap; gap:14px; align-items:flex-end;">
+            <!-- Hora desde -->
+            <div style="display:flex; flex-direction:column; gap:5px;">
+              <label style="font-size:.78rem; font-weight:600; color:var(--muted);">Desde</label>
+              <select id="newBlockFrom" class="date-input" style="width:100px;">
+                <option value="07:00">07:00</option>
+                <option value="08:00">08:00</option>
+                <option value="09:00">09:00</option>
+                <option value="10:00">10:00</option>
+                <option value="11:00">11:00</option>
+                <option value="12:00">12:00</option>
+                <option value="13:00">13:00</option>
+                <option value="14:00">14:00</option>
+                <option value="15:00">15:00</option>
+                <option value="16:00">16:00</option>
+                <option value="17:00">17:00</option>
+                <option value="18:00">18:00</option>
+                <option value="19:00">19:00</option>
+                <option value="20:00">20:00</option>
+                <option value="21:00">21:00</option>
+                <option value="22:00">22:00</option>
+              </select>
+            </div>
+
+            <!-- Hora hasta -->
+            <div style="display:flex; flex-direction:column; gap:5px;">
+              <label style="font-size:.78rem; font-weight:600; color:var(--muted);">Hasta</label>
+              <select id="newBlockTo" class="date-input" style="width:100px;">
+                <option value="07:00">07:00</option>
+                <option value="08:00">08:00</option>
+                <option value="09:00" selected>09:00</option>
+                <option value="10:00">10:00</option>
+                <option value="11:00">11:00</option>
+                <option value="12:00">12:00</option>
+                <option value="13:00">13:00</option>
+                <option value="14:00">14:00</option>
+                <option value="15:00">15:00</option>
+                <option value="16:00">16:00</option>
+                <option value="17:00">17:00</option>
+                <option value="18:00">18:00</option>
+                <option value="19:00">19:00</option>
+                <option value="20:00">20:00</option>
+                <option value="21:00">21:00</option>
+                <option value="22:00">22:00</option>
+              </select>
+            </div>
+
+            <!-- Alcance -->
+            <div style="display:flex; flex-direction:column; gap:5px;">
+              <label style="font-size:.78rem; font-weight:600; color:var(--muted);">Aplicar en</label>
+              <select id="newBlockMode" class="date-input" style="width:190px;" onchange="Admin.onNewBlockModeChange()">
+                <option value="range">Rango de fechas</option>
+                <option value="all">Todos los días futuros</option>
+              </select>
+            </div>
+
+            <!-- Fechas (visible solo en modo range) -->
+            <div id="newBlockDateRange" style="display:flex; gap:10px; align-items:flex-end;">
+              <div style="display:flex; flex-direction:column; gap:5px;">
+                <label style="font-size:.78rem; font-weight:600; color:var(--muted);">Fecha desde</label>
+                <input id="newBlockDateFrom" type="date" class="date-input" style="width:145px;" />
+              </div>
+              <div style="display:flex; flex-direction:column; gap:5px;">
+                <label style="font-size:.78rem; font-weight:600; color:var(--muted);">Fecha hasta</label>
+                <input id="newBlockDateTo" type="date" class="date-input" style="width:145px;" />
+              </div>
+            </div>
+
+            <!-- Etiqueta opcional -->
+            <div style="display:flex; flex-direction:column; gap:5px;">
+              <label style="font-size:.78rem; font-weight:600; color:var(--muted);">Etiqueta (opcional)</label>
+              <input id="newBlockLabel" type="text" class="date-input" placeholder="Ej: Mañanas" style="width:140px;" />
+            </div>
+
+            <button id="btnAddBlockRule" class="mini-btn primary" type="button" style="height:38px; padding:0 18px;"
+              onclick="Admin.agregarReglaBloqueo()">
+              Agregar regla
+            </button>
+          </div>
+
+          <div id="blockAddMsg" style="margin-top:10px; font-size:.82rem;"></div>
+        </div>
       </div>
     </section>
 
@@ -337,6 +408,28 @@
               (Default)</label></div>
           <div class="chk-row"><input type="checkbox" name="INCLUIR_CHOFER_ADMIN_EN_TOTAL"> <label>Incluir Chofer/Admin
               en Total</label></div>
+        </div>
+
+        <div class="vars-group full" style="margin-top:15px; border-top:1px solid #eff2f5; padding-top:20px;">
+          <h3>Seguridad del Panel</h3>
+          <p class="disp-hint">Cambiá tu usuario y contraseña de acceso aquí.</p>
+          <div style="display:flex; flex-wrap:wrap; gap:16px; align-items:flex-end; margin-top:10px;">
+            <div style="display:flex; flex-direction:column; gap:5px;">
+              <label style="font-size:.78rem; font-weight:600; color:var(--muted);">Nuevo Usuario / Email</label>
+              <input id="newAdminUser" type="text" class="date-input" placeholder="Usuario actual"
+                style="width:220px;" />
+            </div>
+            <div style="display:flex; flex-direction:column; gap:5px;">
+              <label style="font-size:.78rem; font-weight:600; color:var(--muted);">Nueva Contraseña</label>
+              <input id="newAdminPass" type="password" class="date-input" placeholder="Nueva contraseña"
+                style="width:220px;" />
+            </div>
+            <button class="mini-btn danger" type="button" style="height:40px; padding:0 18px;"
+              onclick="Admin.cambiarCredenciales()">
+              Guardar nuevas credenciales
+            </button>
+          </div>
+          <div id="credsMsg" style="margin-top:10px; font-size:.82rem;"></div>
         </div>
       </form>
     </section>
@@ -1018,7 +1111,7 @@
 
             if (type !== "all" || term) {
               solicitudes = solicitudes.filter(x => {
-                const st = String(x.estado || "").toLowerCase();
+                const st = String(x.estado || '').toLowerCase();
                 const matchType = (type === "all") ||
                   (type === "completed" && st === "realizado") ||
                   (type === "voided" && st === "anulado");
@@ -1261,44 +1354,117 @@
         } catch (e) { toast(e.message || 'Error al anular'); }
       }
 
-      // =================== BLOQUEO POR RANGO ===================
-      function onBlockModeChange() {
-        const mode = byId('blockMode')?.value;
-        const rangeDiv = byId('blockDateRange');
+      function escapeHtml(text) {
+        if (!text) return "";
+        const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+        return text.replace(/[&<>"']/g, m => map[m]);
+      }
+
+      // =================== REGLAS DE BLOQUEO HORARIO ===================
+
+      async function loadBlockRules() {
+        try {
+          const res = await fetch(`${API_BASE}/api/admin/block-rules`, { headers: adminHeaders() });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.detail || 'Error cargando reglas');
+          renderBlockRules(data.blocks_enabled, data.rules || []);
+        } catch (e) {
+          const list = byId('blockRulesList');
+          if (list) list.innerHTML = `<p class="disp-hint" style="color:#e74c3c;">⚠️ ${e.message}</p>`;
+        }
+      }
+
+      function renderBlockRules(blocksEnabled, rules) {
+        // Actualizar toggle
+        const label = byId('blockEnabledLabel');
+        const btnTgl = byId('btnToggleBlocks');
+        if (label) {
+          label.textContent = blocksEnabled ? '✅ Bloqueos activos' : '⛔ Bloqueos desactivados';
+          label.style.color = blocksEnabled ? 'var(--primary, #27ae60)' : '#e74c3c';
+        }
+        if (btnTgl) {
+          btnTgl.textContent = blocksEnabled ? 'Desactivar bloqueos' : 'Activar bloqueos';
+          btnTgl.className = blocksEnabled ? 'mini-btn danger' : 'mini-btn primary';
+        }
+
+        // Renderizar lista de reglas
+        const list = byId('blockRulesList');
+        if (!list) return;
+
+        if (!rules.length) {
+          list.innerHTML = `<p class="disp-hint" style="font-style:italic; color:var(--muted);">Sin reglas configuradas. Agregá una abajo.</p>`;
+          return;
+        }
+
+        list.innerHTML = rules.map(r => {
+          const scope = r.apply_all
+            ? '📅 Todos los días futuros'
+            : `📅 ${r.date_from || '?'} → ${r.date_to || '?'}`;
+          const rangeText = `🕐 ${r.hour_from} – ${r.hour_to}`;
+          const labelTxt = r.label ? ` · <em>${escapeHtml(r.label)}</em>` : '';
+          const disabledNote = !blocksEnabled ? ' <span style="opacity:.5;">(inactiva)</span>' : '';
+          return `
+            <div class="rule-card" style="display:flex; align-items:center; justify-content:space-between; gap:12px;
+              background:#fff; border:1px solid #e2e8f0; border-radius:8px; padding:10px 14px; margin-bottom:8px;">
+              <div style="font-size:.88rem; line-height:1.5;">
+                <strong>${rangeText}</strong>${labelTxt}${disabledNote}<br>
+                <span style="color:var(--muted); font-size:.8rem;">${scope}</span>
+              </div>
+              <button class="mini-btn danger" style="padding:4px 12px; font-size:.8rem; flex-shrink:0;"
+                onclick="Admin.eliminarReglaBloqueo('${r.id}')">Eliminar</button>
+            </div>`;
+        }).join('');
+      }
+
+      async function toggleBlockRules() {
+        const btn = byId('btnToggleBlocks');
+        if (btn) { btn.disabled = true; }
+        try {
+          const res = await fetch(`${API_BASE}/api/admin/block-rules/toggle`, {
+            method: 'POST', headers: adminHeaders()
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.detail || 'Error');
+          toast(data.blocks_enabled ? 'Bloqueos activados ✅' : 'Bloqueos desactivados ⛔');
+          await loadBlockRules();
+        } catch (e) {
+          toast(e.message || 'Error al cambiar estado');
+        } finally {
+          if (btn) btn.disabled = false;
+        }
+      }
+
+      function onNewBlockModeChange() {
+        const mode = byId('newBlockMode')?.value;
+        const rangeDiv = byId('newBlockDateRange');
         if (rangeDiv) rangeDiv.style.display = (mode === 'range') ? 'flex' : 'none';
       }
 
-      async function aplicarBloqueoRango() {
-        const hourFrom = byId('blockFrom')?.value;
-        const hourTo = byId('blockTo')?.value;
-        const mode = byId('blockMode')?.value;
-        const dateFrom = byId('blockDateFrom')?.value;
-        const dateTo = byId('blockDateTo')?.value;
-        const msgEl = byId('blockRangeMsg');
+      async function agregarReglaBloqueo() {
+        const hourFrom = byId('newBlockFrom')?.value;
+        const hourTo = byId('newBlockTo')?.value;
+        const mode = byId('newBlockMode')?.value;
+        const dateFrom = byId('newBlockDateFrom')?.value;
+        const dateTo = byId('newBlockDateTo')?.value;
+        const label = byId('newBlockLabel')?.value?.trim();
+        const msgEl = byId('blockAddMsg');
 
         if (!hourFrom || !hourTo) {
-          if (msgEl) { msgEl.textContent = '❌ Seleccioná horario desde y hasta.'; msgEl.style.color = 'var(--danger, #e74c3c)'; }
+          if (msgEl) { msgEl.textContent = '❌ Seleccioná horario desde y hasta.'; msgEl.style.color = '#e74c3c'; }
           return;
         }
         if (hourFrom > hourTo) {
-          if (msgEl) { msgEl.textContent = '❌ El horario "Desde" debe ser menor o igual al "Hasta".'; msgEl.style.color = 'var(--danger, #e74c3c)'; }
+          if (msgEl) { msgEl.textContent = '❌ "Desde" debe ser menor o igual a "Hasta".'; msgEl.style.color = '#e74c3c'; }
           return;
         }
         if (mode === 'range' && (!dateFrom || !dateTo)) {
-          if (msgEl) { msgEl.textContent = '❌ Elegí las fechas desde y hasta.'; msgEl.style.color = 'var(--danger, #e74c3c)'; }
+          if (msgEl) { msgEl.textContent = '❌ Elegí las fechas desde y hasta.'; msgEl.style.color = '#e74c3c'; }
           return;
         }
 
         const applyAll = (mode === 'all');
-        const label = applyAll
-          ? `todos los días futuros`
-          : `del ${dateFrom} al ${dateTo}`;
-
-        const confirmMsg = `¿Confirmar bloqueo de ${hourFrom} a ${hourTo} en ${label}?\n\nLos turnos ya reservados NO serán afectados.`;
-        if (!confirm(confirmMsg)) return;
-
-        const btn = byId('btnAplicarBloqueo');
-        if (btn) { btn.disabled = true; btn.textContent = 'Aplicando…'; }
+        const btn = byId('btnAddBlockRule');
+        if (btn) { btn.disabled = true; btn.textContent = 'Guardando…'; }
         if (msgEl) msgEl.textContent = '';
 
         try {
@@ -1306,35 +1472,84 @@
             hour_from: hourFrom,
             hour_to: hourTo,
             apply_all: applyAll,
+            label: label || null,
             ...(applyAll ? {} : { date_from: dateFrom, date_to: dateTo })
           };
-
-          const res = await fetch(`${API_BASE}/api/availability/block-range`, {
+          const res = await fetch(`${API_BASE}/api/admin/block-rules`, {
             method: 'POST',
             headers: adminHeaders({ 'Content-Type': 'application/json' }),
             body: JSON.stringify(payload)
           });
           const data = await res.json();
-          if (!res.ok) throw new Error(data.detail || 'Error al aplicar bloqueo');
+          if (!res.ok) throw new Error(data.detail || 'Error al agregar regla');
 
-          const blockedList = (data.slots_blocked || []).join(', ');
+          const affected = (data.slots_affected || []).join(', ');
           if (msgEl) {
-            msgEl.style.color = 'var(--success, #27ae60)';
-            msgEl.textContent = `✅ Bloqueo aplicado en ${data.dates_updated} día(s). Horarios bloqueados: ${blockedList}`;
+            msgEl.style.color = '#27ae60';
+            msgEl.textContent = `✅ Regla agregada. Horarios afectados: ${affected}`;
           }
-          toast(`Bloqueo aplicado en ${data.dates_updated} día(s) ✅`);
+          toast('Regla de bloqueo agregada ✅');
 
-          // Refrescar la vista del día seleccionado si hay alguno cargado
-          const currentDate = byId('dispFecha')?.value;
-          if (currentDate) {
-            dispState.loadedMonth = ''; // forzar reload
-            await loadDisponibilidad(currentDate);
-          }
+          // Limpiar formulario
+          const lb = byId('newBlockLabel'); if (lb) lb.value = '';
+
+          await loadBlockRules();
         } catch (e) {
-          if (msgEl) { msgEl.style.color = 'var(--danger, #e74c3c)'; msgEl.textContent = `❌ ${e.message}`; }
-          toast(e.message || 'Error al aplicar bloqueo');
+          if (msgEl) { msgEl.style.color = '#e74c3c'; msgEl.textContent = `❌ ${e.message}`; }
+          toast(e.message || 'Error al agregar regla');
         } finally {
-          if (btn) { btn.disabled = false; btn.textContent = 'Aplicar bloqueo'; }
+          if (btn) { btn.disabled = false; btn.textContent = 'Agregar regla'; }
+        }
+      }
+
+      async function eliminarReglaBloqueo(ruleId) {
+        if (!confirm('¿Eliminar esta regla de bloqueo?')) return;
+        try {
+          const res = await fetch(`${API_BASE}/api/admin/block-rules/${ruleId}`, {
+            method: 'DELETE', headers: adminHeaders()
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.detail || 'Error al eliminar');
+          toast('Regla eliminada ✅');
+          await loadBlockRules();
+        } catch (e) {
+          toast(e.message || 'Error al eliminar regla');
+        }
+      }
+
+      async function cambiarCredenciales() {
+        const new_username = byId('newAdminUser')?.value?.trim();
+        const new_password = byId('newAdminPass')?.value?.trim();
+        const msgEl = byId('credsMsg');
+
+        if (!new_username || !new_password) {
+          if (msgEl) { msgEl.textContent = '❌ Usuario y contraseña son obligatorios.'; msgEl.style.color = '#e74c3c'; }
+          return;
+        }
+
+        if (!confirm('¿Estás seguro de cambiar el usuario y contraseña? Deberás usar los nuevos para entrar la próxima vez.')) return;
+
+        if (msgEl) msgEl.textContent = 'Guardando...';
+
+        try {
+          const res = await fetch(`${API_BASE}/api/admin/change-creds`, {
+            method: 'POST',
+            headers: adminHeaders({ 'Content-Type': 'application/json' }),
+            body: JSON.stringify({ new_username, new_password })
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.detail || 'Error al actualizar');
+
+          if (msgEl) { msgEl.textContent = '✅ Credenciales actualizadas correctamente.'; msgEl.style.color = '#27ae60'; }
+          toast('Usuario y clave actualizados ✅');
+
+          // Limpiar inputs
+          byId('newAdminUser').value = '';
+          byId('newAdminPass').value = '';
+
+        } catch (e) {
+          if (msgEl) { msgEl.textContent = `❌ ${e.message}`; msgEl.style.color = '#e74c3c'; }
+          toast(e.message || 'Error al actualizar credenciales');
         }
       }
 
@@ -1354,8 +1569,13 @@
         limpiarHorarios,
         loadVariables,
         guardarVariables,
-        onBlockModeChange,
-        aplicarBloqueoRango,
+        // Reglas de bloqueo
+        loadBlockRules,
+        toggleBlockRules,
+        onNewBlockModeChange,
+        agregarReglaBloqueo,
+        eliminarReglaBloqueo,
+        cambiarCredenciales,
       });
 
       /* =================== MODAL LOGIC =================== */
@@ -1491,10 +1711,10 @@
             Admin.guardarVariables();
           });
 
-          // Inicializar fechas mínimas del bloqueo por rango (hoy)
+          // Inicializar fechas mínimas del formulario de reglas de bloqueo
           const todayIso = new Date().toISOString().split('T')[0];
-          const bdf = byId('blockDateFrom'); if (bdf) { bdf.min = todayIso; bdf.value = todayIso; }
-          const bdt = byId('blockDateTo'); if (bdt) { bdt.min = todayIso; bdt.value = todayIso; }
+          const bdf = byId('newBlockDateFrom'); if (bdf) { bdf.min = todayIso; bdf.value = todayIso; }
+          const bdt = byId('newBlockDateTo'); if (bdt) { bdt.min = todayIso; bdt.value = todayIso; }
         }
 
         safeInit();
@@ -1547,6 +1767,8 @@
             df.value = now.toISOString().slice(0, 10);
           }
           if (df?.value) loadDisponibilidad(df.value);
+          // Cargar reglas de bloqueo al entrar al panel
+          Admin.loadBlockRules();
         });
 
         tVars?.addEventListener('click', () => {

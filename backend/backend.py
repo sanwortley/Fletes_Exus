@@ -117,6 +117,10 @@ users = db["users"]
 availability = db["availability"]
 bookings = db["bookings"]
 
+# ✅ Reglas de bloqueo horario persistentes
+block_rules  = db["block_rules"]   # lista de reglas { hour_from, hour_to, apply_all, date_from, date_to }
+block_config = db["block_config"]  # documento único: { blocks_enabled: bool }
+
 DEFAULT_SLOTS = [
     "08:00", "09:00", "10:00", "11:00", "12:00",
     "13:00", "14:00", "15:00", "16:00", "17:00",
@@ -209,17 +213,18 @@ class AvailabilityDayIn(BaseModel):
     enabled: bool = True
     slots: List[str] = []
 
-class BlockRangeIn(BaseModel):
-    """
-    Bloquea un rango de horarios (desde/hasta) aplicado a:
-    - Un rango de fechas (date_from + date_to)
-    - O todos los días desde hoy en adelante (apply_all=True)
-    """
-    hour_from: str           # HH:MM  ej: "07:00"
-    hour_to: str             # HH:MM  ej: "09:00"  (inclusive)
-    apply_all: bool = False  # True → aplica a todos los días futuros
-    date_from: Optional[str] = None   # YYYY-MM-DD (requerido si apply_all=False)
-    date_to: Optional[str] = None     # YYYY-MM-DD (requerido si apply_all=False)
+class BlockRuleIn(BaseModel):
+    """Regla de bloqueo persistente almacenada en block_rules."""
+    hour_from: str
+    hour_to: str
+    apply_all: bool = False
+    date_from: Optional[str] = None
+    date_to: Optional[str] = None
+    label: Optional[str] = None      # descripción opcional
+
+class ChangeCredsIn(BaseModel):
+    new_username: str
+    new_password: str
 
 # (lo dejamos por compat si después lo querés usar)
 class ReserveIn(BaseModel):
@@ -349,6 +354,36 @@ AR_TZ = timezone(timedelta(hours=-3))
 
 def _today_ar_str() -> str:
     return datetime.now(AR_TZ).date().isoformat()
+
+def _get_blocked_slots_for_date(date_str: str) -> set:
+    """
+    Devuelve el conjunto de horarios bloqueados por las reglas activas para una fecha dada.
+    Si blocks_enabled es False, devuelve set vacío (sin bloqueos).
+    """
+    cfg = block_config.find_one({}) or {}
+    if not cfg.get("blocks_enabled", True):
+        return set()
+
+    today_str = _today_ar_str()
+    blocked = set()
+    for rule in block_rules.find({}):
+        hf  = rule.get("hour_from", "")
+        ht  = rule.get("hour_to",   "")
+        if not hf or not ht:
+            continue
+        if rule.get("apply_all", False):
+            # Aplica a todos los días desde hoy
+            if date_str < today_str:
+                continue
+        else:
+            df = rule.get("date_from", "")
+            dt = rule.get("date_to",   "")
+            if not df or not dt or not (df <= date_str <= dt):
+                continue
+        for slot in DEFAULT_SLOTS:
+            if hf <= slot <= ht:
+                blocked.add(slot)
+    return blocked
 
 def _purge_expired_unconfirmed():
     hoy = _today_ar_str()
@@ -809,9 +844,13 @@ def get_availability(month: str = Query(..., description="YYYY-MM")):
         # Restar bookings
         day_booked = booked.get(date_str, set())
         final_slots = [s for s in base_slots if s not in day_booked]
-        
+
+        # Aplicar reglas dinámicas de bloqueo (no afectan turnos ya reservados)
+        rule_blocked = _get_blocked_slots_for_date(date_str)
+        if rule_blocked:
+            final_slots = [s for s in final_slots if s not in rule_blocked]
+
         # Si el resultado es distinto al DEFAULT_SLOTS original, lo enviamos
-        # (O si preferís enviar todo para ser explícito, también vale)
         if sorted(final_slots) != sorted(DEFAULT_SLOTS):
             days[date_str] = final_slots
 
@@ -872,98 +911,6 @@ def upsert_availability_day(body: AvailabilityDayIn, user=Depends(require_api_ke
     }
 
 
-@app.post("/api/availability/block-range")
-def block_time_range(body: BlockRangeIn, user=Depends(require_api_key)):
-    """
-    Bloquea un rango de horarios (hour_from → hour_to inclusive) en:
-    - Un rango de fechas (date_from..date_to), o
-    - Todos los días desde hoy en adelante si apply_all=True.
-    
-    Funciona quitando esos horarios del slot list de cada día afectado,
-    respetando los bookings existentes (no los toca).
-    """
-    import re
-    hh_re = re.compile(r"^\d{2}:\d{2}$")
-    if not hh_re.match(body.hour_from) or not hh_re.match(body.hour_to):
-        raise HTTPException(status_code=400, detail="hour_from y hour_to deben tener formato HH:MM")
-
-    # Determinar qué horarios del DEFAULT_SLOTS quedan dentro del rango a bloquear
-    def in_range(h: str) -> bool:
-        return body.hour_from <= h <= body.hour_to
-
-    slots_to_block = [h for h in DEFAULT_SLOTS if in_range(h)]
-    if not slots_to_block:
-        raise HTTPException(status_code=400, detail="El rango no incluye ningún horario válido")
-
-    # Determinar fechas afectadas
-    today_str = _today_ar_str()
-
-    if body.apply_all:
-        # Aplicar a los próximos 365 días desde hoy
-        start_dt = datetime.strptime(today_str, "%Y-%m-%d")
-        end_dt = start_dt + timedelta(days=365)
-        date_list = []
-        cur = start_dt
-        while cur <= end_dt:
-            date_list.append(cur.strftime("%Y-%m-%d"))
-            cur += timedelta(days=1)
-    else:
-        if not body.date_from or not body.date_to:
-            raise HTTPException(status_code=400, detail="Especificá date_from y date_to, o activá apply_all")
-        try:
-            start_dt = datetime.strptime(body.date_from, "%Y-%m-%d")
-            end_dt = datetime.strptime(body.date_to, "%Y-%m-%d")
-        except ValueError:
-            raise HTTPException(status_code=400, detail="Fechas inválidas. Usar YYYY-MM-DD")
-        if start_dt > end_dt:
-            raise HTTPException(status_code=400, detail="date_from no puede ser posterior a date_to")
-        date_list = []
-        cur = start_dt
-        while cur <= end_dt:
-            date_list.append(cur.strftime("%Y-%m-%d"))
-            cur += timedelta(days=1)
-
-    updated = 0
-    for date_str in date_list:
-        # Obtener override existente (si lo hay) o construir uno nuevo con default slots
-        existing = availability.find_one({"date": date_str})
-        if existing:
-            current_slots = existing.get("slots", DEFAULT_SLOTS[:])
-            enabled = existing.get("enabled", True)
-        else:
-            current_slots = DEFAULT_SLOTS[:]
-            enabled = True
-
-        # Quitar los slots bloqueados (respetando ocupados con booking real)
-        occupied = set(
-            b["time"] for b in bookings.find(
-                {"date": date_str, "status": {"$in": ["reserved", "confirmed"]}},
-                {"_id": 0, "time": 1}
-            )
-            if b.get("time")
-        )
-        new_slots = [s for s in current_slots if s not in slots_to_block or s in occupied]
-
-        availability.update_one(
-            {"date": date_str},
-            {"$set": {
-                "date": date_str,
-                "enabled": enabled,
-                "slots": sorted(new_slots),
-                "updated_at": datetime.now(timezone.utc),
-            }},
-            upsert=True
-        )
-        updated += 1
-
-    return {
-        "ok": True,
-        "dates_updated": updated,
-        "slots_blocked": slots_to_block,
-        "apply_all": body.apply_all,
-    }
-
-
 @app.get("/api/admin/bookings/day")
 def admin_get_bookings_day(date: str = Query(..., description="YYYY-MM-DD"), user=Depends(require_api_key)):
     """
@@ -982,9 +929,87 @@ def admin_get_bookings_day(date: str = Query(..., description="YYYY-MM-DD"), use
 
     return {"ok": True, "date": date, "ocupados": ocupados}
 
+
 # =========================
-# Rutas core
+# ✅ Reglas de bloqueo horario (Admin)
 # =========================
+
+@app.get("/api/admin/block-rules")
+def get_block_rules(user=Depends(require_api_key)):
+    """
+    Devuelve la lista de reglas de bloqueo y el estado global (blocks_enabled).
+    """
+    import re
+    cfg = block_config.find_one({}) or {}
+    rules = []
+    for r in block_rules.find({}):
+        rules.append({
+            "id":        str(r["_id"]),
+            "hour_from": r.get("hour_from", ""),
+            "hour_to":   r.get("hour_to", ""),
+            "apply_all": r.get("apply_all", False),
+            "date_from": r.get("date_from"),
+            "date_to":   r.get("date_to"),
+            "label":     r.get("label"),
+        })
+    return {
+        "ok": True,
+        "blocks_enabled": cfg.get("blocks_enabled", True),
+        "rules": rules,
+    }
+
+@app.post("/api/admin/block-rules")
+def add_block_rule(body: BlockRuleIn, user=Depends(require_api_key)):
+    """
+    Agrega una nueva regla de bloqueo persistente.
+    """
+    import re
+    hh_re = re.compile(r"^\d{2}:\d{2}$")
+    if not hh_re.match(body.hour_from) or not hh_re.match(body.hour_to):
+        raise HTTPException(400, "hour_from y hour_to deben tener formato HH:MM")
+    if body.hour_from > body.hour_to:
+        raise HTTPException(400, "hour_from debe ser <= hour_to")
+    if not body.apply_all and (not body.date_from or not body.date_to):
+        raise HTTPException(400, "Especificá date_from y date_to, o activá apply_all")
+
+    slots_affected = [h for h in DEFAULT_SLOTS if body.hour_from <= h <= body.hour_to]
+    doc = {
+        "hour_from": body.hour_from,
+        "hour_to":   body.hour_to,
+        "apply_all": body.apply_all,
+        "date_from": body.date_from,
+        "date_to":   body.date_to,
+        "label":     body.label,
+        "created_at": datetime.now(timezone.utc),
+    }
+    res = block_rules.insert_one(doc)
+    return {"ok": True, "id": str(res.inserted_id), "slots_affected": slots_affected}
+
+@app.delete("/api/admin/block-rules/{rule_id}")
+def delete_block_rule(rule_id: str, user=Depends(require_api_key)):
+    """
+    Elimina una regla de bloqueo por ID.
+    """
+    try:
+        oid = ObjectId(rule_id)
+    except Exception:
+        raise HTTPException(400, "ID inválido")
+    r = block_rules.delete_one({"_id": oid})
+    if r.deleted_count == 0:
+        raise HTTPException(404, "Regla no encontrada")
+    return {"ok": True}
+
+@app.post("/api/admin/block-rules/toggle")
+def toggle_block_rules(user=Depends(require_api_key)):
+    """
+    Alterna el estado global de los bloqueos (activo/inactivo).
+    """
+    cfg = block_config.find_one({}) or {}
+    new_val = not cfg.get("blocks_enabled", True)
+    block_config.update_one({}, {"$set": {"blocks_enabled": new_val}}, upsert=True)
+    return {"ok": True, "blocks_enabled": new_val}
+
+
 @app.get("/api/config")
 def get_config():
     return {
@@ -1006,6 +1031,37 @@ def update_admin_config_vars(payload: dict = Body(...), user=Depends(require_api
         return {"ok": True, "config": updated}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+@app.post("/api/admin/change-creds")
+def change_admin_creds(body: ChangeCredsIn, user=Depends(require_api_key)):
+    """
+    Actualiza el usuario y contraseña del administrador.
+    Busca por rol 'admin'.
+    """
+    new_user = body.new_username.strip().lower()
+    new_pass = body.new_password.strip()
+
+    if not new_user or not new_pass:
+        raise HTTPException(status_code=400, detail="Usuario y contraseña no pueden estar vacíos")
+
+    hashed = hash_password(new_pass)
+
+    # Actualizar o insertar el usuario administrador.
+    # Usamos email como 'new_username' para mantener la lógica de login que busca por email o username.
+    res = users.update_one(
+        {"role": "admin"},
+        {
+            "$set": {
+                "email": new_user,
+                "username": new_user,
+                "password_hash": hashed,
+                "updated_at": datetime.now(timezone.utc)
+            }
+        },
+        upsert=True
+    )
+
+    return {"ok": True, "message": "Credenciales actualizadas exitosamente. Se aplicarán en el próximo login."}
 
 @app.get("/api/health")
 def health():
