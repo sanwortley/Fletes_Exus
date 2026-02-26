@@ -320,6 +320,43 @@
       .top-bar {
         padding: 15px !important;
       }
+
+      /* Form de reglas de bloqueo */
+      .rules-form-grid {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 14px;
+        align-items: flex-end;
+      }
+
+      .rules-form-item {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+      }
+
+      .date-range-flex {
+        display: flex;
+        gap: 10px;
+        align-items: flex-end;
+      }
+
+      @media (max-width: 550px) {
+
+        .rules-form-grid>div,
+        .date-range-flex {
+          width: 100% !important;
+        }
+
+        .date-range-flex {
+          flex-direction: column !important;
+          align-items: stretch !important;
+        }
+
+        .date-input-full {
+          width: 100% !important;
+        }
+      }
     }
   </style>
 </head>
@@ -523,11 +560,11 @@
             <p style="margin:0 0 16px; font-size:.9rem; font-weight:700; color:var(--dark);">➕ Agregar nueva regla de
               bloqueo</p>
 
-            <div style="display:flex; flex-wrap:wrap; gap:14px; align-items:flex-end;">
+            <div class="rules-form-grid">
               <!-- Hora desde -->
-              <div style="display:flex; flex-direction:column; gap:5px;">
+              <div class="rules-form-item">
                 <label style="font-size:.78rem; font-weight:600; color:var(--muted);">Desde</label>
-                <select id="newBlockFrom" class="date-input" style="width:100px;">
+                <select id="newBlockFrom" class="date-input date-input-full" style="width:100px;">
                   <option value="07:00">07:00</option>
                   <option value="08:00">08:00</option>
                   <option value="09:00">09:00</option>
@@ -548,9 +585,9 @@
               </div>
 
               <!-- Hora hasta -->
-              <div style="display:flex; flex-direction:column; gap:5px;">
+              <div class="rules-form-item">
                 <label style="font-size:.78rem; font-weight:600; color:var(--muted);">Hasta</label>
-                <select id="newBlockTo" class="date-input" style="width:100px;">
+                <select id="newBlockTo" class="date-input date-input-full" style="width:100px;">
                   <option value="07:00">07:00</option>
                   <option value="08:00">08:00</option>
                   <option value="09:00" selected>09:00</option>
@@ -571,9 +608,9 @@
               </div>
 
               <!-- Alcance -->
-              <div style="display:flex; flex-direction:column; gap:5px;">
+              <div class="rules-form-item">
                 <label style="font-size:.78rem; font-weight:600; color:var(--muted);">Aplicar en</label>
-                <select id="newBlockMode" class="date-input" style="width:190px;"
+                <select id="newBlockMode" class="date-input date-input-full" style="width:190px;"
                   onchange="Admin.onNewBlockModeChange()">
                   <option value="range">Rango de fechas</option>
                   <option value="all">Todos los días futuros</option>
@@ -581,21 +618,21 @@
               </div>
 
               <!-- Fechas (visible solo en modo range) -->
-              <div id="newBlockDateRange" style="display:flex; gap:10px; align-items:flex-end;">
-                <div style="display:flex; flex-direction:column; gap:5px;">
+              <div id="newBlockDateRange" class="date-range-flex">
+                <div class="rules-form-item">
                   <label style="font-size:.78rem; font-weight:600; color:var(--muted);">Fecha desde</label>
-                  <input id="newBlockDateFrom" type="date" class="date-input" style="width:145px;" />
+                  <input id="newBlockDateFrom" type="date" class="date-input date-input-full" style="width:145px;" />
                 </div>
-                <div style="display:flex; flex-direction:column; gap:5px;">
+                <div class="rules-form-item">
                   <label style="font-size:.78rem; font-weight:600; color:var(--muted);">Fecha hasta</label>
-                  <input id="newBlockDateTo" type="date" class="date-input" style="width:145px;" />
+                  <input id="newBlockDateTo" type="date" class="date-input date-input-full" style="width:145px;" />
                 </div>
               </div>
 
               <!-- Etiqueta opcional -->
-              <div style="display:flex; flex-direction:column; gap:5px;">
+              <div class="rules-form-item">
                 <label style="font-size:.78rem; font-weight:600; color:var(--muted);">Etiqueta (opcional)</label>
-                <input id="newBlockLabel" type="text" class="date-input" placeholder="Ej: Mañanas"
+                <input id="newBlockLabel" type="text" class="date-input date-input-full" placeholder="Ej: Mañanas"
                   style="width:140px;" />
               </div>
 
