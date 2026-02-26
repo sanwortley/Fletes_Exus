@@ -829,18 +829,24 @@ def get_availability(month: str = Query(..., description="YYYY-MM")):
         d_key = b["date"]
         booked.setdefault(d_key, set()).add(b["time"])
 
-    # 3) Construir respuesta (solo devolvemos días que tengan algún cambio respecto al default)
-    #    Si no está en la respuesta, el frontend usa defaultSlots.
+    # 3) Obtener configuración global de bloqueos y REGLAS de una sola vez para optimizar (evita N+1 queries)
+    cfg = block_config.find_one({"_id": "global_config"}) or block_config.find_one({}) or {}
+    is_blocking_active = cfg.get("blocks_enabled", True)
+    
+    rules_cache = []
+    if is_blocking_active:
+        rules_cache = list(block_rules.find({}))
+
+    today_str = _today_ar_str()
     days: Dict[str, List[str]] = {}
     
-    # Iteramos todos los días del mes para asegurar consistencia
+    # 4) Construir respuesta iterando días del mes
     for d in range(1, last_day + 1):
         date_str = f"{year:04d}-{mon:02d}-{d:02d}"
         
         # Base: lo que el admin configuró o el default
         day_ovr = overrides.get(date_str)
         if day_ovr and not day_ovr.get("enabled", True):
-            # Día deshabilitado completamente
             days[date_str] = []
             continue
             
@@ -850,10 +856,29 @@ def get_availability(month: str = Query(..., description="YYYY-MM")):
         day_booked = booked.get(date_str, set())
         final_slots = [s for s in base_slots if s not in day_booked]
 
-        # Aplicar reglas dinámicas de bloqueo (no afectan turnos ya reservados)
-        rule_blocked = _get_blocked_slots_for_date(date_str)
-        if rule_blocked:
-            final_slots = [s for s in final_slots if s not in rule_blocked]
+        # Aplicar reglas dinámicas de bloqueo desde el cache (OPTIMIZADO)
+        if is_blocking_active and rules_cache:
+            blocked_by_rules = set()
+            for rule in rules_cache:
+                hf = rule.get("hour_from", "")
+                ht = rule.get("hour_to", "")
+                if not hf or not ht: continue
+
+                # Validar si aplica según modo (apply_all o rango)
+                if rule.get("apply_all", False):
+                    if date_str < today_str: continue
+                else:
+                    df = rule.get("date_from", "")
+                    dt = rule.get("date_to", "")
+                    if not df or not dt or not (df <= date_str <= dt): continue
+                
+                # Agregar slots al set de bloqueados
+                for slot in DEFAULT_SLOTS:
+                    if hf <= slot <= ht:
+                        blocked_by_rules.add(slot)
+            
+            if blocked_by_rules:
+                final_slots = [s for s in final_slots if s not in blocked_by_rules]
 
         # Si el resultado es distinto al DEFAULT_SLOTS original, lo enviamos
         if sorted(final_slots) != sorted(DEFAULT_SLOTS):
