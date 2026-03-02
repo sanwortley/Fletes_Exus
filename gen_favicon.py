@@ -11,12 +11,14 @@ def make_favicon(size=64, output_path=None):
     color_gold = (211, 161, 41, 255)
     draw.rounded_rectangle([0, 0, size-1, size-1], radius=radius, fill=color_gold)
 
-    # Texto F&M
+    # Texto F&M - Mucho más grande
     text = "F&M"
-    font_size = int(size * 0.38)
+    # Aumentado el font_size considerablemente del 0.38 original
+    # Usamos 0.52 para que se vea mas grande pero sin Pegar los bordes
+    font_size = int(size * 0.52)
 
     try:
-        # Intentar fuente bold del sistema
+        # Intentar fuente bold del sistema (PowerShell en Windows tiene estas)
         font = ImageFont.truetype("arialbd.ttf", font_size)
     except:
         try:
@@ -24,10 +26,13 @@ def make_favicon(size=64, output_path=None):
         except:
             font = ImageFont.load_default()
 
-    # Centrar texto
+    # Centrar texto milimétricamente
     bbox = draw.textbbox((0, 0), text, font=font)
     text_w = bbox[2] - bbox[0]
     text_h = bbox[3] - bbox[1]
+    
+    # Ajuste fino: movemos la 'Y' un poquito para que el texto se
+    # lea perfecto en tamaño favicon (16x16)
     x = (size - text_w) // 2
     y = (size - text_h) // 2 - bbox[1]
 
@@ -37,8 +42,11 @@ def make_favicon(size=64, output_path=None):
 
 base = r"c:\Exus MVP\Exus\frontend\images"
 
-make_favicon(64, os.path.join(base, "favicon_fm_64.png"))
-make_favicon(32, os.path.join(base, "favicon_fm_32.png"))
-make_favicon(16, os.path.join(base, "favicon_fm_16.png"))
+# Sobrescribimos el archivo clave que usa el HTML
+make_favicon(64, os.path.join(base, "favicon_final_monogram.png"))
+
+# Versiones extra si hicieran falta
+make_favicon(32, os.path.join(base, "favicon_fm_32_large.png"))
+make_favicon(16, os.path.join(base, "favicon_fm_16_large.png"))
 
 print("Listo!")
