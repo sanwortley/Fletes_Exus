@@ -39,9 +39,10 @@ header.nav {
 
 .brand img {
   display: block;
-  height: 90px;
+  height: 50px;
   width: auto;
   object-fit: contain;
+  mix-blend-mode: multiply;
 }
 
 .nav-links {
@@ -155,7 +156,7 @@ header.nav {
   }
 
   .brand img {
-    height: 55px;
+    height: 38px;
   }
 }
 
