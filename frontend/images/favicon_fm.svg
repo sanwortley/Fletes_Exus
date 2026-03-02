@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <!-- Fondo dorado redondeado -->
+  <rect width="64" height="64" rx="12" fill="#D3A129"/>
+  <!-- Texto F&M en blanco, bold, centrado -->
+  <text
+    x="32"
+    y="44"
+    font-family="Arial Black, Arial, sans-serif"
+    font-size="26"
+    font-weight="900"
+    fill="white"
+    text-anchor="middle"
+    letter-spacing="-1"
+  >F&amp;M</text>
+</svg>
