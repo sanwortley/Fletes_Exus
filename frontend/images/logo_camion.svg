@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 100" width="200" height="100">
+  <!-- Silueta exterior sólida del camión tipo Porter con caja abierta -->
+  <g fill="#D3A129">
+
+    <!-- Cuerpo principal (cabina + caja) -->
+    <path d="
+      M 18 60
+      L 18 38
+      Q 18 30 26 30
+      L 52 30
+      Q 58 30 62 36
+      L 68 30
+      L 170 30
+      L 170 60
+      Z
+    "/>
+
+    <!-- Rueda trasera -->
+    <circle cx="145" cy="64" r="12"/>
+    <circle cx="145" cy="64" r="5" fill="white"/>
+
+    <!-- Rueda delantera -->
+    <circle cx="38" cy="64" r="12"/>
+    <circle cx="38" cy="64" r="5" fill="white"/>
+
+    <!-- Tapa ruedas (guardabarros) -->
+    <path d="M 20 60 Q 20 76 38 76 Q 56 76 56 60 Z" fill="#D3A129"/>
+    <path d="M 127 60 Q 127 76 145 76 Q 163 76 163 60 Z" fill="#D3A129"/>
+
+    <!-- Espejo lateral -->
+    <rect x="12" y="36" width="6" height="8" rx="2"/>
+
+  </g>
+
+  <!-- Carrocería interior (ventanilla) para dar detalle a la cabina -->
+  <rect x="26" y="34" width="28" height="18" rx="3" fill="white" opacity="0.35"/>
+
+</svg>
