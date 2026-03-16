@@ -2,9 +2,16 @@
 <html lang="es">
 
 <head>
+  <!-- Google Tag Manager -->
+  <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+  new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+  j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+  'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+  })(window,document,'script','dataLayer','GTM-W8R9JWGM');</script>
+  <!-- End Google Tag Manager -->
+
   <!-- Google tag (gtag.js) -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=AW-18003768342">
-  </script>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=AW-18003768342"></script>
   <script>
     window.dataLayer = window.dataLayer || [];
     function gtag(){dataLayer.push(arguments);}
@@ -89,7 +96,7 @@
     .login-row {
       max-width: 420px;
       margin: 60px auto;
-      display: flex !important;
+      display: flex;
       /* Force flex if shown */
       flex-direction: column;
       gap: 20px;
@@ -469,6 +476,10 @@
 </head>
 
 <body data-page="admin">
+  <!-- Google Tag Manager (noscript) -->
+  <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-W8R9JWGM"
+  height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+  <!-- End Google Tag Manager (noscript) -->
   <header class="nav">
     <div class="nav-inner">
       <div class="brand">
@@ -538,7 +549,6 @@
         <input class="input" id="usr" type="text" placeholder="Usuario" autocomplete="username" />
         <input class="input" id="pwd" type="password" placeholder="Contraseña" autocomplete="current-password" />
         <button class="btn btn-primary" type="submit">INGRESAR AL PANEL</button>
-        <div id="authFlag" class="tag muted">No autenticado</div>
       </form>
 
       <table class="table" id="tabla" style="display:none">
@@ -896,7 +906,7 @@
           : ''
       );
 
-      const isAdminView = () => !!(byId('loginForm') && byId('authFlag') && byId('tbody'));
+      const isAdminView = () => !!(byId('loginForm') && byId('tbody'));
       const toast = (msg) => { const t = byId('toast'); if (!t) return; t.textContent = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 2200); };
       const peso = (n) => (n != null ? ('$ ' + Number(n).toLocaleString('es-AR')) : '-');
       const coalesce = (...vals) => { for (const v of vals) { if (v !== undefined && v !== null) return v; } return null; };
@@ -1396,11 +1406,13 @@
         const viewSwitch = byId('viewSwitch');
         const reqSwitch = byId('reqSwitch');
 
-        if (loginForm) loginForm.style.display = isOn ? 'none' : 'flex';
-        if (btnLogout) {
-          btnLogout.hidden = !isOn;          // ✅ muestra/oculta de verdad
+        if (loginForm) {
+          loginForm.style.setProperty('display', isOn ? 'none' : 'flex', isOn ? 'important' : '');
+          loginForm.style.display = isOn ? 'none' : 'flex';
         }
-
+        if (btnLogout) {
+          btnLogout.hidden = !isOn;
+        }
 
         if (flag) {
           flag.textContent = isOn ? 'Autenticado' : 'No autenticado';
@@ -1418,6 +1430,7 @@
         if (tabla) tabla.style.display = 'table'; // Siempre visible para mostrar el mensaje de "Iniciá sesión"
         if (thead) thead.style.display = isOn ? 'table-header-group' : 'none';
         if (reqSwitch) reqSwitch.style.display = isOn ? 'flex' : 'none';
+        if (histToolbar) histToolbar.style.display = isOn ? 'flex' : 'none';
 
         // Asegurar que el panel principal se vea (contiene login o tabla)
         if (pSol) pSol.style.display = 'block';
@@ -2110,7 +2123,7 @@
       }
 
       (function initAdmin() {
-        const NEED = ['authFlag', 'tbody', 'loginForm'];
+        const NEED = ['tbody', 'loginForm'];
         const hasAdmin = () => NEED.every(id => document.getElementById(id));
         let inited = false;
 

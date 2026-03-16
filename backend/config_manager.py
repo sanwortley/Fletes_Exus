@@ -1,7 +1,8 @@
-
 from pydantic import BaseModel, Field
 from typing import Dict, Any, List, Optional
-from pymongo import MongoClient
+from sqlmodel import Session, select
+from .models.models import dbPricingConfig
+from datetime import datetime, timezone
 import os
 from dotenv import load_dotenv
 
@@ -66,33 +67,38 @@ def get_default_env_config() -> dict:
     }
 
 class DynamicConfig:
-    _cache = None
-    _last_fetched = 0
-
     @classmethod
-    def get_values(cls, db) -> dict:
-        # Intentamos leer de DB
+    def get_values(cls, db_session: Session) -> dict:
+        """Lee la configuración desde la tabla PricingConfig."""
         try:
-            doc = db.config.find_one({"_id": "pricing_vars"})
-            if doc:
-                # Merge con defaults (por si falta alguna key nueva)
-                defaults = get_default_env_config()
-                # Sobrescribir defaults con lo que haya en DB
-                defaults.update({k: v for k, v in doc.items() if k in defaults})
-                return defaults
-        except Exception:
-            pass
-        
-        # Si falla o no existe, retornamos ENV puro
-        return get_default_env_config()
+            # En el refactor, db_session será el objeto Session de SQLModel
+            statement = select(dbPricingConfig).where(dbPricingConfig.id == "pricing_vars")
+            config = db_session.exec(statement).first()
+            
+            defaults = get_default_env_config()
+            if config and config.config_data:
+                # Merge con lo que hay en DB
+                defaults.update({k: v for k, v in config.config_data.items() if k in defaults})
+            return defaults
+        except Exception as e:
+            print(f"Error reading dynamic config from SQL: {e}")
+            return get_default_env_config()
 
     @classmethod
-    def update_values(cls, db, new_values: dict):
+    def update_values(cls, db_session: Session, new_values: dict):
         # Validar con Pydantic
-        validated = ConfigVars(**new_values).model_dump()
-        db.config.update_one(
-            {"_id": "pricing_vars"},
-            {"$set": validated},
-            upsert=True
-        )
-        return validated
+        validated_data = ConfigVars(**new_values).model_dump()
+        
+        statement = select(dbPricingConfig).where(dbPricingConfig.id == "pricing_vars")
+        config = db_session.exec(statement).first()
+        
+        if config:
+            config.config_data = validated_data
+            config.updated_at = datetime.now(timezone.utc)
+        else:
+            config = dbPricingConfig(id="pricing_vars", config_data=validated_data)
+            db_session.add(config)
+        
+        db_session.commit()
+        db_session.refresh(config)
+        return validated_data

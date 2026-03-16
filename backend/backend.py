@@ -20,8 +20,12 @@ import requests
 from fastapi import FastAPI, HTTPException, Depends, Body, BackgroundTasks, Request, Query
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
-from pymongo import MongoClient
-from bson import ObjectId
+from sqlmodel import Session, select
+from .database import engine, get_session, init_db
+from .models.models import (
+    dbUser, dbQuote, dbBooking, dbAvailabilityOverride, 
+    dbBlockRule, dbGlobalConfig, dbPricingConfig
+)
 from dotenv import load_dotenv
 load_dotenv(override=True)
 
@@ -102,24 +106,15 @@ if ALLOWED_ORIGINS:
     )
 
 # =========================
-# MongoDB
+# Database Initialization (SQL)
 # =========================
-MONGO_URI = os.getenv("MONGO_URI")
-if not MONGO_URI:
-    raise RuntimeError("Falta MONGO_URI en variables de entorno")
-client = MongoClient(MONGO_URI, serverSelectionTimeoutMS=5000)
-client.admin.command("ping")
-db = client["fletes_db"]
-quotes = db["quotes"]
-users = db["users"]
+@app.on_event("startup")
+def on_startup():
+    init_db()
+    print("Database synchronized (SQL)")
 
-# ✅ AÑADIDO: colecciones agenda
-availability = db["availability"]
-bookings = db["bookings"]
-
-# ✅ Reglas de bloqueo horario persistentes
-block_rules  = db["block_rules"]   # lista de reglas { hour_from, hour_to, apply_all, date_from, date_to }
-block_config = db["block_config"]  # documento único: { blocks_enabled: bool }
+# ✅ Colecciones (ahora son tablas, se manejan vía Session)
+# quotes, users, availability, bookings, block_rules, block_config
 
 DEFAULT_SLOTS = [
     "08:00", "09:00", "10:00", "11:00", "12:00",
@@ -128,19 +123,9 @@ DEFAULT_SLOTS = [
 ]
 
 # ✅ índices útiles
-try:
-    availability.create_index("date", unique=True)
-    bookings.create_index([("date", 1), ("time", 1)], unique=True)
-except Exception:
-    pass
+# Legacy MongoDB index creation removed
 
-@app.on_event("startup")
-def _on_startup():
-    try:
-        client.admin.command("ping")
-        print("[Mongo] Atlas OK 🚀")
-    except Exception as e:
-        print("[Mongo] ERROR:", e)
+# Eliminated MongoDB startup check as we use SQL on_startup
 
 # =========================
 # Config de cálculo (.env)
@@ -335,9 +320,9 @@ def _distance_time_ors(origen: str, destino: str) -> Optional[Dict[str, Any]]:
     except Exception:
         return None
 
-def _distance_time_fallback(origen: str, destino: str) -> Dict[str, Any]:
+def _distance_time_fallback(session: Session, origen: str, destino: str) -> Dict[str, Any]:
     # Obtener config actual
-    conf = DynamicConfig.get_values(db)
+    conf = DynamicConfig.get_values(session)
     FACTOR_TRAZADO = conf["FACTOR_TRAZADO"]
     VEL_KMH = conf["VEL_KMH"]
 
@@ -355,34 +340,35 @@ AR_TZ = timezone(timedelta(hours=-3))
 def _today_ar_str() -> str:
     return datetime.now(AR_TZ).date().isoformat()
 
-def _get_blocked_slots_for_date(date_str: str) -> set:
+def _get_blocked_slots_for_date(session: Session, date_str: str) -> set:
     """
     Devuelve el conjunto de horarios bloqueados por las reglas activas para una fecha dada.
     Si blocks_enabled es False, devuelve set vacío (sin bloqueos).
     """
-    # Usar un filtro específico para asegurar que siempre leemos el mismo documento
-    cfg = block_config.find_one({"_id": "global_config"})
-    if not cfg:
-        # Fallback por si existe uno viejo sin ese ID específico
-        cfg = block_config.find_one({}) or {}
+    statement_cfg = select(dbGlobalConfig).where(dbGlobalConfig.id == "global_config")
+    cfg = session.exec(statement_cfg).first()
     
-    if not cfg.get("blocks_enabled", True):
+    if cfg and not cfg.blocks_enabled:
         return set()
 
     today_str = _today_ar_str()
     blocked = set()
-    for rule in block_rules.find({}):
-        hf  = rule.get("hour_from", "")
-        ht  = rule.get("hour_to",   "")
+    
+    statement_rules = select(dbBlockRule)
+    rules = session.exec(statement_rules).all()
+    
+    for rule in rules:
+        hf  = rule.hour_from
+        ht  = rule.hour_to
         if not hf or not ht:
             continue
-        if rule.get("apply_all", False):
+        if rule.apply_all:
             # Aplica a todos los días desde hoy
             if date_str < today_str:
                 continue
         else:
-            df = rule.get("date_from", "")
-            dt = rule.get("date_to",   "")
+            df = rule.date_from
+            dt = rule.date_to
             if not df or not dt or not (df <= date_str <= dt):
                 continue
         for slot in DEFAULT_SLOTS:
@@ -390,42 +376,48 @@ def _get_blocked_slots_for_date(date_str: str) -> set:
                 blocked.add(slot)
     return blocked
 
-def _purge_expired_unconfirmed():
+def _purge_expired_unconfirmed(session: Session):
     hoy = _today_ar_str()
 
-    expired = list(quotes.find(
-        {"estado": {"$in": ["sent", "rechazado"]}, "fecha_turno": {"$lt": hoy}},
-        {"_id": 1}
-    ))
+    statement = select(dbQuote).where(
+        dbQuote.estado.in_(["sent", "rechazado"]),
+        dbQuote.fecha_turno < hoy
+    )
+    expired = session.exec(statement).all()
 
     if not expired:
         return 0
 
-    ids = [d["_id"] for d in expired]
-    quotes.delete_many({"_id": {"$in": ids}})
-    return len(ids)
+    count = len(expired)
+    for q in expired:
+        session.delete(q)
+    session.commit()
+    return count
 
 
 
-def _marcar_realizados():
+def _marcar_realizados(session: Session):
     hoy = _today_ar_str()
 
     # Confirmado + fecha_turno pasada => Realizado
-    quotes.update_many(
-        {
-            "estado": "confirmado",
-            "fecha_turno": {"$lt": hoy}
-        },
-        {
-            "$set": {
-                "estado": "realizado",
-                "realizado_en": datetime.now(timezone.utc)
-            }
-        }
+    statement = select(dbQuote).where(
+        dbQuote.estado == "confirmado",
+        dbQuote.fecha_turno < hoy
     )
+    quotes_to_update = session.exec(statement).all()
+    
+    for q in quotes_to_update:
+        q.estado = "realizado"
+        # Nota: en SQLModel no tenemos realizado_en en el modelo dbQuote, 
+        # pero podemos agregarlo o ignorarlo por ahora si no es crítico.
+        # Mantendremos la consistencia con el modelo definido.
+        # q.realizado_en = datetime.now(timezone.utc)
+    
+    if quotes_to_update:
+        session.commit()
 
 
-def calcular_ruta(origen: str, destino: str) -> Dict[str, Any]:
+def calcular_ruta(session: Session, origen: str, destino: str) -> Dict[str, Any]:
     used = None
     res = None
     if ROUTING_PROVIDER == "google":
@@ -437,7 +429,7 @@ def calcular_ruta(origen: str, destino: str) -> Dict[str, Any]:
         if not res and GOOGLE_MAPS_API_KEY:
             res = _distance_time_google(origen, destino); used = "google(fallback)"
     if not res:
-        res = _distance_time_fallback(origen, destino); used = "fallback(heuristica_10km)"
+        res = _distance_time_fallback(session, origen, destino); used = "fallback(heuristica_10km)"
     print(f"[route] provider_used={used} origen='{origen}' destino='{destino}' -> {res}")
     return res
 
@@ -448,6 +440,7 @@ def calcular_ruta(origen: str, destino: str) -> Dict[str, Any]:
 # Cálculo de costos
 # =========================
 def calcular_costos(
+    session: Session, # Añadimos session
     dist_km: float,
     tiempo_viaje_min: int,
     ayudante: bool,
@@ -458,7 +451,7 @@ def calcular_costos(
 ) -> Dict[str, float]:
 
     # 1) Obtener configuración dinámica
-    conf = DynamicConfig.get_values(db)
+    conf = DynamicConfig.get_values(session)
     
     FACTOR_PONDERACION = conf.get("FACTOR_PONDERACION", 1.5)
     COSTO_HORA = conf.get("COSTO_HORA", 0.0)
@@ -548,28 +541,28 @@ def calcular_costos(
 # =========================
 # Serializaciones
 # =========================
-def _quote_public(doc: dict) -> dict:
+def _quote_public(doc: dbQuote) -> dict:
     return {
-        "id": str(doc["_id"]) if doc.get("_id") else None,
-        "nombre_cliente": doc.get("nombre_cliente"),
-        "telefono": doc.get("telefono"),
-        "tipo_carga": doc.get("tipo_carga"),
-        "origen": doc.get("origen"),
-        "destino": doc.get("destino"),
-        "fecha": doc.get("fecha"),
-        "ayudante": bool(doc.get("ayudante")),
-        "regreso_base": bool(doc.get("regreso_base", False)),
-        "dist_km": float(doc.get("dist_km", 0)),
-        "tiempo_viaje_min": int(doc.get("tiempo_viaje_min", 0)),
-        "tiempo_servicio_min": int(doc.get("tiempo_servicio_min", 0)),
-        "costo_tiempo": float(doc.get("costo_tiempo", 0)),
-        "costo_combustible": float(doc.get("costo_combustible", 0)),
-        "monto_estimado": float(doc.get("monto_estimado", 0)),
-        "estado": doc.get("estado", "preview"),
+        "id": doc.id,
+        "nombre_cliente": doc.nombre_cliente,
+        "telefono": doc.telefono,
+        "tipo_carga": doc.tipo_carga,
+        "origen": doc.origen,
+        "destino": doc.destino,
+        "fecha": doc.fecha,
+        "ayudante": bool(doc.ayudante),
+        "regreso_base": bool(doc.regreso_base),
+        "dist_km": float(doc.dist_km),
+        "tiempo_viaje_min": int(doc.tiempo_viaje_min),
+        "tiempo_servicio_min": int(doc.tiempo_servicio_min),
+        "costo_tiempo": float(doc.costo_tiempo),
+        "costo_combustible": float(doc.costo_combustible),
+        "monto_estimado": float(doc.monto_estimado),
+        "estado": doc.estado,
 
         # ✅ AÑADIDO: exponer turno (para que lo muestres en UI/admin)
-        "fecha_turno": doc.get("fecha_turno"),
-        "hora_turno": doc.get("hora_turno"),
+        "fecha_turno": doc.fecha_turno,
+        "hora_turno": doc.hora_turno,
     }
 
 def _contact_urls(quote_id: str) -> dict:
@@ -806,7 +799,10 @@ def _notify_confirmed_quote(doc: dict):
 # =========================
 
 @app.get("/api/availability")
-def get_availability(month: str = Query(..., description="YYYY-MM")):
+def get_availability(
+    month: str = Query(..., description="YYYY-MM"),
+    session: Session = Depends(get_session)
+):
     """
     Público: devuelve disponibilidad real (Merge de DEFAULT_SLOTS + Disponibilidad Admin + Bookings)
     { days: { 'YYYY-MM-DD': ['08:00', '09:00', ...] } }
@@ -821,21 +817,31 @@ def get_availability(month: str = Query(..., description="YYYY-MM")):
     end   = f"{year:04d}-{mon:02d}-{last_day:02d}"
 
     # 1) Obtener overrides del admin
-    overrides = {d["date"]: d for d in availability.find({"date": {"$gte": start, "$lte": end}})}
+    statement_ovr = select(dbAvailabilityOverride).where(
+        dbAvailabilityOverride.date >= start,
+        dbAvailabilityOverride.date <= end
+    )
+    overrides = {ovr.date: ovr for ovr in session.exec(statement_ovr).all()}
     
     # 2) Obtener bookings (reservados o confirmados)
+    statement_booked = select(dbBooking).where(
+        dbBooking.date >= start,
+        dbBooking.date <= end,
+        dbBooking.status.in_(["reserved", "confirmed"])
+    )
     booked = {}
-    for b in bookings.find({"date": {"$gte": start, "$lte": end}, "status": {"$in": ["reserved", "confirmed"]}}):
-        d_key = b["date"]
-        booked.setdefault(d_key, set()).add(b["time"])
+    for b in session.exec(statement_booked).all():
+        booked.setdefault(b.date, set()).add(b.time)
 
-    # 3) Obtener configuración global de bloqueos y REGLAS de una sola vez para optimizar (evita N+1 queries)
-    cfg = block_config.find_one({"_id": "global_config"}) or block_config.find_one({}) or {}
-    is_blocking_active = cfg.get("blocks_enabled", True)
+    # 3) Obtener configuración global de bloqueos y REGLAS
+    statement_cfg = select(dbGlobalConfig).where(dbGlobalConfig.id == "global_config")
+    cfg = session.exec(statement_cfg).first()
+    is_blocking_active = cfg.blocks_enabled if cfg else True
     
     rules_cache = []
     if is_blocking_active:
-        rules_cache = list(block_rules.find({}))
+        statement_rules = select(dbBlockRule)
+        rules_cache = session.exec(statement_rules).all()
 
     today_str = _today_ar_str()
     days: Dict[str, List[str]] = {}
@@ -846,11 +852,11 @@ def get_availability(month: str = Query(..., description="YYYY-MM")):
         
         # Base: lo que el admin configuró o el default
         day_ovr = overrides.get(date_str)
-        if day_ovr and not day_ovr.get("enabled", True):
+        if day_ovr and not day_ovr.enabled:
             days[date_str] = []
             continue
             
-        base_slots = day_ovr.get("slots") if (day_ovr and "slots" in day_ovr) else DEFAULT_SLOTS
+        base_slots = day_ovr.slots if (day_ovr and day_ovr.slots) else DEFAULT_SLOTS
         
         # Restar bookings
         day_booked = booked.get(date_str, set())
@@ -860,16 +866,16 @@ def get_availability(month: str = Query(..., description="YYYY-MM")):
         if is_blocking_active and rules_cache:
             blocked_by_rules = set()
             for rule in rules_cache:
-                hf = rule.get("hour_from", "")
-                ht = rule.get("hour_to", "")
+                hf = rule.hour_from
+                ht = rule.hour_to
                 if not hf or not ht: continue
 
                 # Validar si aplica según modo (apply_all o rango)
-                if rule.get("apply_all", False):
+                if rule.apply_all:
                     if date_str < today_str: continue
                 else:
-                    df = rule.get("date_from", "")
-                    dt = rule.get("date_to", "")
+                    df = rule.date_from
+                    dt = rule.date_to
                     if not df or not dt or not (df <= date_str <= dt): continue
                 
                 # Agregar slots al set de bloqueados
@@ -887,7 +893,11 @@ def get_availability(month: str = Query(..., description="YYYY-MM")):
     return {"ok": True, "month": month, "days": days}
 
 @app.get("/api/admin/availability")
-def admin_get_availability(month: str = Query(..., description="YYYY-MM"), user=Depends(require_api_key)):
+def admin_get_availability(
+    month: str = Query(..., description="YYYY-MM"),
+    user=Depends(require_api_key),
+    session: Session = Depends(get_session)
+):
     """
     Admin: devuelve TODO (enabled true/false + slots) para pintar grises
     """
@@ -900,39 +910,54 @@ def admin_get_availability(month: str = Query(..., description="YYYY-MM"), user=
     start = f"{year:04d}-{mon:02d}-01"
     end   = f"{year:04d}-{mon:02d}-{last_day:02d}"
 
-    items = list(availability.find({"date": {"$gte": start, "$lte": end}}, {"_id": 0}))
+    statement = select(dbAvailabilityOverride).where(
+        dbAvailabilityOverride.date >= start,
+        dbAvailabilityOverride.date <= end
+    )
+    items = session.exec(statement).all()
+    
+    # Serializamos manualmente los items para el frontend si es necesario, 
+    # o confiamos en que SQLModel se porta bien (JSON field necesita cuidado)
     return {"ok": True, "month": month, "items": items}
 
 @app.post("/api/availability/day")
-def upsert_availability_day(body: AvailabilityDayIn, user=Depends(require_api_key)):
+def upsert_availability_day(
+    body: AvailabilityDayIn,
+    user=Depends(require_api_key),
+    session: Session = Depends(get_session)
+):
 
     if not body.date or not isinstance(body.slots, list):
         raise HTTPException(status_code=400, detail="Se requiere 'date' y 'slots' (lista)")
 
     # 🔒 1) Buscar horarios ya reservados o confirmados
-    ocupados = set(
-        b["time"] for b in bookings.find(
-            {
-                "date": body.date,
-                "status": {"$in": ["reserved", "confirmed"]}
-            },
-            {"_id": 0, "time": 1}
-        )
+    statement_booked = select(dbBooking).where(
+        dbBooking.date == body.date,
+        dbBooking.status.in_(["reserved", "confirmed"])
     )
+    ocupados = set(b.time for b in session.exec(statement_booked).all())
 
     # 🔒 2) Filtrar slots enviados por el admin
     slots_validos = [s for s in body.slots if s not in ocupados]
 
-    availability.update_one(
-        {"date": body.date},
-        {"$set": {
-            "date": body.date,
-            "enabled": bool(body.enabled),
-            "slots": slots_validos,
-            "updated_at": datetime.now(timezone.utc),
-        }},
-        upsert=True
+    statement_ovr = select(dbAvailabilityOverride).where(
+        dbAvailabilityOverride.date == body.date
     )
+    ovr = session.exec(statement_ovr).first()
+    
+    if ovr:
+        ovr.enabled = bool(body.enabled)
+        ovr.slots = slots_validos
+        ovr.updated_at = datetime.now(timezone.utc)
+    else:
+        ovr = dbAvailabilityOverride(
+            date=body.date,
+            enabled=bool(body.enabled),
+            slots=slots_validos
+        )
+        session.add(ovr)
+    
+    session.commit()
 
     return {
         "ok": True,
@@ -941,40 +966,58 @@ def upsert_availability_day(body: AvailabilityDayIn, user=Depends(require_api_ke
     }
 
 @app.delete("/api/availability/all")
-def delete_all_availability(user=Depends(require_api_key)):
+def delete_all_availability(
+    user=Depends(require_api_key),
+    session: Session = Depends(get_session)
+):
     """
     Borra ABSOLUTAMENTE TODOS los overrides manuales de disponibilidad.
-    El calendario volverá a responder basándose solo en DEFAULT_SLOTS y Reglas Dinámicas.
     """
-    availability.delete_many({})
+    statement = select(dbAvailabilityOverride)
+    items = session.exec(statement).all()
+    for item in items:
+        session.delete(item)
+    session.commit()
     return {"ok": True, "message": "Toda la disponibilidad manual ha sido reseteada"}
 
 @app.delete("/api/availability/day/{date_str}")
-def delete_availability_day(date_str: str, user=Depends(require_api_key)):
+def delete_availability_day(
+    date_str: str,
+    user=Depends(require_api_key),
+    session: Session = Depends(get_session)
+):
     """
     Elimina cualquier override manual para un día, volviendo a DEFAULT_SLOTS.
     """
     if len(date_str) != 10:
         raise HTTPException(400, "Formato YYYY-MM-DD requerido")
-    availability.delete_one({"date": date_str})
+    
+    statement = select(dbAvailabilityOverride).where(dbAvailabilityOverride.date == date_str)
+    item = session.exec(statement).first()
+    if item:
+        session.delete(item)
+        session.commit()
+    
     return {"ok": True}
 
 
 @app.get("/api/admin/bookings/day")
-def admin_get_bookings_day(date: str = Query(..., description="YYYY-MM-DD"), user=Depends(require_api_key)):
+def admin_get_bookings_day(
+    date: str = Query(..., description="YYYY-MM-DD"),
+    user=Depends(require_api_key),
+    session: Session = Depends(get_session)
+):
     """
     Devuelve horarios ocupados (reserved/confirmed) para bloquearlos en el panel de disponibilidad.
     """
     if not date or len(date) != 10:
         raise HTTPException(status_code=400, detail="date inválida. Usar YYYY-MM-DD")
 
-    ocupados = sorted(list(set(
-        b["time"] for b in bookings.find(
-            {"date": date, "status": {"$in": ["reserved", "confirmed"]}},
-            {"_id": 0, "time": 1}
-        )
-        if b.get("time")
-    )))
+    statement = select(dbBooking).where(
+        dbBooking.date == date,
+        dbBooking.status.in_(["reserved", "confirmed"])
+    )
+    ocupados = sorted(list(set(b.time for b in session.exec(statement).all() if b.time)))
 
     return {"ok": True, "date": date, "ocupados": ocupados}
 
@@ -984,31 +1027,42 @@ def admin_get_bookings_day(date: str = Query(..., description="YYYY-MM-DD"), use
 # =========================
 
 @app.get("/api/admin/block-rules")
-def get_block_rules(user=Depends(require_api_key)):
+def get_block_rules(
+    user=Depends(require_api_key),
+    session: Session = Depends(get_session)
+):
     """
     Devuelve la lista de reglas de bloqueo y el estado global (blocks_enabled).
     """
-    import re
-    cfg = block_config.find_one({"_id": "global_config"}) or block_config.find_one({}) or {}
+    statement_cfg = select(dbGlobalConfig).where(dbGlobalConfig.id == "global_config")
+    cfg = session.exec(statement_cfg).first()
+    
+    statement_rules = select(dbBlockRule)
+    db_rules = session.exec(statement_rules).all()
+    
     rules = []
-    for r in block_rules.find({}):
+    for r in db_rules:
         rules.append({
-            "id":        str(r["_id"]),
-            "hour_from": r.get("hour_from", ""),
-            "hour_to":   r.get("hour_to", ""),
-            "apply_all": r.get("apply_all", False),
-            "date_from": r.get("date_from"),
-            "date_to":   r.get("date_to"),
-            "label":     r.get("label"),
+            "id":        str(r.id),
+            "hour_from": r.hour_from,
+            "hour_to":   r.hour_to,
+            "apply_all": r.apply_all,
+            "date_from": r.date_from,
+            "date_to":   r.date_to,
+            "label":     r.label,
         })
     return {
         "ok": True,
-        "blocks_enabled": cfg.get("blocks_enabled", True),
+        "blocks_enabled": cfg.blocks_enabled if cfg else True,
         "rules": rules,
     }
 
 @app.post("/api/admin/block-rules")
-def add_block_rule(body: BlockRuleIn, user=Depends(require_api_key)):
+def add_block_rule(
+    body: BlockRuleIn,
+    user=Depends(require_api_key),
+    session: Session = Depends(get_session)
+):
     """
     Agrega una nueva regla de bloqueo persistente.
     """
@@ -1022,46 +1076,64 @@ def add_block_rule(body: BlockRuleIn, user=Depends(require_api_key)):
         raise HTTPException(400, "Especificá date_from y date_to, o activá apply_all")
 
     slots_affected = [h for h in DEFAULT_SLOTS if body.hour_from <= h <= body.hour_to]
-    doc = {
-        "hour_from": body.hour_from,
-        "hour_to":   body.hour_to,
-        "apply_all": body.apply_all,
-        "date_from": body.date_from,
-        "date_to":   body.date_to,
-        "label":     body.label,
-        "created_at": datetime.now(timezone.utc),
-    }
-    res = block_rules.insert_one(doc)
-    return {"ok": True, "id": str(res.inserted_id), "slots_affected": slots_affected}
+    
+    rule = dbBlockRule(
+        hour_from=body.hour_from,
+        hour_to=body.hour_to,
+        apply_all=body.apply_all,
+        date_from=body.date_from,
+        date_to=body.date_to,
+        label=body.label
+    )
+    session.add(rule)
+    session.commit()
+    session.refresh(rule)
+    
+    return {"ok": True, "id": str(rule.id), "slots_affected": slots_affected}
 
 @app.delete("/api/admin/block-rules/{rule_id}")
-def delete_block_rule(rule_id: str, user=Depends(require_api_key)):
+def delete_block_rule(
+    rule_id: str,
+    user=Depends(require_api_key),
+    session: Session = Depends(get_session)
+):
     """
     Elimina una regla de bloqueo por ID.
     """
     try:
-        oid = ObjectId(rule_id)
+        rid = int(rule_id)
     except Exception:
         raise HTTPException(400, "ID inválido")
-    r = block_rules.delete_one({"_id": oid})
-    if r.deleted_count == 0:
+    
+    rule = session.get(dbBlockRule, rid)
+    if not rule:
         raise HTTPException(404, "Regla no encontrada")
+    
+    session.delete(rule)
+    session.commit()
     return {"ok": True}
 
 @app.post("/api/admin/block-rules/toggle")
-def toggle_block_rules(user=Depends(require_api_key)):
+def toggle_block_rules(
+    user=Depends(require_api_key),
+    session: Session = Depends(get_session)
+):
     """
     Alterna el estado global de los bloqueos (activo/inactivo).
     """
-    cfg = block_config.find_one({"_id": "global_config"}) or block_config.find_one({}) or {}
-    new_val = not cfg.get("blocks_enabled", True)
+    statement = select(dbGlobalConfig).where(dbGlobalConfig.id == "global_config")
+    cfg = session.exec(statement).first()
     
-    # Forzamos el uso de un ID único para evitar duplicados
-    block_config.update_one(
-        {"_id": "global_config"}, 
-        {"$set": {"blocks_enabled": new_val}}, 
-        upsert=True
-    )
+    new_val = not (cfg.blocks_enabled if cfg else True)
+    
+    if cfg:
+        cfg.blocks_enabled = new_val
+        cfg.updated_at = datetime.now(timezone.utc)
+    else:
+        cfg = dbGlobalConfig(id="global_config", blocks_enabled=new_val)
+        session.add(cfg)
+        
+    session.commit()
     return {"ok": True, "blocks_enabled": new_val}
 
 
@@ -1076,19 +1148,30 @@ def get_config():
 
 # ✅ NUEVO: Endpoints de variables de presupuesto (Admin)
 @app.get("/api/admin/config-vars")
-def get_admin_config_vars(user=Depends(require_api_key)):
-    return DynamicConfig.get_values(db)
+def get_admin_config_vars(
+    user=Depends(require_api_key),
+    session: Session = Depends(get_session)
+):
+    return DynamicConfig.get_values(session)
 
 @app.post("/api/admin/config-vars")
-def update_admin_config_vars(payload: dict = Body(...), user=Depends(require_api_key)):
+def update_admin_config_vars(
+    payload: dict = Body(...),
+    user=Depends(require_api_key),
+    session: Session = Depends(get_session)
+):
     try:
-        updated = DynamicConfig.update_values(db, payload)
+        updated = DynamicConfig.update_values(session, payload)
         return {"ok": True, "config": updated}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
 @app.post("/api/admin/change-creds")
-def change_admin_creds(body: ChangeCredsIn, user=Depends(require_api_key)):
+def change_admin_creds(
+    body: ChangeCredsIn,
+    user=Depends(require_api_key),
+    session: Session = Depends(get_session)
+):
     """
     Actualiza el usuario y contraseña del administrador.
     Busca por rol 'admin'.
@@ -1101,28 +1184,31 @@ def change_admin_creds(body: ChangeCredsIn, user=Depends(require_api_key)):
 
     hashed = hash_password(new_pass)
 
-    # Actualizar o insertar el usuario administrador.
-    # Usamos email como 'new_username' para mantener la lógica de login que busca por email o username.
-    res = users.update_one(
-        {"role": "admin"},
-        {
-            "$set": {
-                "email": new_user,
-                "username": new_user,
-                "password_hash": hashed,
-                "updated_at": datetime.now(timezone.utc)
-            }
-        },
-        upsert=True
-    )
-
-    return {"ok": True, "message": "Credenciales actualizadas exitosamente. Se aplicarán en el próximo login."}
+    statement = select(dbUser).where(dbUser.role == "admin")
+    admin = session.exec(statement).first()
+    
+    if admin:
+        admin.email = new_user
+        admin.username = new_user
+        admin.password_hash = hashed
+        admin.updated_at = datetime.now(timezone.utc)
+    else:
+        admin = dbUser(
+            username=new_user,
+            email=new_user,
+            password_hash=hashed,
+            role="admin"
+        )
+        session.add(admin)
+    
+    session.commit()
+    return {"ok": True, "message": "Credenciales actualizadas exitosamente."}
 
 @app.get("/api/health")
 def health():
     return {"status": "ok", "service": "Fletes Javier API"}
 
-def _calcular_desde_body(body: QuoteIn) -> dict:
+def _calcular_desde_body(session: Session, body: QuoteIn) -> dict:
     # Normalizar
     nombre = body.nombre_cliente or body.__dict__.get("nombre_cliente")
     if not nombre:
@@ -1133,15 +1219,15 @@ def _calcular_desde_body(body: QuoteIn) -> dict:
     base_norm = _normalize_addr(BASE_DIRECCION)
 
     # Tramos
-    t1 = calcular_ruta(base_norm, origen_norm)
-    t2 = calcular_ruta(origen_norm, destino_norm)
+    t1 = calcular_ruta(session, base_norm, origen_norm)
+    t2 = calcular_ruta(session, origen_norm, destino_norm)
 
     dist_total = float(t1["dist_km"] + t2["dist_km"])
     tiempo_total_min = int(t1["tiempo_viaje_min"] + t2["tiempo_viaje_min"])
 
     # Regreso a base (incluido)
     regreso_flag = True
-    t3 = calcular_ruta(destino_norm, base_norm)
+    t3 = calcular_ruta(session, destino_norm, base_norm)
     dist_total += float(t3["dist_km"])
     tiempo_total_min += int(t3["tiempo_viaje_min"])
 
@@ -1161,6 +1247,7 @@ def _calcular_desde_body(body: QuoteIn) -> dict:
     extra_servicio_min = 0 # Eliminamos el buffer automático para que coincida con Excel
 
     costos = calcular_costos(
+        session=session, # Pasar session
         dist_km=dist_total,
         tiempo_viaje_min=tiempo_total_min,
         ayudante=body.ayudante,
@@ -1228,182 +1315,236 @@ def _calcular_desde_body(body: QuoteIn) -> dict:
 
 # ⛔ CAMBIO: /api/quote ahora NO persiste; solo devuelve preview
 @app.post("/api/quote")
-def preview_quote(body: QuoteIn):
-    doc = _calcular_desde_body(body)
-    doc["estado"] = "preview"
-    return {"ok": True, "quote": _quote_public(doc)}
+def preview_quote(
+    body: QuoteIn,
+    session: Session = Depends(get_session)
+):
+    doc = _calcular_desde_body(session, body)
+    # Creamos un objeto dbQuote temporalmente (sin guardar) para serializar
+    temp_quote = dbQuote(**doc, estado="preview")
+    return {"ok": True, "quote": _quote_public(temp_quote)}
 
 # ✅ Nuevo: enviar y guardar (sin ID previo) + RESERVA ATÓMICA
 @app.post("/api/quote/send")
-def send_quote_nuevo(body: QuoteIn, background: BackgroundTasks, debug: bool = Query(default=False)):
+def send_quote_nuevo(
+    body: QuoteIn, 
+    background: BackgroundTasks, 
+    debug: bool = Query(default=False),
+    session: Session = Depends(get_session)
+):
     """
-    Guarda el presupuesto y RESERVA el horario de forma atómica.
-    Válido para horarios por defecto o configurados por admin.
+    Guarda el presupuesto y RESERVA el horario.
     """
     # 1) Requisitos básicos
     if not body.fecha_turno or not body.hora_turno:
         raise HTTPException(status_code=422, detail="Tenés que elegir fecha y horario")
 
-    # 2) Validar que no sea en el pasado (Hoy o Futuro)
+    # 2) Validar que no sea en el pasado
     hoy_ar = datetime.now(AR_TZ)
     try:
         req_dt = datetime.strptime(f"{body.fecha_turno} {body.hora_turno}", "%Y-%m-%d %H:%M").replace(tzinfo=AR_TZ)
-        if req_dt < hoy_ar - timedelta(minutes=5): # Margen de 5 min
+        if req_dt < hoy_ar - timedelta(minutes=5):
             raise HTTPException(status_code=409, detail="Ese horario ya pasó")
     except ValueError:
         raise HTTPException(status_code=400, detail="Formato de fecha/hora inválido")
 
-    # 3) Validar contra overrides del admin (Habilitado/Deshabilitado o slots específicos)
-    day_ovr = availability.find_one({"date": body.fecha_turno})
+    # 3) Validar contra overrides del admin
+    statement_ovr = select(dbAvailabilityOverride).where(dbAvailabilityOverride.date == body.fecha_turno)
+    day_ovr = session.exec(statement_ovr).first()
+    
     if day_ovr:
-        if not day_ovr.get("enabled", True):
+        if not day_ovr.enabled:
             raise HTTPException(status_code=409, detail="El día seleccionado no está habilitado")
-        
-        # Si el admin definió un set específico de slots para ese día
-        if "slots" in day_ovr:
-            if body.hora_turno not in day_ovr["slots"]:
-                raise HTTPException(status_code=409, detail="El horario ya no está disponible (cambio del admin)")
+        if day_ovr.slots and body.hora_turno not in day_ovr.slots:
+            raise HTTPException(status_code=409, detail="El horario ya no está disponible")
     else:
-        # Si no hay override, validamos contra los defaults globales
         if body.hora_turno not in DEFAULT_SLOTS:
             raise HTTPException(status_code=409, detail="Horario no válido para este servicio")
 
-    # 4) RESERVA ATÓMICA en la colección bookings (gracias al índice único)
-    try:
-        bookings.insert_one({
-            "quote_id": "PENDING", # Se actualizará luego
-            "date": body.fecha_turno,
-            "time": body.hora_turno,
-            "status": "reserved",
-            "created_at": datetime.now(timezone.utc),
-        })
-    except Exception: # Puede ser DuplicateKeyError
+    # 4) RESERVA en la tabla bookings
+    # Verificamos si ya existe un booking para esa fecha/hora con estado reserved o confirmed
+    statement_check = select(dbBooking).where(
+        dbBooking.date == body.fecha_turno,
+        dbBooking.time == body.hora_turno,
+        dbBooking.status.in_(["reserved", "confirmed"])
+    )
+    existing = session.exec(statement_check).first()
+    if existing:
         raise HTTPException(status_code=409, detail="Ese horario ya fue reservado por otra persona")
 
-    # 5) Sincronizar 'availability' (si el admin puso slots específicos, lo sacamos de la lista)
-    if day_ovr and "slots" in day_ovr:
-         availability.update_one(
-            {"date": body.fecha_turno},
-            {"$pull": {"slots": body.hora_turno}}
+    try:
+        booking = dbBooking(
+            quote_id="PENDING",
+            date=body.fecha_turno,
+            time=body.hora_turno,
+            status="reserved"
         )
+        session.add(booking)
+        session.commit() # Flush inicial para asegurar reserva
+    except Exception as e:
+        session.rollback()
+        raise HTTPException(status_code=409, detail="Ese horario ya fue reservado (error de concurrencia)")
+
+    # 5) Sincronizar 'availability' (si el admin puso slots específicos, lo sacamos de la lista)
+    if day_ovr and day_ovr.slots:
+        if body.hora_turno in day_ovr.slots:
+            new_slots = [s for s in day_ovr.slots if s != body.hora_turno]
+            day_ovr.slots = new_slots
+            session.add(day_ovr)
 
     # 6) Calcular y guardar presupuesto
     try:
-        doc = _calcular_desde_body(body)
-        doc["estado"] = "sent"
-        doc["created_at"] = datetime.now(timezone.utc)
-        
-        _id = quotes.insert_one(doc).inserted_id
-        doc["_id"] = _id
+        data = _calcular_desde_body(session, body)
+        quote = dbQuote(**data, estado="sent")
+        session.add(quote)
+        session.commit()
+        session.refresh(quote)
         
         # Actualizar el booking con el ID real
-        bookings.update_one(
-            {"date": body.fecha_turno, "time": body.hora_turno, "quote_id": "PENDING"},
-            {"$set": {"quote_id": str(_id)}}
-        )
+        booking.quote_id = str(quote.id)
+        session.add(booking)
+        session.commit()
+        
     except Exception as e:
-        # Rollback del booking en caso de error catastrófico al guardar el quote
-        bookings.delete_one({"date": body.fecha_turno, "time": body.hora_turno, "quote_id": "PENDING"})
+        # Rollback del booking en caso de error
+        session.delete(booking)
+        session.commit()
         raise HTTPException(status_code=500, detail=f"Error al procesar presupuesto: {str(e)}")
 
     # 7) Notificar
+    doc_dict = quote.model_dump()
     if debug:
-        res = _notify_new_quote(doc)
+        res = _notify_new_quote(doc_dict)
     else:
-        background.add_task(_notify_new_quote, doc)
+        background.add_task(_notify_new_quote, doc_dict)
         res = None
 
-    pub = _quote_public(doc)
-    pub["contact_urls"] = _contact_urls(str(_id))
+    pub = _quote_public(quote)
+    pub["contact_urls"] = _contact_urls(str(quote.id))
     return {"ok": True, "quote": pub, "notify": res} if debug else {"ok": True, "quote": pub}
 
 # (Compat) Enviar por ID existente (sigue funcionando si lo usabas en admin)
 @app.post("/api/quote/{quote_id}/send")
-def send_quote(quote_id: str, background: BackgroundTasks, debug: bool = Query(default=False)):
+def send_quote(
+    quote_id: str, 
+    background: BackgroundTasks, 
+    debug: bool = Query(default=False),
+    session: Session = Depends(get_session)
+):
     try:
-        _id = ObjectId(quote_id)
+        qid = int(quote_id)
     except Exception:
         raise HTTPException(status_code=400, detail="ID inválido")
 
-    doc = quotes.find_one({"_id": _id})
-    if not doc:
+    quote = session.get(dbQuote, qid)
+    if not quote:
         raise HTTPException(status_code=404, detail="Presupuesto no encontrado")
-    if doc.get("estado") == "cancelado":
+    if quote.estado == "cancelado":
         raise HTTPException(status_code=409, detail="El presupuesto fue cancelado")
 
-    if doc.get("estado") != "sent":
-        quotes.update_one({"_id": _id}, {"$set": {"estado": "sent", "sent_at": datetime.now(timezone.utc)}})
-        doc = quotes.find_one({"_id": _id})
+    if quote.estado != "sent":
+        quote.estado = "sent"
+        quote.sent_at = datetime.now(timezone.utc)
+        session.add(quote)
+        session.commit()
+        session.refresh(quote)
 
+    doc_dict = quote.model_dump()
     if debug:
-        res = _notify_new_quote(doc)
-        pub = _quote_public(doc)
-        pub["estado"] = "sent"
+        res = _notify_new_quote(doc_dict)
+        pub = _quote_public(quote)
         pub["contact_urls"] = _contact_urls(quote_id)
         return {"ok": True, "quote": pub, "notify": res}
 
-    background.add_task(_notify_new_quote, doc)
-    pub = _quote_public(doc)
-    pub["estado"] = "sent"
+    background.add_task(_notify_new_quote, doc_dict)
+    pub = _quote_public(quote)
     pub["contact_urls"] = _contact_urls(quote_id)
     return {"ok": True, "quote": pub}
 
 @app.post("/api/quote/{quote_id}/cancel")
-def cancel_quote(quote_id: str):
+def cancel_quote(
+    quote_id: str,
+    session: Session = Depends(get_session)
+):
     try:
-        _id = ObjectId(quote_id)
+        qid = int(quote_id)
     except Exception:
         raise HTTPException(status_code=400, detail="ID inválido")
 
-    doc = quotes.find_one({"_id": _id})
-    if not doc:
+    quote = session.get(dbQuote, qid)
+    if not quote:
         raise HTTPException(status_code=404, detail="Presupuesto no encontrado")
 
-    quotes.update_one({"_id": _id}, {"$set": {"estado": "cancelado", "cancelled_at": datetime.now(timezone.utc)}})
-    doc = quotes.find_one({"_id": _id})
-    return {"ok": True, "quote": _quote_public(doc)}
+    quote.estado = "cancelado"
+    quote.cancelled_at = datetime.now(timezone.utc)
+    session.add(quote)
+    session.commit()
+    session.refresh(quote)
+    
+    return {"ok": True, "quote": _quote_public(quote)}
 
 @app.post("/api/quotes/{quote_id}/confirm")
-def confirmar_quote(quote_id: str, body: ConfirmPayload = Body(default=None), background: BackgroundTasks = None):
+def confirmar_quote(
+    quote_id: str, 
+    body: ConfirmPayload = Body(default=None), 
+    background: BackgroundTasks = None,
+    session: Session = Depends(get_session)
+):
     try:
-        _id = ObjectId(quote_id)
+        qid = int(quote_id)
     except Exception:
         raise HTTPException(status_code=400, detail="ID inválido")
 
-    doc = quotes.find_one({"_id": _id})
-    if not doc:
+    quote = session.get(dbQuote, qid)
+    if not quote:
         raise HTTPException(status_code=404, detail="Presupuesto no encontrado")
 
-    if doc.get("estado") != "confirmado":
-        quotes.update_one({"_id": _id}, {"$set": {
-            "estado": "confirmado",
-            "confirmado_en": datetime.now(timezone.utc),
-            "fecha_hora_preferida": (body.fecha_hora_preferida if body else None),
-            "notas_confirmacion": (body.notas if body else None)
-        }})
-        doc = quotes.find_one({"_id": _id})
+    if quote.estado != "confirmado":
+        quote.estado = "confirmado"
+        quote.confirmado_en = datetime.now(timezone.utc)
+        if body:
+            quote.fecha_hora_preferida = body.fecha_hora_preferida
+            quote.notas_confirmacion = body.notas
+        session.add(quote)
+        session.commit()
+        session.refresh(quote)
 
     # ✅ marcar booking como confirmado (si existe)
     try:
-        ft = doc.get("fecha_turno")
-        ht = doc.get("hora_turno")
+        ft = quote.fecha_turno
+        ht = quote.hora_turno
         if ft and ht:
-            bookings.update_one(
-                {"quote_id": str(_id), "date": ft, "time": ht},
-                {"$set": {"status": "confirmed", "confirmed_at": datetime.now(timezone.utc)}},
-                upsert=True
+            statement_b = select(dbBooking).where(
+                dbBooking.quote_id == str(quote.id),
+                dbBooking.date == ft,
+                dbBooking.time == ht
             )
-    except Exception:
-        pass
+            booking = session.exec(statement_b).first()
+            if booking:
+                booking.status = "confirmed"
+                booking.confirmed_at = datetime.now(timezone.utc)
+                session.add(booking)
+            else:
+                # Fallback: crear booking si no existía (raro pero posible en migración)
+                booking = dbBooking(
+                    quote_id=str(quote.id),
+                    date=ft,
+                    time=ht,
+                    status="confirmed",
+                    confirmed_at=datetime.now(timezone.utc)
+                )
+                session.add(booking)
+            session.commit()
+    except Exception as e:
+        print(f"Error confirmando booking: {e}")
 
+    doc_dict = quote.model_dump()
     if background:
-        background.add_task(_notify_confirmed_quote, doc)
-
+        background.add_task(_notify_confirmed_quote, doc_dict)
     else:
-        _notify_confirmed_quote(doc)
+        _notify_confirmed_quote(doc_dict)
 
-
-    return {"ok": True, "quote": _quote_public(doc)}
+    return {"ok": True, "quote": _quote_public(quote)}
 
 
 # =========================
@@ -1411,37 +1552,58 @@ def confirmar_quote(quote_id: str, body: ConfirmPayload = Body(default=None), ba
 # =========================
 @app.post("/api/login", response_model=LoginOut)
 @limiter.limit("5/minute")
-async def admin_login(request: Request, body: LoginIn):
+async def admin_login(
+    request: Request, 
+    body: LoginIn,
+    session: Session = Depends(get_session)
+):
     username = (body.username or "").strip().lower()
     password = (body.password or "").strip()
 
     if not username or not password:
         raise HTTPException(status_code=422, detail="Faltan 'username/email' y/o 'password'")
 
-    user = users.find_one({"email": username}) or users.find_one({"username": username})
+    statement = select(dbUser).where(
+        (dbUser.email == username) | (dbUser.username == username)
+    )
+    user = session.exec(statement).first()
 
-    if not user and username == (os.getenv("ADMIN_USER","admin")).lower() and password == os.getenv("ADMIN_PASS","admin123"):
+    import traceback
+    try:
+        if not user and username == (os.getenv("ADMIN_USER","admin")).lower() and password == os.getenv("ADMIN_PASS","admin123"):
+            token = os.urandom(16).hex()
+            expira = datetime.now(timezone.utc) + timedelta(minutes=int(os.getenv("SESSION_DURATION_MIN", "120")))
+            return LoginOut(ok=True, message=f"Login exitoso (modo .env). Expira a las {expira.strftime('%H:%M')}", token=token)
+
+        if not user:
+            raise HTTPException(status_code=401, detail="Credenciales inválidas")
+
+        # Asegurar que el objeto está vinculado a la sesión actual
+        session.add(user)
+
+        # 2) Verificar bloqueo
+        try:
+            check_lock(user)
+        except PermissionError as e:
+            raise HTTPException(status_code=429, detail=str(e))
+
+        # 3) Verificar password
+        if not verify_password(user.password_hash or "", password):
+            register_fail(session, user)
+            raise HTTPException(status_code=401, detail="Credenciales inválidas")
+
+        # 4) Success
+        reset_fail(session, user)
+
         token = os.urandom(16).hex()
         expira = datetime.now(timezone.utc) + timedelta(minutes=int(os.getenv("SESSION_DURATION_MIN", "120")))
-        return LoginOut(ok=True, message=f"Login exitoso (modo .env). Expira a las {expira.strftime('%H:%M')}", token=token)
-
-    if not user:
-        raise HTTPException(status_code=401, detail="Credenciales inválidas")
-
-    try:
-        check_lock(user)
-    except PermissionError as e:
-        raise HTTPException(status_code=429, detail=str(e))
-
-    if not verify_password(user.get("password_hash", ""), password):
-        register_fail(users, user)
-        raise HTTPException(status_code=401, detail="Credenciales inválidas")
-
-    reset_fail(users, user["_id"])
-
-    token = os.urandom(16).hex()
-    expira = datetime.now(timezone.utc) + timedelta(minutes=int(os.getenv("SESSION_DURATION_MIN", "120")))
-    return LoginOut(ok=True, message=f"Login exitoso. Expira a las {expira.strftime('%H:%M')}", token=token)
+        return LoginOut(ok=True, message=f"Login exitoso. Expira a las {expira.strftime('%H:%M')}", token=token)
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"[Error] admin_login critical failure: {e}")
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/ratelimit-test")
 @limiter.limit("10/minute")
@@ -1452,24 +1614,24 @@ async def ratelimit_test(request: Request):
 # =========================
 # Admin (listado simple)
 # =========================
-def _serialize_quote(doc: dict) -> dict:
+def _serialize_quote(doc: dbQuote) -> dict:
     d = _quote_public(doc)
     d.update({
-        "tramo_base_origen_km": float(doc.get("tramo_base_origen_km", 0)),
-        "tramo_origen_destino_km": float(doc.get("tramo_origen_destino_km", 0)),
-        "tramo_destino_base_km": float(doc.get("tramo_destino_base_km", 0)),
-        "tramo_base_origen_min": int(doc.get("tramo_base_origen_min", 0)),
-        "tramo_origen_destino_min": int(doc.get("tramo_origen_destino_min", 0)),
-        "tramo_destino_base_min": int(doc.get("tramo_destino_base_min", 0)),
-        "created_at": (doc.get("created_at") or datetime.now(timezone.utc)).isoformat(),
-        "extra_servicio_min": int(doc.get("extra_servicio_min", 0)),
-        "costo_tiempo_base": float(doc.get("costo_tiempo_base", 0)),
-        "mantenimiento": float(doc.get("mantenimiento", 0)),
-        "costo_ayudante": float(doc.get("costo_ayudante", 0)),
-        "peajes_total": float(doc.get("peajes_total", 0)),
+        "tramo_base_origen_km": float(doc.tramo_base_origen_km),
+        "tramo_origen_destino_km": float(doc.tramo_origen_destino_km),
+        "tramo_destino_base_km": float(doc.tramo_destino_base_km),
+        "tramo_base_origen_min": int(doc.tramo_base_origen_min),
+        "tramo_origen_destino_min": int(doc.tramo_origen_destino_min),
+        "tramo_destino_base_min": int(doc.tramo_destino_base_min),
+        "created_at": (doc.created_at or datetime.now(timezone.utc)).isoformat(),
+        "extra_servicio_min": int(doc.extra_servicio_min),
+        "costo_tiempo_base": float(doc.costo_tiempo_base),
+        "mantenimiento": float(doc.mantenimiento),
+        "costo_ayudante": float(doc.costo_ayudante),
+        "peajes_total": float(doc.peajes_total),
         # ✅ mostrar turno en admin
-        "fecha_turno": doc.get("fecha_turno"),
-        "hora_turno": doc.get("hora_turno"),
+        "fecha_turno": doc.fecha_turno,
+        "hora_turno": doc.hora_turno,
     })
     return d
 
@@ -1479,10 +1641,11 @@ from datetime import timezone as dt_timezone  # arriba ya importaste timezone, e
 @app.get("/api/requests")
 def listar_requests(
     status: str = Query(default="pending", description="pending | historicos | all"),
-    user=Depends(require_api_key)
+    user=Depends(require_api_key),
+    session: Session = Depends(get_session)
 ):
     # 1) marcar realizados (confirmados vencidos)
-    _marcar_realizados()
+    _marcar_realizados(session)
 
     # 2) hoy AR (YYYY-MM-DD)
     today_str = _today_ar_str()
@@ -1490,173 +1653,214 @@ def listar_requests(
 
     # 3) autolimpieza: borrar NO confirmados vencidos
     #    (sent o rechazado) -> se borran solos cuando ya pasó la fecha_turno
-    #    ⚠️ NO liberar horarios acá (para Opción A)
-    quotes.delete_many({
-        "estado": {"$in": ["sent", "rechazado"]},
-        "fecha_turno": {"$lt": today_str}
-    })
+    statement_del = select(dbQuote).where(
+        dbQuote.estado.in_(["sent", "rechazado"]),
+        dbQuote.fecha_turno < today_str
+    )
+    to_delete = session.exec(statement_del).all()
+    for q in to_delete:
+        session.delete(q)
+    if to_delete:
+        session.commit()
 
+    # 4) Construir filtro según estado solicitado
     if st == "pending":
-        base_filter = {
-            "estado": {"$in": ["sent", "rechazado", "confirmado"]},
-            "$or": [
-                {"fecha_turno": {"$gte": today_str}},
-                {"fecha_turno": {"$exists": False}},
-                {"fecha_turno": None},
-            ]
-        }
+        statement = select(dbQuote).where(
+            dbQuote.estado.in_(["sent", "rechazado", "confirmado"]),
+            (dbQuote.fecha_turno >= today_str) | (dbQuote.fecha_turno == None)
+        ).order_by(dbQuote.created_at.desc())
 
     elif st == "historicos":
         # Incluye realizados y anulados
-        base_filter = {"estado": {"$in": ["realizado", "anulado"]}}
+        statement = select(dbQuote).where(
+            dbQuote.estado.in_(["realizado", "anulado", "cancelado"])
+        ).order_by(dbQuote.created_at.desc())
 
     elif st == "all":
-        base_filter = {}
+        statement = select(dbQuote).order_by(dbQuote.created_at.desc())
 
     else:
         raise HTTPException(status_code=400, detail="status inválido. Usar pending | historicos | all")
 
-    items: List[dict] = []
-    for doc in quotes.find(base_filter).sort("created_at", -1):
-        items.append(_serialize_quote(doc))
+    quotes_list = session.exec(statement).all()
+    items = [_serialize_quote(q) for q in quotes_list]
 
     return {"items": items, "status": st, "today": today_str}
 
 @app.post("/api/requests/{quote_id}/confirm")
-def admin_confirmar(quote_id: str, background: BackgroundTasks, user=Depends(require_api_key)):
+def admin_confirmar(
+    quote_id: str, 
+    background: BackgroundTasks, 
+    user=Depends(require_api_key),
+    session: Session = Depends(get_session)
+):
     try:
-        _id = ObjectId(quote_id)
+        qid = int(quote_id)
     except Exception:
         raise HTTPException(status_code=400, detail="ID inválido")
-    doc = quotes.find_one({"_id": _id})
-    if not doc:
+    
+    quote = session.get(dbQuote, qid)
+    if not quote:
         raise HTTPException(status_code=404, detail="Presupuesto no encontrado")
 
-    quotes.update_one({"_id": _id}, {"$set": {"estado": "confirmado", "confirmado_en": datetime.now(timezone.utc)}})
+    quote.estado = "confirmado"
+    quote.confirmado_en = datetime.now(timezone.utc)
+    session.add(quote)
+    session.commit()
+    session.refresh(quote)
     
     # ✅ marcar booking como confirmado
     try:
-        ft = doc.get("fecha_turno")
-        ht = doc.get("hora_turno")
+        ft = quote.fecha_turno
+        ht = quote.hora_turno
         if ft and ht:
-            bookings.update_one(
-                {"quote_id": str(_id), "date": ft, "time": ht},
-                {"$set": {"status": "confirmed", "confirmed_at": datetime.now(timezone.utc)}},
-                upsert=True
+            statement_b = select(dbBooking).where(
+                dbBooking.quote_id == str(quote.id),
+                dbBooking.date == ft,
+                dbBooking.time == ht
             )
-    except Exception:
-        pass
+            booking = session.exec(statement_b).first()
+            if booking:
+                booking.status = "confirmed"
+                booking.confirmed_at = datetime.now(timezone.utc)
+                session.add(booking)
+                session.commit()
+    except Exception as e:
+        print(f"Error confirmando booking: {e}")
 
-    doc = quotes.find_one({"_id": _id})
-    background.add_task(_notify_confirmed_quote, doc)
+    background.add_task(_notify_confirmed_quote, quote.model_dump())
 
     return {"message": "Presupuesto confirmado"}
 
 @app.post("/api/requests/{quote_id}/complete")
-def admin_completar(quote_id: str, user=Depends(require_api_key)):
+def admin_completar(
+    quote_id: str, 
+    user=Depends(require_api_key),
+    session: Session = Depends(get_session)
+):
     try:
-        _id = ObjectId(quote_id)
+        qid = int(quote_id)
     except Exception:
         raise HTTPException(status_code=400, detail="ID inválido")
 
-    # Marcar quote como realizado
-    updated = quotes.update_one(
-        {"_id": _id},
-        {"$set": {"estado": "realizado", "completed_at": datetime.now(timezone.utc)}}
-    )
-    if updated.matched_count == 0:
+    quote = session.get(dbQuote, qid)
+    if not quote:
         raise HTTPException(status_code=404, detail="Presupuesto no encontrado")
-        
-    # Actualizar booking a completed (para que quede registro pero no bloquee igual que active?) 
-    # En realidad completed sigue "ocupando" el slot histórico, está bien.
-    bookings.update_many({"quote_id": quote_id}, {"$set": {"status": "completed"}})
 
+    quote.estado = "realizado"
+    quote.completed_at = datetime.now(timezone.utc)
+    session.add(quote)
+    
+    # Actualizar booking a completed
+    statement_b = select(dbBooking).where(dbBooking.quote_id == str(quote.id))
+    bookings_list = session.exec(statement_b).all()
+    for b in bookings_list:
+        b.status = "completed"
+        session.add(b)
+        
+    session.commit()
     return {"message": "Trabajo completado"}
 
 @app.post("/api/requests/{quote_id}/void")
-def admin_anular(quote_id: str, user=Depends(require_api_key)):
+def admin_anular(
+    quote_id: str, 
+    user=Depends(require_api_key),
+    session: Session = Depends(get_session)
+):
     try:
-        _id = ObjectId(quote_id)
+        qid = int(quote_id)
     except Exception:
         raise HTTPException(status_code=400, detail="ID inválido")
 
-    doc = quotes.find_one({"_id": _id})
-    if not doc:
+    quote = session.get(dbQuote, qid)
+    if not quote:
         raise HTTPException(status_code=404, detail="Presupuesto no encontrado")
 
-    # Marcar quote como anulado
-    quotes.update_one(
-        {"_id": _id},
-        {"$set": {"estado": "anulado", "voided_at": datetime.now(timezone.utc)}}
-    )
+    quote.estado = "anulado"
+    quote.voided_at = datetime.now(timezone.utc)
+    session.add(quote)
 
     # LIBERAR el slot del calendario (borrar booking)
-    # Porque "Anulado" implica que el viaje no se hizo, entonces el slot "se liberó" (aunque sea en el pasado o futuro)
-    bookings.delete_many({"quote_id": quote_id})
+    statement_b = select(dbBooking).where(dbBooking.quote_id == str(quote.id))
+    bookings_list = session.exec(statement_b).all()
+    for b in bookings_list:
+        session.delete(b)
     
     # Si había override manual en availability, devolver el slot
-    ft = doc.get("fecha_turno")
-    ht = doc.get("hora_turno")
+    ft = quote.fecha_turno
+    ht = quote.hora_turno
     if ft and ht:
-        day_ovr = availability.find_one({"date": ft})
-        if day_ovr and "slots" in day_ovr:
-            availability.update_one(
-                {"date": ft},
-                {"$addToSet": {"slots": ht}}
-            )
+        statement_ovr = select(dbAvailabilityOverride).where(dbAvailabilityOverride.date == ft)
+        day_ovr = session.exec(statement_ovr).first()
+        if day_ovr and day_ovr.slots:
+            if ht not in day_ovr.slots:
+                day_ovr.slots.append(ht)
+                session.add(day_ovr)
 
+    session.commit()
     return {"message": "Presupuesto anulado y horario liberado"}
 
 @app.post("/api/requests/{quote_id}/reject")
-def admin_rechazar(quote_id: str, user=Depends(require_api_key)):
+def admin_rechazar(
+    quote_id: str, 
+    user=Depends(require_api_key),
+    session: Session = Depends(get_session)
+):
     try:
-        _id = ObjectId(quote_id)
+        qid = int(quote_id)
     except Exception:
         raise HTTPException(status_code=400, detail="ID inválido")
 
-    updated = quotes.update_one(
-        {"_id": _id},
-        {"$set": {"estado": "rechazado", "updated_at": datetime.utcnow()}}
-    )
-
-    if updated.matched_count == 0:
+    quote = session.get(dbQuote, qid)
+    if not quote:
         raise HTTPException(status_code=404, detail="Presupuesto no encontrado")
+
+    quote.estado = "rechazado"
+    # El campo updated_at no existe en dbQuote, lo omitimos o lo agregamos después si es necesario
+    session.add(quote)
+    session.commit()
 
     return {"message": "Presupuesto rechazado"}
 
 @app.delete("/api/requests/{quote_id}")
-def admin_eliminar(quote_id: str, user=Depends(require_api_key)):
+def admin_eliminar(
+    quote_id: str, 
+    user=Depends(require_api_key),
+    session: Session = Depends(get_session)
+):
     try:
-        _id = ObjectId(quote_id)
+        qid = int(quote_id)
     except Exception:
         raise HTTPException(status_code=400, detail="ID inválido")
 
-    doc = quotes.find_one({"_id": _id})
-    if not doc:
+    quote = session.get(dbQuote, qid)
+    if not quote:
         raise HTTPException(status_code=404, detail="Presupuesto no encontrado")
 
     # ✅ recuperar turno antes de borrar
-    ft = doc.get("fecha_turno")
-    ht = doc.get("hora_turno")
+    ft = quote.fecha_turno
+    ht = quote.hora_turno
 
     # ✅ borrar quote
-    quotes.delete_one({"_id": _id})
+    session.delete(quote)
 
     # ✅ Liberar horario
     if ft and ht:
-        # 1) Borrar booking (esto ya libera el slot para los días "por defecto")
-        bookings.delete_many({"quote_id": quote_id})
-        bookings.delete_many({"date": ft, "time": ht})
-
+        # 1) Borrar booking
+        statement_b = select(dbBooking).where(dbBooking.quote_id == str(qid))
+        bs = session.exec(statement_b).all()
+        for b in bs:
+            session.delete(b)
+            
         # 2) Devolver a 'availability' SOLO si el día ya tenía configuración custom
-        # (Si el día no existe en 'availability', usa DEFAULT_SLOTS - bookings automáticamente)
-        day_ovr = availability.find_one({"date": ft})
-        if day_ovr and "slots" in day_ovr:
-            availability.update_one(
-                {"date": ft},
-                {"$addToSet": {"slots": ht}, "$set": {"updated_at": datetime.now(timezone.utc)}}
-            )
+        statement_ovr = select(dbAvailabilityOverride).where(dbAvailabilityOverride.date == ft)
+        day_ovr = session.exec(statement_ovr).first()
+        if day_ovr and day_ovr.slots:
+            if ht not in day_ovr.slots:
+                day_ovr.slots.append(ht)
+                session.add(day_ovr)
 
+    session.commit()
     return {"message": "Eliminado y turno liberado" if (ft and ht) else "Eliminado"}
 
 

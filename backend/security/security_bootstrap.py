@@ -31,7 +31,17 @@ def harden_app(app: FastAPI):
     # ================================
     # 🧱 3) Security headers (manual)
     # ================================
-    CSP = "default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://maps.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; script-src 'self' 'unsafe-inline' https://maps.googleapis.com; img-src 'self' data: blob: https://maps.gstatic.com https://maps.googleapis.com; connect-src 'self' https: https://maps.googleapis.com; base-uri 'self'; frame-ancestors 'self';"
+    CSP = (
+        "default-src 'self'; "
+        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://maps.googleapis.com; "
+        "font-src 'self' data: https://fonts.gstatic.com; "
+        "script-src 'self' 'unsafe-inline' https://maps.googleapis.com https://www.googletagmanager.com https://www.googleadservices.com https://googleads.g.doubleclick.net; "
+        "img-src 'self' data: blob: https://maps.gstatic.com https://maps.googleapis.com https://www.google.com https://www.google.com.ar https://googleads.g.doubleclick.net https://www.googleadservices.com; "
+        "connect-src 'self' https: https://maps.googleapis.com https://www.googletagmanager.com https://www.googleadservices.com https://googleads.g.doubleclick.net; "
+        "frame-src 'self' https://www.googletagmanager.com https://www.googleadservices.com https://googleads.g.doubleclick.net; "
+        "base-uri 'self'; "
+        "frame-ancestors 'self';"
+    )
 
     FORCE_HSTS = os.getenv("FORCE_HSTS", "0") in ("1", "true", "True")
 
