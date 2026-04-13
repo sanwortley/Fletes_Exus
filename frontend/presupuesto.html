@@ -11,13 +11,13 @@
   <!-- End Google Tag Manager -->
 
   <!-- Google tag (gtag.js) -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=AW-18003768342"></script>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-WN4XP08H33"></script>
   <script>
     window.dataLayer = window.dataLayer || [];
     function gtag(){dataLayer.push(arguments);}
     gtag('js', new Date());
 
-    gtag('config', 'AW-18003768342');
+    gtag('config', 'G-WN4XP08H33');
   </script>
 
   <meta charset="UTF-8" />
@@ -66,80 +66,50 @@
       <p>Presupuesto fijo por viaje. Estimá el costo total del servicio al instante.</p>
     </section>
 
-    <div class="grid2">
+    <div class="minimal-wrapper">
       <!-- Formulario -->
-      <section class="card">
-        <div class="grid">
-          <div>
-            <label for="nombre">Nombre y apellido</label>
-            <input id="nombre" placeholder="Juan Pérez" required>
-          </div>
-          <div>
-            <label for="tel">Teléfono</label>
-            <input id="tel" placeholder="351..." required>
-          </div>
-          <div>
-            <label for="tipo">Tipo de carga</label>
-            <select id="tipo">
-              <option value="mudanza">Mudanza</option>
-              <option value="puntual">Algo puntual</option>
-            </select>
+      <section class="card lead-card">
+        <div class="form-instructions">
+          <h2>Calculá tu presupuesto</h2>
+          <p>Ingresá los datos del viaje y obtené una estimación al instante.</p>
+        </div>
+        
+        <div class="grid-minimal">
+          <div class="form-group">
+            <label for="tel">Tu Teléfono</label>
+            <input id="tel" type="tel" placeholder="Ej: 3512345678" required>
+            <div class="help">Te contactaremos por este medio para confirmar.</div>
           </div>
 
-          <div class="full">
+          <div class="form-group">
             <label for="origen">Origen (dirección completa)</label>
-            <input id="origen" placeholder="Calle y número" required autocomplete="off">
-            <div class="help">Ej: Colón 100, Córdoba</div>
+            <input id="origen" placeholder="Calle y número, Ciudad" required autocomplete="off">
           </div>
 
-          <div class="full">
+          <div class="form-group">
             <label for="destino">Destino (dirección completa)</label>
-            <input id="destino" placeholder="Calle y número" required autocomplete="off">
+            <input id="destino" placeholder="Calle y número, Ciudad" required autocomplete="off">
           </div>
 
-          <div>
-            <label for="fecha">Fecha</label>
-            <input id="fecha" type="date" required>
-          </div>
-
-          <div class="full calendar-row">
-            <label>Horario disponible</label>
-            <div id="calendarBox" class="card" style="padding:14px">
-              <div id="calendarDays" class="help">Elegí una fecha arriba.</div>
-              <div id="timeSlots" class="slots-grid"></div>
-            </div>
-
-            <div class="help">Elegí un día y luego un horario disponible.</div>
-          </div>
-
-
-          <!-- Checkbox + botón -->
-          <div class="actions-row">
-            <div class="left">
-              <input id="ayudante" type="checkbox">
-              <label for="ayudante">¿Necesita ayudante?</label>
-            </div>
-            <button class="btn" id="btnCalc" type="button">Calcular</button>
-          </div>
+          <button class="btn btn-primary btn-large" id="btnCalc" type="button">Ver presupuesto estimado</button>
           <span id="msg" class="help"></span>
         </div>
 
         <section id="out" class="result"></section>
       </section>
 
-      <!-- Aside -->
-      <aside class="card">
-        <h3 style="color:var(--primary); margin-bottom:8px;">¿Por qué elegirnos?</h3>
-        <ul class="bullets">
-          <li><b>Presupuesto inmediato:</b> en segundos.</li>
-          <li><b>Precio fijo por viaje:</b> sin sorpresas.</li>
-          <li><b>Capacidad:</b> 10m³ / 1.2 toneladas.</li>
-          <li><b>Puntualidad y confiabilidad</b> garantizadas.</li>
-          <li><b>Córdoba y ciudades vecinas.</b></li>
-          <li><b>Atención familiar</b> y personalizada.</li>
-        </ul>
-        <div class="help" style="margin-top:10px">¿Dudas? Escribinos por WhatsApp y te respondemos al toque.</div>
-      </aside>
+      <!-- Resumen Beneficios -->
+      <div class="mini-benefits">
+        <div class="benefit">
+          <span>✓</span> Presupuesto inmediato
+        </div>
+        <div class="benefit">
+          <span>✓</span> Precio fijo por viaje
+        </div>
+        <div class="benefit">
+          <span>✓</span> Puntualidad garantizada
+        </div>
+      </div>
     </div>
 
     <!-- ✅ MODAL DENTRO DEL MAIN (para que SPA lo cargue) -->
@@ -314,7 +284,7 @@
         cleanupTimer = setTimeout(resetForm, seconds * 1000);
       }
 
-      const requiredIds = ["nombre", "tel", "origen", "destino", "fecha"];
+      const requiredIds = ["tel", "origen", "destino"];
       const $ = (id) => document.getElementById(id);
 
       function clearMsg() {
@@ -326,25 +296,17 @@
 
       function validateForm() {
         clearMsg();
-        let ok = true, first = null;
+        let ok = true;
         requiredIds.forEach(id => {
           const el = $(id);
-          const val = (id === "fecha") ? el?.value : (el?.value || "").trim();
+          const val = (el?.value || "").trim();
           if (!val) {
             ok = false;
             el?.classList.add("invalid");
-            if (!first) first = el;
           } else {
             el?.classList.remove("invalid");
           }
         });
-        if (!selectedDate || !selectedTime) {
-          ok = false;
-          const msg = document.getElementById("msg");
-          if (msg) {
-            msg.classList.add("error");
-          }
-        }
         return ok;
       }
 
@@ -391,18 +353,20 @@
         clearInterval(cleanupInterval);
         document.getElementById('cleanupTicker')?.remove();
 
+        // Enviar valores por defecto para los campos eliminados
+        // El admin completará estos datos luego.
         const data = {
-          nombre: $("nombre")?.value?.trim(),
+          nombre: "Interesado Web",
           telefono: $("tel")?.value?.trim(),
-          tipo_carga: $("tipo")?.value,
+          tipo_carga: "mudanza",
           origen: $("origen")?.value?.trim(),
           destino: $("destino")?.value?.trim(),
-          fecha: $("fecha")?.value,
-          ayudante: $("ayudante")?.checked,
+          fecha: new Date().toISOString().split('T')[0],
+          ayudante: false,
           accepted_terms: true,
           accepted_terms_at: new Date().toISOString(),
-          fecha_turno: selectedDate,
-          hora_turno: selectedTime
+          fecha_turno: null, 
+          hora_turno: null
         };
 
         const msg = document.getElementById('msg');
@@ -427,11 +391,13 @@
             <p><b>Origen:</b> ${origenShow} &nbsp;→&nbsp; <b>Destino:</b> ${destinoShow}</p>
             <div class="total">Total estimado: $ ${fmt(totalVal)}</div>
             <div class="pill">Estado: ${estadoVal.toUpperCase()}</div>
-            <p class="help" style="margin-top:8px">Zona de prueba: esto <b>no se guarda</b> hasta que presiones "Confirmar flete".</p>
+            <div id="actionsWrap">
+              <p class="help" style="margin-top:8px">Zona de prueba: esto <b>no se guarda</b> hasta que presiones "Confirmar flete".</p>
 
-            <div class="row" style="margin-top:12px; gap:10px; flex-wrap:wrap">
-              <button class="btn" id="btnEnviar">Confirmar flete</button>
-              <button class="btn-ghost" id="btnCancelarDraft">Cancelar flete</button>
+              <div class="row" style="margin-top:12px; gap:10px; flex-wrap:wrap">
+                <button class="btn" id="btnEnviar">Confirmar flete</button>
+                <button class="btn-ghost" id="btnCancelarDraft">Cancelar flete</button>
+              </div>
             </div>
 
             <div id="contactWrap" style="margin-top:12px"></div>
@@ -459,7 +425,12 @@
 
             try {
               await postJSON(`${API_BASE}/api/quote/send`, data);
-              if (cw) cw.innerHTML = `<p class="help" style="margin:6px 0">¡Listo! Se envió tu presupuesto.</p>`;
+              
+              // ✅ Ocultar botones para evitar confusión o doble envío
+              const aw = document.getElementById('actionsWrap');
+              if (aw) aw.style.display = 'none';
+
+              if (cw) cw.innerHTML = `<p class="help" style="margin:6px 0; color:var(--primary); font-weight:bold;">¡Listo! Se envió tu presupuesto ✅</p>`;
               scheduleCleanup(30);
             } catch (e) {
               const m = String(e.message || "Error desconocido");
@@ -469,8 +440,6 @@
               btnEnviar.textContent = oldText;
               return;
             }
-
-            btnEnviar.textContent = "Enviado";
           });
 
           document.getElementById('btnCancelarDraft')?.addEventListener('click', async () => {
@@ -503,7 +472,6 @@
 
       // Validaciones live
       const telInput = document.getElementById("tel");
-      const nameInput = document.getElementById("nombre");
 
       telInput?.addEventListener("input", (e) => {
         const cleaned = e.target.value.replace(/\D/g, "");
@@ -514,163 +482,7 @@
           e.target.classList.remove("invalid");
           clearMsg();
         }
-        e.target.value = cleaned;
       });
-
-      nameInput?.addEventListener("input", (e) => {
-        const valid = /^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+$/.test(e.target.value.trim());
-        if (!valid && e.target.value !== "") {
-          e.target.classList.add("invalid");
-          document.getElementById("msg")?.classList.add("error");
-        } else {
-          e.target.classList.remove("invalid");
-          clearMsg();
-        }
-      });
-      let selectedDate = null;
-      let selectedTime = null;
-
-      async function loadAvailabilityForMonth(dateStr) {
-        const d = new Date(dateStr);
-        const month = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-
-        const res = await fetch(`${API_BASE}/api/availability?month=${month}&t=${Date.now()}`);
-        const js = await res.json().catch(() => ({}));
-        if (!res.ok) throw new Error(js.detail || "No se pudo cargar disponibilidad");
-        return js.days || {};
-      }
-
-      function renderSlots(slots) {
-        const wrap = document.getElementById('timeSlots');
-        wrap.innerHTML = "";
-
-        slots.forEach(time => {
-          const btn = document.createElement('button');
-          btn.type = "button";
-          btn.className = 'slot-btn';
-          btn.textContent = time;
-
-          btn.onclick = () => {
-            selectedTime = time;
-            document.querySelectorAll('.slot-btn').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            document.getElementById("msg")?.classList.remove("error");
-          };
-
-          wrap.appendChild(btn);
-        });
-      }
-
-      async function renderCalendar() {
-        const dateInput = document.getElementById('fecha');
-        const daysWrap = document.getElementById('calendarDays');
-        const slotsWrap = document.getElementById('timeSlots');
-
-        const selected = dateInput?.value;
-        if (!selected) {
-          if (daysWrap) daysWrap.innerHTML = "Elegí una fecha arriba.";
-          if (slotsWrap) slotsWrap.innerHTML = "";
-          selectedDate = null;
-          selectedTime = null;
-          return;
-        }
-
-        selectedDate = selected;
-        selectedTime = null;
-
-        // Definir horario por defecto FULL (todos los horarios habilitados visualmente)
-        // El backend validará si realmente está bloqueado, pero la UI se ve "limpia" y disponible.
-        const defaultSlots = [
-          "08:00", "09:00", "10:00", "11:00", "12:00",
-          "13:00", "14:00", "15:00", "16:00", "17:00",
-          "18:00", "19:00", "20:00", "21:00", "22:00"
-        ];
-
-        try {
-          // Intentamos cargar disponibilidad real (por si hay bloqueos específicos)
-          const days = await loadAvailabilityForMonth(selected);
-          let slots = days[selectedDate] || [];
-
-          // Si la API no devuelve nada para hoy (día no creado/configurado), 
-          // asumimos que está ABIERTO COMPLETAMENTE (mostramos todos los slots).
-          if (!days[selectedDate]) {
-            slots = defaultSlots;
-          }
-
-          if (daysWrap) daysWrap.innerHTML = `Fecha seleccionada: <b style="color:var(--primary)">${selectedDate.split('-').reverse().join('/')}</b>`;
-          renderSlots(slots.sort());
-
-        } catch (e) {
-          // Fallback en caso de error de red: mostrar todo abierto
-          if (daysWrap) daysWrap.innerHTML = `Fecha seleccionada: <b style="color:var(--primary)">${selectedDate.split('-').reverse().join('/')}</b>`;
-          renderSlots(defaultSlots);
-        }
-      }
-
-
-      function renderSlots(slots) {
-        const wrap = document.getElementById('timeSlots');
-        wrap.innerHTML = "";
-
-        // Ordenar horarios cronológicamente
-        slots.sort();
-
-        // ✅ Filtrar horarios ya pasados si es HOY
-        if (selectedDate) {
-          const now = new Date();
-          const selParts = selectedDate.split("-");
-          const selYear = parseInt(selParts[0]);
-          const selMonth = parseInt(selParts[1]) - 1;
-          const selDay = parseInt(selParts[2]);
-
-          const isToday = (
-            selYear === now.getFullYear() &&
-            selMonth === now.getMonth() &&
-            selDay === now.getDate()
-          );
-
-          if (isToday) {
-            const currentHour = now.getHours();
-            const currentMin = now.getMinutes();
-
-            slots = slots.filter(timeStr => { // "08:00"
-              const [h, m] = timeStr.split(":").map(Number);
-              if (h < currentHour) return false;
-              if (h === currentHour && m <= currentMin) return false;
-              return true;
-            });
-          }
-        }
-
-        if (!slots.length) {
-          wrap.innerHTML = `<span class="help">No hay horarios disponibles (ya es tarde por hoy).</span>`;
-          return;
-        }
-
-        slots.forEach(time => {
-          const btn = document.createElement('button');
-          btn.type = "button";
-          btn.className = 'slot-btn';
-          btn.textContent = time;
-
-          btn.onclick = () => {
-            selectedTime = time;
-            document.querySelectorAll('.slot-btn').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            clearMsg();
-          };
-
-          wrap.appendChild(btn);
-        });
-      }
-
-
-      document.getElementById('fecha')?.addEventListener('change', () => {
-        selectedDate = null;
-        selectedTime = null;
-        renderCalendar();
-      });
-
     })();
   </script>
   <script>

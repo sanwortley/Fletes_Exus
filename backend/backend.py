@@ -20,7 +20,7 @@ import requests
 from fastapi import FastAPI, HTTPException, Depends, Body, BackgroundTasks, Request, Query
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
-from sqlmodel import Session, select
+from sqlmodel import Session, select, SQLModel
 from .database import engine, get_session, init_db
 from .models.models import (
     dbUser, dbQuote, dbBooking, dbAvailabilityOverride, 
@@ -81,14 +81,15 @@ def redirect_index():
 def redirect_index_html():
     return RedirectResponse(url="/", status_code=308)
 
-# Redirigir /presupuesto → /
+# Rutas de páginas
 @app.get("/presupuesto", include_in_schema=False)
+@app.get("/presupuesto.html", include_in_schema=False)
 def presupuesto_page():
     return FileResponse(FRONT_DIR / "presupuesto.html")
 
-# Redirigir /admin → /
 @app.get("/admin", include_in_schema=False)
 @app.get("/admin/", include_in_schema=False)
+@app.get("/admin.html", include_in_schema=False)
 def admin_page():
     return FileResponse(FRONT_DIR / "admin.html")
 
@@ -110,7 +111,16 @@ if ALLOWED_ORIGINS:
 # =========================
 @app.on_event("startup")
 def on_startup():
+    SQLModel.metadata.create_all(engine) # Asegura que audit_logs y nuevas columnas existan
     init_db()
+
+def _add_audit_log(session: Session, qid: Optional[int], action: str, details: str):
+    try:
+        from .models.models import dbAuditLog
+        log = dbAuditLog(quote_id=qid, action=action, details=details)
+        session.add(log)
+    except Exception as e:
+        print(f"Error logging audit: {e}")
     print("Database synchronized (SQL)")
 
 # ✅ Colecciones (ahora son tablas, se manejan vía Session)
@@ -156,11 +166,11 @@ PRO_NAME = os.getenv("PRO_NAME", "Fletes Javier")
 # Modelos
 # =========================
 class QuoteIn(BaseModel):
-    nombre_cliente: str = Field(None, alias="nombre")
-    telefono: str
-    tipo_carga: str
-    origen: str
-    destino: str
+    nombre_cliente: Optional[str] = Field(None, alias="nombre")
+    telefono: Optional[str] = None
+    tipo_carga: Optional[str] = "flete"
+    origen: Optional[str] = ""
+    destino: Optional[str] = ""
     fecha: Optional[str] = None
     ayudante: bool = False
     regreso_base: Optional[bool] = None
@@ -176,6 +186,32 @@ class QuoteIn(BaseModel):
     # ✅ AÑADIDO: turno elegido por el usuario
     fecha_turno: Optional[str] = None   # YYYY-MM-DD
     hora_turno: Optional[str] = None    # HH:MM
+
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    print(f"❌ ERROR DE VALIDACIÓN: {exc.errors()}")
+    return JSONResponse(
+        status_code=422,
+        content={"detail": exc.errors(), "body": exc.body},
+    )
+
+class QuoteUpdate(BaseModel):
+    nombre_cliente: Optional[str] = Field(None, alias="nombre")
+    telefono: Optional[str] = None
+    tipo_carga: Optional[str] = None
+    origen: Optional[str] = None
+    destino: Optional[str] = None
+    fecha: Optional[str] = None
+    ayudante: Optional[bool] = None
+    peajes: Optional[int] = None
+    viaticos: Optional[float] = None
+    fecha_turno: Optional[str] = None
+    hora_turno: Optional[str] = None
+    monto_estimado: Optional[float] = None
+    model_config = {"populate_by_name": True, "extra": "allow"}
 
 
 class ConfirmPayload(BaseModel):
@@ -376,33 +412,20 @@ def _get_blocked_slots_for_date(session: Session, date_str: str) -> set:
                 blocked.add(slot)
     return blocked
 
-def _purge_expired_unconfirmed(session: Session):
-    hoy = _today_ar_str()
-
-    statement = select(dbQuote).where(
-        dbQuote.estado.in_(["sent", "rechazado"]),
-        dbQuote.fecha_turno < hoy
-    )
-    expired = session.exec(statement).all()
-
-    if not expired:
-        return 0
-
-    count = len(expired)
-    for q in expired:
-        session.delete(q)
-    session.commit()
-    return count
+# _purge_expired_unconfirmed ELIMINADO permanentemente para evitar pérdida de datos.
 
 
 
 def _marcar_realizados(session: Session):
     hoy = _today_ar_str()
 
-    # Confirmado + fecha_turno pasada => Realizado
+    # Confirmado + fecha_turno válida pasada => Realizado
     statement = select(dbQuote).where(
         dbQuote.estado == "confirmado",
-        dbQuote.fecha_turno < hoy
+        dbQuote.fecha_turno < hoy,
+        dbQuote.fecha_turno != "",
+        dbQuote.fecha_turno != "1970-01-01",
+        dbQuote.fecha_turno.is_not(None)
     )
     quotes_to_update = session.exec(statement).all()
     
@@ -1210,12 +1233,13 @@ def health():
 
 def _calcular_desde_body(session: Session, body: QuoteIn) -> dict:
     # Normalizar
-    nombre = body.nombre_cliente or body.__dict__.get("nombre_cliente")
-    if not nombre:
-        raise HTTPException(status_code=400, detail="Falta nombre_cliente")
+    nombre = body.nombre_cliente or body.__dict__.get("nombre_cliente") or "Consulta Admin"
+    
+    origen_val = body.origen or BASE_DIRECCION
+    destino_val = body.destino or BASE_DIRECCION
 
-    origen_norm = _normalize_addr(body.origen)
-    destino_norm = _normalize_addr(body.destino)
+    origen_norm = _normalize_addr(origen_val)
+    destino_norm = _normalize_addr(destino_val)
     base_norm = _normalize_addr(BASE_DIRECCION)
 
     # Tramos
@@ -1335,62 +1359,64 @@ def send_quote_nuevo(
     """
     Guarda el presupuesto y RESERVA el horario.
     """
-    # 1) Requisitos básicos
-    if not body.fecha_turno or not body.hora_turno:
-        raise HTTPException(status_code=422, detail="Tenés que elegir fecha y horario")
+    # 1) Detectar si es un Lead (sin horario asignado por el cliente)
+    is_lead = (not body.fecha_turno or not body.hora_turno or body.fecha_turno == "1970-01-01")
 
-    # 2) Validar que no sea en el pasado
-    hoy_ar = datetime.now(AR_TZ)
-    try:
-        req_dt = datetime.strptime(f"{body.fecha_turno} {body.hora_turno}", "%Y-%m-%d %H:%M").replace(tzinfo=AR_TZ)
-        if req_dt < hoy_ar - timedelta(minutes=5):
-            raise HTTPException(status_code=409, detail="Ese horario ya pasó")
-    except ValueError:
-        raise HTTPException(status_code=400, detail="Formato de fecha/hora inválido")
+    booking = None
+    day_ovr = None
 
-    # 3) Validar contra overrides del admin
-    statement_ovr = select(dbAvailabilityOverride).where(dbAvailabilityOverride.date == body.fecha_turno)
-    day_ovr = session.exec(statement_ovr).first()
-    
-    if day_ovr:
-        if not day_ovr.enabled:
-            raise HTTPException(status_code=409, detail="El día seleccionado no está habilitado")
-        if day_ovr.slots and body.hora_turno not in day_ovr.slots:
-            raise HTTPException(status_code=409, detail="El horario ya no está disponible")
-    else:
-        if body.hora_turno not in DEFAULT_SLOTS:
-            raise HTTPException(status_code=409, detail="Horario no válido para este servicio")
+    if not is_lead:
+        # 2) Validar que no sea en el pasado
+        hoy_ar = datetime.now(AR_TZ)
+        try:
+            req_dt = datetime.strptime(f"{body.fecha_turno} {body.hora_turno}", "%Y-%m-%d %H:%M").replace(tzinfo=AR_TZ)
+            if req_dt < hoy_ar - timedelta(minutes=5):
+                raise HTTPException(status_code=409, detail="Ese horario ya pasó")
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Formato de fecha/hora inválido")
 
-    # 4) RESERVA en la tabla bookings
-    # Verificamos si ya existe un booking para esa fecha/hora con estado reserved o confirmed
-    statement_check = select(dbBooking).where(
-        dbBooking.date == body.fecha_turno,
-        dbBooking.time == body.hora_turno,
-        dbBooking.status.in_(["reserved", "confirmed"])
-    )
-    existing = session.exec(statement_check).first()
-    if existing:
-        raise HTTPException(status_code=409, detail="Ese horario ya fue reservado por otra persona")
+        # 3) Validar contra overrides del admin
+        statement_ovr = select(dbAvailabilityOverride).where(dbAvailabilityOverride.date == body.fecha_turno)
+        day_ovr = session.exec(statement_ovr).first()
+        
+        if day_ovr:
+            if not day_ovr.enabled:
+                raise HTTPException(status_code=409, detail="El día seleccionado no está habilitado")
+            if day_ovr.slots and body.hora_turno not in day_ovr.slots:
+                raise HTTPException(status_code=409, detail="El horario ya no está disponible")
+        else:
+            if body.hora_turno not in DEFAULT_SLOTS:
+                raise HTTPException(status_code=409, detail="Horario no válido para este servicio")
 
-    try:
-        booking = dbBooking(
-            quote_id="PENDING",
-            date=body.fecha_turno,
-            time=body.hora_turno,
-            status="reserved"
+        # 4) RESERVA en la tabla bookings
+        statement_check = select(dbBooking).where(
+            dbBooking.date == body.fecha_turno,
+            dbBooking.time == body.hora_turno,
+            dbBooking.status.in_(["reserved", "confirmed"])
         )
-        session.add(booking)
-        session.commit() # Flush inicial para asegurar reserva
-    except Exception as e:
-        session.rollback()
-        raise HTTPException(status_code=409, detail="Ese horario ya fue reservado (error de concurrencia)")
+        existing = session.exec(statement_check).first()
+        if existing:
+            raise HTTPException(status_code=409, detail="Ese horario ya fue reservado por otra persona")
 
-    # 5) Sincronizar 'availability' (si el admin puso slots específicos, lo sacamos de la lista)
-    if day_ovr and day_ovr.slots:
-        if body.hora_turno in day_ovr.slots:
-            new_slots = [s for s in day_ovr.slots if s != body.hora_turno]
-            day_ovr.slots = new_slots
-            session.add(day_ovr)
+        try:
+            booking = dbBooking(
+                quote_id="PENDING",
+                date=body.fecha_turno,
+                time=body.hora_turno,
+                status="reserved"
+            )
+            session.add(booking)
+            session.commit() # Flush inicial para asegurar reserva
+        except Exception as e:
+            session.rollback()
+            raise HTTPException(status_code=409, detail="Ese horario ya fue reservado (error de concurrencia)")
+
+        # 5) Sincronizar 'availability'
+        if day_ovr and day_ovr.slots:
+            if body.hora_turno in day_ovr.slots:
+                new_slots = [s for s in day_ovr.slots if s != body.hora_turno]
+                day_ovr.slots = new_slots
+                session.add(day_ovr)
 
     # 6) Calcular y guardar presupuesto
     try:
@@ -1400,15 +1426,17 @@ def send_quote_nuevo(
         session.commit()
         session.refresh(quote)
         
-        # Actualizar el booking con el ID real
-        booking.quote_id = str(quote.id)
-        session.add(booking)
-        session.commit()
+        # Actualizar el booking con el ID real (solo si se creó uno)
+        if booking:
+            booking.quote_id = str(quote.id)
+            session.add(booking)
+            session.commit()
         
     except Exception as e:
         # Rollback del booking en caso de error
-        session.delete(booking)
-        session.commit()
+        if booking:
+            session.delete(booking)
+            session.commit()
         raise HTTPException(status_code=500, detail=f"Error al procesar presupuesto: {str(e)}")
 
     # 7) Notificar
@@ -1651,33 +1679,25 @@ def listar_requests(
     today_str = _today_ar_str()
     st = (status or "pending").strip().lower()
 
-    # 3) autolimpieza: borrar NO confirmados vencidos
-    #    (sent o rechazado) -> se borran solos cuando ya pasó la fecha_turno
-    statement_del = select(dbQuote).where(
-        dbQuote.estado.in_(["sent", "rechazado"]),
-        dbQuote.fecha_turno < today_str
-    )
-    to_delete = session.exec(statement_del).all()
-    for q in to_delete:
-        session.delete(q)
-    if to_delete:
-        session.commit()
+    # 3) autolimpieza: (ELIMINADO por solicitud del usuario para evitar desaparición de pedidos)
+    # Anteriormente se borraban aquí los pedidos 'sent' o 'rechazado' con fecha anterior a hoy.
 
     # 4) Construir filtro según estado solicitado
     if st == "pending":
         statement = select(dbQuote).where(
             dbQuote.estado.in_(["sent", "rechazado", "confirmado"]),
-            (dbQuote.fecha_turno >= today_str) | (dbQuote.fecha_turno == None)
+            dbQuote.is_deleted == False
         ).order_by(dbQuote.created_at.desc())
 
     elif st == "historicos":
         # Incluye realizados y anulados
         statement = select(dbQuote).where(
-            dbQuote.estado.in_(["realizado", "anulado", "cancelado"])
+            dbQuote.estado.in_(["realizado", "anulado", "cancelado"]),
+            dbQuote.is_deleted == False
         ).order_by(dbQuote.created_at.desc())
 
     elif st == "all":
-        statement = select(dbQuote).order_by(dbQuote.created_at.desc())
+        statement = select(dbQuote).where(dbQuote.is_deleted == False).order_by(dbQuote.created_at.desc())
 
     else:
         raise HTTPException(status_code=400, detail="status inválido. Usar pending | historicos | all")
@@ -1828,6 +1848,7 @@ def admin_eliminar(
     user=Depends(require_api_key),
     session: Session = Depends(get_session)
 ):
+    print(f"--- AUDIT: Intento de ELIMINACIÓN del pedido ID {quote_id} ---")
     try:
         qid = int(quote_id)
     except Exception:
@@ -1841,12 +1862,15 @@ def admin_eliminar(
     ft = quote.fecha_turno
     ht = quote.hora_turno
 
-    # ✅ borrar quote
-    session.delete(quote)
+    # ✅ SOFT DELETE quote
+    quote.is_deleted = True
+    session.add(quote)
+    
+    _add_audit_log(session, qid, "SOFT_DELETE", f"Eliminación lógica solicitada. Datos: {quote.nombre_cliente}")
 
     # ✅ Liberar horario
     if ft and ht:
-        # 1) Borrar booking
+        # 1) Borrar booking (aquí sí borramos el booking para liberar el slot real)
         statement_b = select(dbBooking).where(dbBooking.quote_id == str(qid))
         bs = session.exec(statement_b).all()
         for b in bs:
@@ -1861,7 +1885,95 @@ def admin_eliminar(
                 session.add(day_ovr)
 
     session.commit()
-    return {"message": "Eliminado y turno liberado" if (ft and ht) else "Eliminado"}
+    return {"message": "Registro marcado como eliminado y turno liberado" if (ft and ht) else "Registro marcado como eliminado"}
+
+@app.patch("/api/requests/{quote_id}")
+def admin_patch_request(
+    quote_id: str,
+    body: QuoteUpdate,
+    user=Depends(require_api_key),
+    session: Session = Depends(get_session)
+):
+    print(f"--- AUDIT: Edición de pedido ID {quote_id}. Datos recibidos: {body.model_dump(exclude_unset=True)} ---")
+    try:
+        qid = int(quote_id)
+    except Exception:
+        raise HTTPException(status_code=400, detail="ID inválido")
+
+    quote = session.get(dbQuote, qid)
+    if not quote:
+        raise HTTPException(status_code=404, detail="Presupuesto no encontrado")
+
+    # 1) Actualizar campos del modelo (solo los que vienen en el body)
+    update_data = body.model_dump(exclude_unset=True, by_alias=False)
+    for key, value in update_data.items():
+        if hasattr(quote, key):
+            setattr(quote, key, value)
+
+    # 2) Re-calcular costos basándose en los nuevos datos
+    # Usamos QuoteIn para disparar la misma lógica de cálculo que en el frontend
+    temp_in = QuoteIn(
+        nombre=quote.nombre_cliente,
+        telefono=quote.telefono,
+        tipo_carga=quote.tipo_carga,
+        origen=quote.origen,
+        destino=quote.destino,
+        fecha=quote.fecha,
+        ayudante=quote.ayudante,
+        peajes=quote.peajes,
+        viaticos=quote.viaticos,
+        fecha_turno=quote.fecha_turno,
+        hora_turno=quote.hora_turno
+    )
+    
+    try:
+        new_doc = _calcular_desde_body(session, temp_in)
+        # Sincronizar campos calculados (sin tocar metadatos como estado, id o created_at)
+        FORBIDDEN_FIELDS = ['id', 'estado', 'created_at', 'confirmado_en', 'sent_at']
+        for key, value in new_doc.items():
+            if hasattr(quote, key) and key not in FORBIDDEN_FIELDS:
+                setattr(quote, key, value)
+    except Exception as e:
+        print(f"Error recalculando pedido {qid}: {e}")
+        # No fallamos si el cálculo falla, al menos guardamos los cambios manuales
+    
+    # 3) Sincronizar Calendario si está confirmado
+    if quote.estado == "confirmado":
+        # ¿Hubo cambio de fecha u hora?
+        fecha_vieja = update_data.get("fecha_turno") != quote.fecha_turno if "fecha_turno" in update_data else False
+        hora_vieja = update_data.get("hora_turno") != quote.hora_turno if "hora_turno" in update_data else False
+        
+        # Realizamos la sincronización si cambió el horario o la fecha
+        # (O simplemente siempre forzamos la actualización del booking por seguridad)
+        try:
+            # Borrar booking viejo (si existe) asociado a este quote
+            statement_old = select(dbBooking).where(dbBooking.quote_id == str(quote.id))
+            old_bookings = session.exec(statement_old).all()
+            for ob in old_bookings:
+                session.delete(ob)
+            
+            # Crear booking nuevo
+            if quote.fecha_turno and quote.hora_turno:
+                new_b = dbBooking(
+                    quote_id=str(quote.id),
+                    date=quote.fecha_turno,
+                    time=quote.hora_turno,
+                    status="confirmed"
+                )
+                session.add(new_b)
+        except Exception as e:
+            print(f"Error sincronizando agenda en PATCH: {e}")
+
+    # 4) Si vino monto manual, aplicarlo AL FINAL para que mande sobre el cálculo
+    if body.monto_estimado is not None:
+        quote.monto_estimado = body.monto_estimado
+
+    session.add(quote)
+    _add_audit_log(session, qid, "UPDATE", f"Edición del pedido. Payload: {update_data}")
+    session.commit()
+    session.refresh(quote)
+
+    return {"ok": True, "quote": _serialize_quote(quote)}
 
 
 # ✅ 2) recién DESPUÉS tu catch-all para el SPA

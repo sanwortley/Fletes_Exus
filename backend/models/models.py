@@ -2,6 +2,16 @@ from datetime import datetime, timezone
 from typing import Optional, List, Dict
 from sqlmodel import SQLModel, Field, JSON
 import uuid
+from enum import Enum
+
+class dbAuditLog(SQLModel, table=True):
+    __tablename__ = "audit_logs"
+    id: Optional[int] = Field(default=None, primary_key=True)
+    quote_id: Optional[int] = Field(index=True)
+    action: str # CREATE, UPDATE, DELETE, STATUS_CHANGE
+    details: str
+    admin_user: Optional[str] = None
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 # --- Modelos Basados en el Proyecto Exus ---
 
@@ -80,6 +90,7 @@ class dbQuote(SQLModel, table=True):
     voided_at: Optional[datetime] = None
     fecha_hora_preferida: Optional[str] = None
     notas_confirmacion: Optional[str] = None
+    is_deleted: bool = Field(default=False, index=True)
 
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 

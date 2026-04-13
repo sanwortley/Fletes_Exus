@@ -663,6 +663,7 @@ h1 .accent {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: 8px;
   border: none;
   outline: none;
   background: none;
@@ -671,13 +672,32 @@ h1 .accent {
   font-weight: 700;
   text-transform: uppercase;
   cursor: pointer;
-  transition: all .2s ease;
+  transition: all .25s cubic-bezier(0.4, 0, 0.2, 1);
   padding: 12px 24px;
   border-radius: 10px;
   font-family: 'Inter', sans-serif;
-  font-size: 0.8rem;
-  letter-spacing: 0.5px;
+  font-size: 0.78rem;
+  letter-spacing: 0.8px;
   line-height: 1;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  user-select: none;
+}
+
+.btn-sm {
+  padding: 8px 16px;
+  font-size: 0.72rem;
+  border-radius: 8px;
+  letter-spacing: 0.5px;
+}
+
+.btn:active {
+  transform: scale(0.97);
+}
+
+.btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  filter: brightness(1.05);
 }
 
 .btn-primary {
@@ -691,20 +711,27 @@ h1 .accent {
 }
 
 .btn-reject {
+  background: #f1f5f9;
+  color: #64748b;
+  border: 1px solid #e2e8f0;
+  box-shadow: none;
+}
+
+.btn-reject:hover {
+  background: #e2e8f0;
+  color: var(--ink);
+}
+
+.btn-danger {
   background: var(--bad);
   color: #fff;
 }
 
-.btn-danger {
-  background: #f4f4f5;
-  color: #52525b;
-}
-
 .btn-ghost {
-  background: transparent;
-  color: #64748b;
-  border: 1px solid #e2e8f0 !important;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  background: #fff;
+  color: var(--muted);
+  border: 1.5px solid var(--stroke) !important;
+  box-shadow: none;
 }
 
 .btn-ghost:hover {
@@ -772,6 +799,33 @@ h1 .accent {
     background: #fff;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
   }
+
+  /* Optimización botones modal mobile */
+  .modal-foot .btn-text {
+    display: none;
+  }
+  .modal-foot .btn {
+    padding: 10px 14px;
+    min-width: 44px;
+    justify-content: center;
+  }
+  .modal-foot {
+    gap: 8px;
+    padding-bottom: 5px;
+  }
+
+  /* Sugerencias de Google Maps sobre el modal */
+  .pac-container {
+    z-index: 10001 !important;
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    border: 1px solid var(--stroke);
+    font-family: 'Inter', sans-serif;
+    margin-top: 5px;
+  }
+  
+  /* Evitar que se muestre si no hay un input enfocado (solución radical) */
+  .pac-container:empty { display: none !important; }
 
   .row td {
     display: flex;
@@ -1052,3 +1106,33 @@ h1 .accent {
   margin: 0 !important;
   color: var(--ink);
 }
+
+/* EDITABLE MODAL STYLES */
+.modal-input {
+  width: 100%;
+  padding: 8px 12px !important;
+  border: 1.5px solid var(--stroke) !important;
+  border-radius: 8px !important;
+  font-size: 0.9rem !important;
+  font-family: 'Inter', sans-serif !important;
+  color: var(--ink) !important;
+  outline: none !important;
+  transition: all 0.2s !important;
+  background: #fdfdfd !important;
+  margin-top: 4px;
+}
+
+.modal-input:focus {
+  border-color: var(--primary) !important;
+  background: #fff !important;
+}
+
+.kv.full-modal {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 600px) {
+  .grid-modal {
+    grid-template-columns: 1fr;
+  }
+}

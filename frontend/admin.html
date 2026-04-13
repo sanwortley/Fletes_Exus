@@ -11,13 +11,13 @@
   <!-- End Google Tag Manager -->
 
   <!-- Google tag (gtag.js) -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=AW-18003768342"></script>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-WN4XP08H33"></script>
   <script>
     window.dataLayer = window.dataLayer || [];
     function gtag(){dataLayer.push(arguments);}
     gtag('js', new Date());
 
-    gtag('config', 'AW-18003768342');
+    gtag('config', 'G-WN4XP08H33');
   </script>
 
   <meta charset="utf-8" />
@@ -490,12 +490,14 @@
         <a href="/" data-view="inicio">Inicio</a>
         <a href="/presupuesto.html" data-view="presupuesto">Presupuesto</a>
         <a href="/admin.html" data-view="admin" class="active">Admin</a>
-
-        <!-- ✅ aparece solo logueado -->
-        <button id="btnLogout" class="btn-out" type="button" hidden onclick="Admin.logout()">
-          Cerrar sesión
-        </button>
       </div>
+
+      <!-- ✅ Botón de salida desplazado a la derecha fuera del flujo central -->
+      <button id="btnLogout" class="btn-out-icon" type="button" style="display:none" onclick="Admin.logout()" title="Cerrar sesión">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9" />
+          </svg>
+      </button>
     </div>
   </header>
 
@@ -850,45 +852,75 @@
         </div>
         <div class="modal-body">
           <div class="grid-modal">
-            <div class="kv"><small>Cliente</small><strong id="m_cliente">-</strong></div>
-            <div class="kv"><small>Teléfono</small><strong id="m_tel">-</strong></div>
-            <div class="kv"><small>Tipo de carga</small><strong id="m_tipo">-</strong></div>
+            <div class="kv"><small>Cliente</small><input id="m_cliente_in" class="modal-input" placeholder="Nombre..."></div>
+            <div class="kv"><small>Teléfono</small><input id="m_tel_in" class="modal-input" placeholder="Tel..."></div>
+            <div class="kv"><small>Tipo de carga</small>
+              <select id="m_tipo_in" class="modal-input">
+                <option value="mudanza">Mudanza</option>
+                <option value="puntual">Algo puntual</option>
+              </select>
+            </div>
 
-            <div class="kv"><small>Fecha</small><strong id="m_fecha">-</strong></div>
-            <div class="kv"><small>Horario</small><strong id="m_hora">-</strong></div>
+            <div class="kv"><small>Fecha</small><input id="m_fecha_in" type="date" class="modal-input"></div>
+            <div class="kv"><small>Horario</small>
+              <select id="m_hora_in" class="modal-input"></select>
+            </div>
 
-            <div class="kv"><small>Ayudante</small><strong id="m_ayudante">-</strong></div>
-            <div class="kv"><small>Estado</small><strong id="m_estado">-</strong></div>
-            <div class="kv"><small>Origen</small><strong id="m_origen">-</strong></div>
-            <div class="kv"><small>Destino</small><strong id="m_destino">-</strong></div>
+            <div class="kv"><small>¿Ayudante?</small>
+              <div style="display:flex; align-items:center; gap:8px; height:40px;">
+                <input id="m_ayudante_in" type="checkbox" style="width:20px; height:20px;"> 
+                <label for="m_ayudante_in" style="margin:0; font-size:0.8rem;">Sí, requiere</label>
+              </div>
+            </div>
+            
+            <div class="kv"><small>Estado</small><strong id="m_estado" style="padding-top:10px">-</strong></div>
+            
+            <div class="kv full-modal"><small>Origen</small><input id="m_origen_in" class="modal-input"></div>
+            <div class="kv full-modal"><small>Destino</small><input id="m_destino_in" class="modal-input"></div>
+            
             <div class="kv"><small>Distancia (km)</small><strong id="m_dist_km">-</strong></div>
-            <div class="kv"><small>Tiempo de manejo (min)</small><strong id="m_tiempo_viaje">-</strong></div>
-            <div class="kv"><small>Tiempo total de servicio (min)</small><strong id="m_tiempo_servicio">-</strong></div>
-            <div class="kv"><small>Tiempo carga/descarga (min)</small><strong id="m_tiempo_carga_desc">-</strong></div>
-            <div class="kv"><small>Costo tiempo</small><strong id="m_costo_tiempo">-</strong></div>
-            <div class="kv"><small>Costo combustible</small><strong id="m_costo_combustible">-</strong></div>
-            <div class="kv"><small>Costo ayudante</small><strong id="m_costo_ayudante">-</strong></div>
-            <div class="kv total">
-              <small><b>Total estimado</b></small>
-              <strong id="m_total">$ -</strong>
+            <div class="kv"><small>T. Manejo (min)</small><strong id="m_tiempo_viaje">-</strong></div>
+            <div class="kv"><small>T. Servicio (min)</small><strong id="m_tiempo_servicio">-</strong></div>
+            
+            <div class="kv total" style="grid-column: 1 / -1; background: #fffcf0; border: 1px dashed var(--primary); padding: 15px; border-radius: 12px; margin-top: 10px;">
+              <small style="display:block; margin-bottom:5px;"><b>Total estimado (editable)</b> <span id="m_loading" style="display:none; color:var(--primary); font-size:0.7rem;"> (Recalculando...)</span></small>
+              <div style="display:flex; align-items:center; gap:8px;">
+                <span style="font-size:1.5rem; color:var(--primary); font-weight:800;">$</span>
+                <input type="number" id="m_total_in" class="modal-input" style="font-size:1.8rem; color:var(--primary); font-weight:800; border:none; background:transparent; width:100%; padding:0;" value="0">
+              </div>
             </div>
           </div>
         </div>
-        <div class="modal-foot">
-          <button class="btn btn-danger" onclick="Admin.eliminar()" type="button">Eliminar</button>
-          <div style="display:flex; gap:8px">
+        <div class="modal-foot" style="display:flex; justify-content:space-between; align-items:center; padding-top:20px; border-top:1px solid #f1f5f9; margin-top:20px;">
+          <div style="display:flex; align-items:center; gap:12px">
+            <button class="btn btn-reject btn-sm" onclick="Admin.rechazar()" type="button" style="display:none">Rechazar</button>
+            <button class="btn btn-primary btn-sm" id="btnGuardarCambios" onclick="Admin.guardarCambios()" type="button" title="Guardar cambios">
+              <svg viewBox="0 0 448 512" width="18" height="18"><path fill="currentColor" d="M433.941 129.941l-83.882-83.882A48 48 0 0 0 316.118 32H48C21.49 32 0 53.49 0 80v352c0 26.51 21.49 48 48 48h352c26.51 0 48-21.49 48-48V163.882a48 48 0 0 0-14.059-33.941zM352 80v64H128V80h224zM160 432c-26.51 0-48-21.49-48-48s21.49-48 48-48 48 21.49 48 48-21.49 48-48 48zm224-224H64V192h320v16z"/></svg>
+            </button>
+          </div>
+          <div style="display:flex; align-items:center; gap:12px">
             <!-- Acciones Pendientes -->
-            <button class="btn btn-reject" onclick="Admin.rechazar()" type="button"
-              style="display:none">Rechazar</button>
-            <button class="btn btn-ok" onclick="Admin.aprobar()" type="button" style="display:none">Confirmar</button>
+            <button class="btn btn-ok" onclick="Admin.aprobar()" type="button" style="display:none">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              <span class="btn-text">Confirmar</span>
+            </button>
+            
+            <div style="width:1px; height:24px; background:#e2e8f0; margin:0 4px"></div>
+            <button class="btn btn-danger" onclick="Admin.eliminar()" type="button" title="Eliminar definitivamente" style="font-size:0.85rem; padding:8px 16px; min-width:auto">
+              <svg viewBox="0 0 448 512" width="18" height="18"><path fill="currentColor" d="M135.2 17.7C140.6 6.8 151.7 0 163.8 0H284.2c12.1 0 23.2 6.8 28.6 17.7L320 32h96c17.7 0 32 14.3 32 32s-14.3 32-32 32H32C14.3 96 0 81.7 0 64S14.3 32 32 32h96l7.2-14.3zM32 128H416V448c0 35.3-28.7 64-64 64H96c-35.3 0-64-28.7-64-64V128zm96 64c-8.8 0-16 7.2-16 16V432c0 8.8 7.2 16 16 16s16-7.2 16-16V208c0-8.8-7.2-16-16-16zm96 0c-8.8 0-16 7.2-16 16V432c0 8.8 7.2 16 16 16s16-7.2 16-16V208c0-8.8-7.2-16-16-16zm96 0c-8.8 0-16 7.2-16 16V432c0 8.8 7.2 16 16 16s16-7.2 16-16V208c0-8.8-7.2-16-16-16z"/></svg>
+              <span class="btn-text">Eliminar</span>
+            </button>
 
             <!-- Acciones Confirmados -->
-            <button class="btn btn-out btn-void" onclick="Admin.anular()" type="button"
-              style="display:none; color:var(--muted)">Anular</button>
-            <button class="btn btn-ok btn-complete" onclick="Admin.completar()" type="button"
-              style="display:none">Completar</button>
+            <button class="btn btn-out btn-void" onclick="Admin.anular()" type="button" style="display:none; color:var(--muted)">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line></svg>
+              <span class="btn-text">Anular</span>
+            </button>
+            <button class="btn btn-ok btn-complete" onclick="Admin.completar()" type="button" style="display:none">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              <span class="btn-text">Completar</span>
+            </button>
           </div>
-
         </div>
       </div>
     </div>
@@ -915,6 +947,17 @@
       const API_KEY = localStorage.getItem("ADMIN_API_KEY") || "AdminFletesJavier20251110!!";
       function adminHeaders(extra = {}) {
         return { "X-API-Key": API_KEY, ...extra };
+      }
+
+      let configVars = null;
+      let isManualPriceMode = false;
+      let manualBasePrice = 0;
+
+      async function loadConfigVars() {
+        try {
+          const res = await fetch(`${API_BASE}/api/admin/config-vars`, { headers: adminHeaders() });
+          if (res.ok) configVars = await res.json();
+        } catch (e) { console.error("Error loading config vars:", e); }
       }
 
       const getId = (s) => {
@@ -1411,7 +1454,7 @@
           loginForm.style.display = isOn ? 'none' : 'flex';
         }
         if (btnLogout) {
-          btnLogout.hidden = !isOn;
+          btnLogout.style.display = isOn ? 'flex' : 'none';
         }
 
         if (flag) {
@@ -1590,8 +1633,14 @@
         </td>
         <td data-label="Carga">${s.tipo_carga || '-'}</td>
         <td data-label="Fecha/Hora">
-          ${(s.fecha_turno || s.fecha || '-')}
-          ${(s.hora_turno ? ` • ${s.hora_turno}` : '')}
+          ${(() => {
+            const f = s.fecha_turno;
+            const h = s.hora_turno;
+            const isLead = !f || f === "1970-01-01" || !h || h === "00:00";
+            if (isLead && !f && !h) return "-";
+            if (f === "1970-01-01" || !f) return `<span style="color:var(--muted)">Sin fecha</span>`;
+            return `${f}${h && h !== "00:00" ? ` • ${h}` : ''}`;
+          })()}
         </td>
         <td data-label="Estado"><span class="badge ${cls}">${texto}</span></td>
         <td data-label="Acciones">
@@ -1606,18 +1655,15 @@
         });
       }
 
-      function openModal(id, idx) {
+      async function openModal(id, idx) {
         if (!isAdminView()) return;
         if (!token) { adminLogout(); return; }
 
         let s = null;
         if (id != null) {
           const sid = String(id);
-          // Buscar en tabla principal O en calendario
           s = (solicitudes || []).find(x => String(getId(x)) === sid);
-          if (!s) {
-            s = (calendarSolicitudes || []).find(x => String(getId(x)) === sid);
-          }
+          if (!s) s = (calendarSolicitudes || []).find(x => String(getId(x)) === sid);
         }
         if (!s && Number.isInteger(idx) && idx >= 0 && idx < (solicitudes || []).length) {
           s = solicitudes[idx];
@@ -1625,60 +1671,233 @@
         if (!s) { toast('No se encontró la solicitud'); return; }
 
         selected = s;
+        const st = String(s.estado || "").toLowerCase();
 
-        // 🔒 BLOQUEO SOLO EN HISTÓRICOS + REALIZADO
-        const estado = String(s.estado || "").toLowerCase();
-        const isHistoricosView = (reqMode === "historicos");
-        const lockActions = isHistoricosView && (estado === "realizado");
-
-        const modal = byId('overlay');
+        // Visibilidad de botones de acción
         const btnConfirm = document.querySelector(".btn-ok");
         const btnReject = document.querySelector(".btn-reject");
+        const btnComplete = document.querySelector(".btn-complete");
+        const btnVoid = document.querySelector(".btn-void");
 
-        if (btnConfirm) btnConfirm.style.display = lockActions ? "none" : "inline-flex";
-        if (btnReject) btnReject.style.display = lockActions ? "none" : "inline-flex";
+        let showCR = (st === 'sent' || st === 'rechazado' || st === 'pending');
+        let showCA = (st === 'confirmado');
 
-        // --- tu código existente de setear datos ---
-        const tiempo_viaje_min = coalesce(
-          s.tiempo_viaje_min,
-          (s.tramo_base_origen_min && s.tramo_origen_destino_min)
-            ? Number(s.tramo_base_origen_min) + Number(s.tramo_origen_destino_min) + Number(s.tramo_destino_base_min || 0)
-            : null
-        );
-        const tiempo_servicio_min = coalesce(s.tiempo_servicio_min, null);
-        const tiempo_carga_desc_min = coalesce(s.tiempo_carga_descarga_min, s.tiempo_servicio_min);
-        const costo_tiempo = coalesce(
-          s.costo_tiempo,
-          (s.costo_tiempo_base != null && s.mantenimiento != null)
-            ? (Number(s.costo_tiempo_base) + Number(s.mantenimiento))
-            : null
-        );
+        if (btnConfirm) btnConfirm.style.display = showCR ? "inline-flex" : "none";
+        if (btnReject) btnReject.style.display = showCR ? "inline-flex" : "none";
+        if (btnComplete) btnComplete.style.display = showCA ? "inline-flex" : "none";
+        if (btnVoid) btnVoid.style.display = showCA ? "inline-flex" : "none";
 
-        const set = (id, val) => { const el = byId(id); if (el) el.textContent = val; };
+        // Llenar inputs editables
+        const setVal = (id, val) => { const el = byId(id); if (el) el.value = val || ''; };
+        setVal('m_cliente_in', s.nombre_cliente);
+        setVal('m_tel_in', s.telefono);
+        setVal('m_tipo_in', s.tipo_carga);
+        
+        // Normalizar fecha para el modal (si es 1970 o null, mostrar vacío)
+        const fTurno = (s.fecha_turno && s.fecha_turno !== "1970-01-01") ? s.fecha_turno : "";
+        setVal('m_fecha_in', fTurno);
+        
+        setVal('m_origen_in', s.origen);
+        setVal('m_destino_in', s.destino);
+        
+        const chkAyudante = byId('m_ayudante_in');
+        if (chkAyudante) chkAyudante.checked = !!s.ayudante;
 
-        set('m_cliente', s.nombre_cliente || '-');
-        set('m_tel', s.telefono || '-');
-        set('m_tipo', s.tipo_carga || '-');
+        // Cargar horarios (slots)
+        await updateModalSlots(s.fecha_turno || s.fecha, s.hora_turno);
 
-        set('m_fecha', s.fecha_turno || s.fecha || '-');
-        set('m_hora', s.hora_turno || '-');
+        // Mostrar datos calculados actuales
+        updateModalCalculatedFields(s);
 
-        set('m_ayudante', s.ayudante ? 'Sí' : 'No');
-        set('m_estado', s.estado || '-');
-        set('m_origen', s.origen || '-');
-        set('m_destino', s.destino || '-');
+        // Reset modo manual al abrir
+        isManualPriceMode = false;
+        // La base manual debe ser el flete solo, sin el ayudante que ya tenía el presupuesto guardado
+        const initialCostAyud = s.costo_ayudante || 0;
+        manualBasePrice = (s.monto_estimado || 0) - initialCostAyud;
 
-        set('m_dist_km', (s.dist_km != null ? Number(s.dist_km).toFixed(3).replace('.', ',') : '-'));
-        set('m_tiempo_viaje', (tiempo_viaje_min != null ? `${tiempo_viaje_min} min` : '-'));
-        set('m_tiempo_servicio', (tiempo_servicio_min != null ? `${tiempo_servicio_min} min` : '-'));
-        set('m_tiempo_carga_desc', (tiempo_carga_desc_min != null ? `${tiempo_carga_desc_min} min` : '-'));
-
-        set('m_costo_tiempo', peso(costo_tiempo));
-        set('m_costo_combustible', peso(s.costo_combustible));
-        set('m_costo_ayudante', peso(s.costo_ayudante));
-        set('m_total', peso(s.monto_estimado));
+        // Agregar listeners para recalculación automática
+        setupModalListeners();
 
         byId('overlay')?.classList.add('open');
+      }
+
+      async function updateModalSlots(dateStr, currentTime) {
+        const select = byId('m_hora_in');
+        if (!select) return;
+        select.innerHTML = '<option value="">Cargando...</option>';
+        
+        try {
+          const res = await fetch(`${API_BASE}/api/availability?month=${dateStr.slice(0,7)}`);
+          const data = await res.json();
+          const slots = (data.days && data.days[dateStr]) ? data.days[dateStr] : DEFAULT_SLOTS;
+          
+          select.innerHTML = '<option value="">Seleccioná hora</option>';
+          slots.sort().forEach(h => {
+             const opt = document.createElement('option');
+             opt.value = h;
+             opt.textContent = h;
+             if (h === currentTime) opt.selected = true;
+             select.appendChild(opt);
+          });
+          // Si el horario actual no está en la lista y no es el placeholder 00:00, agregarlo
+          const isPlaceholderTime = !currentTime || currentTime === "00:00";
+          if (!isPlaceholderTime && !slots.includes(currentTime)) {
+            const opt = document.createElement('option');
+            opt.value = currentTime;
+            opt.textContent = currentTime + " (Actual)";
+            opt.selected = true;
+            select.appendChild(opt);
+          }
+        } catch (e) {
+          select.innerHTML = '<option value="">Error al cargar slots</option>';
+        }
+      }
+
+      function updateModalCalculatedFields(s) {
+        if (!s) return;
+        const distElem = byId('m_dist_km');
+        const timeElem = byId('m_tiempo_viaje');
+        const servElem = byId('m_tiempo_servicio');
+        const totalIn = byId('m_total_in');
+
+        const dist_km = s.dist_km != null ? Number(s.dist_km) : null;
+        const tiempo_viaje_min = coalesce(
+           s.tiempo_viaje_min,
+           (s.tramo_base_origen_min && s.tramo_origen_destino_min)
+             ? Number(s.tramo_base_origen_min) + Number(s.tramo_origen_destino_min) + Number(s.tramo_destino_base_min || 0)
+             : null
+         );
+         const tiempo_servicio_min = coalesce(s.tiempo_servicio_min, null);
+
+         const set = (id, val) => { const el = byId(id); if (el) el.textContent = val; };
+         set('m_estado', s.estado || '-');
+         set('m_dist_km', (dist_km != null ? dist_km.toFixed(1).replace('.', ',') : '-'));
+         set('m_tiempo_viaje', (tiempo_viaje_min != null ? `${tiempo_viaje_min} min` : '-'));
+         set('m_tiempo_servicio', (tiempo_servicio_min != null ? `${tiempo_servicio_min} min` : '-'));
+
+         if (totalIn) {
+           if (isManualPriceMode) {
+             // Si el user editó manual, sumamos el costo del ayudante que viene del backend (o el local si no hay backend aún)
+             const costAyud = s.costo_ayudante || 0;
+             totalIn.value = manualBasePrice + costAyud;
+           } else {
+             totalIn.value = s.monto_estimado || 0;
+           }
+         }
+      }
+
+      let recalculateTimer = null;
+      function setupModalListeners() {
+        const editableIds = ['m_tipo_in', 'm_fecha_in', 'm_hora_in', 'm_ayudante_in', 'm_origen_in', 'm_destino_in'];
+        editableIds.forEach(id => {
+          const el = byId(id);
+          if (!el) return;
+          el.onchange = () => {
+             if (id === 'm_fecha_in') updateModalSlots(el.value);
+             triggerRecalculate();
+          };
+          if (el.tagName === 'INPUT' && el.type !== 'checkbox' && id !== 'm_fecha_in') {
+            el.oninput = triggerRecalculate;
+          }
+        });
+
+        // 🟢 Listener para el precio manual (Buscado por el USER)
+        const totalIn = byId('m_total_in');
+        if (totalIn) {
+          totalIn.oninput = () => {
+            isManualPriceMode = true;
+            const currentVal = parseFloat(totalIn.value) || 0;
+            const hasHelper = byId('m_ayudante_in')?.checked;
+            
+            // Calculamos la "Base del Jefe" restando el costo de ayudante actual del objeto seleccionado
+            const costAyud = (selected && selected.costo_ayudante) ? selected.costo_ayudante : 0;
+            manualBasePrice = currentVal - (hasHelper ? costAyud : 0);
+          };
+        }
+      }
+
+      function triggerRecalculate() {
+        if (recalculateTimer) clearTimeout(recalculateTimer);
+        const loader = byId('m_loading');
+        if (loader) loader.style.display = 'inline';
+        
+        recalculateTimer = setTimeout(async () => {
+          try {
+            const payload = {
+              origen: byId('m_origen_in').value,
+              destino: byId('m_destino_in').value,
+              tipo_carga: byId('m_tipo_in').value,
+              ayudante: byId('m_ayudante_in').checked,
+              fecha: byId('m_fecha_in').value,
+              fecha_turno: byId('m_fecha_in').value,
+              hora_turno: byId('m_hora_in').value
+            };
+            
+            // Usamos endpoint de preview para no guardar aún
+            const res = await fetch(`${API_BASE}/api/quote`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload)
+            });
+            const data = await res.json();
+            if (res.ok && data.quote) {
+              updateModalCalculatedFields(data.quote);
+            }
+          } catch (e) {
+            console.error("Recalculation error:", e);
+          } finally {
+            if (loader) loader.style.display = 'none';
+          }
+        }, 800);
+      }
+
+      async function guardarCambios() {
+        if (!selected || !token) return;
+        const btn = byId('btnGuardarCambios');
+        if (btn) { 
+          btn.disabled = true; 
+          btn.style.opacity = '0.5';
+          btn.style.cursor = 'not-allowed';
+        }
+        
+        try {
+          const payload = {
+            nombre: byId('m_cliente_in').value,
+            telefono: byId('m_tel_in').value,
+            tipo_carga: byId('m_tipo_in').value,
+            origen: byId('m_origen_in').value,
+            destino: byId('m_destino_in').value,
+            fecha_turno: byId('m_fecha_in').value,
+            hora_turno: byId('m_hora_in').value,
+            ayudante: byId('m_ayudante_in').checked,
+            monto_estimado: parseFloat(byId('m_total_in').value) || 0
+          };
+          
+          const res = await fetch(`${API_BASE}/api/requests/${getId(selected)}`, {
+            method: 'PATCH',
+            headers: adminHeaders({'Content-Type': 'application/json'}),
+            body: JSON.stringify(payload)
+          });
+          
+          if (res.ok) {
+            toast('Cambios guardados con éxito ✅');
+            // Mantenerse en la pestaña actual (reqMode)
+            const currentTab = (typeof reqMode !== 'undefined') ? reqMode : 'pending';
+            loadSolicitudes(currentTab);
+            closeModal();
+          } else {
+            const err = await res.json();
+            throw new Error(err.detail || 'Error al guardar');
+          }
+        } catch (e) {
+          toast(e.message);
+        } finally {
+          if (btn) { 
+            btn.disabled = false; 
+            btn.style.opacity = '1';
+            btn.style.cursor = 'pointer';
+          }
+        }
       }
 
 
@@ -2035,92 +2254,94 @@
         eliminarReglaBloqueo,
         cambiarCredenciales,
         toggleTabsMenu,
+        guardarCambios,
+        // ✅ MAPS AUTOCOMPLETE
+        initMapsAdmin,
       });
 
-      /* =================== MODAL LOGIC =================== */
-      function openModal(id, idx) {
-        if (!isAdminView()) return;
-        if (!token) { adminLogout(); return; }
+      // --- AUTOCOMPLETE GOOGLE MAPS ADMIN ---
+      async function initMapsAdmin() {
+        if (window.google?.maps?.places) {
+          setupAutocompleteAdmin();
+          return;
+        }
 
-        let s = null;
-        if (id != null) {
-          const sid = String(id);
-          s = (solicitudes || []).find(x => String(getId(x)) === sid);
-          if (!s) {
-            s = (calendarSolicitudes || []).find(x => String(getId(x)) === sid);
+        try {
+          if (!globalThis.MAPS_CONFIG) {
+            const res = await fetch(`${API_BASE}/api/config`);
+            if (!res.ok) return;
+            globalThis.MAPS_CONFIG = await res.json();
           }
+          const config = globalThis.MAPS_CONFIG;
+          if (!config.google_maps_api_key) return;
+
+          if (!document.getElementById('gmaps-script')) {
+            const script = document.createElement('script');
+            script.id = 'gmaps-script';
+            script.src = `https://maps.googleapis.com/maps/api/js?key=${config.google_maps_api_key}&libraries=places&language=${config.maps_language || 'es'}&region=${config.maps_region || 'AR'}`;
+            script.async = true;
+            script.onload = () => setupAutocompleteAdmin();
+            document.head.appendChild(script);
+          } else if (window.google?.maps) {
+            setupAutocompleteAdmin();
+          }
+        } catch (e) {
+          console.error("Error en initMapsAdmin:", e);
         }
-        if (!s && Number.isInteger(idx) && idx >= 0 && idx < (solicitudes || []).length) {
-          s = solicitudes[idx];
-        }
-        if (!s) { toast('No se encontró la solicitud'); return; }
-
-        selected = s;
-        const st = String(s.estado || "").toLowerCase();
-
-        const btnConfirm = document.querySelector(".btn-ok");
-        const btnReject = document.querySelector(".btn-reject");
-
-        // Nuevos botones
-        const btnComplete = document.querySelector(".btn-complete");
-        const btnVoid = document.querySelector(".btn-void");
-
-        // Reglas de visibilidad
-        let showCR = false; // Confirm/Reject
-        let showCA = false; // Complete/Anular
-
-        if (st === 'sent' || st === 'rechazado' || st === 'pending') {
-          showCR = true;
-        } else if (st === 'confirmado') {
-          showCA = true;
-        }
-
-        if (btnConfirm) btnConfirm.style.display = showCR ? "inline-flex" : "none";
-        if (btnReject) btnReject.style.display = showCR ? "inline-flex" : "none";
-
-        if (btnComplete) btnComplete.style.display = showCA ? "inline-flex" : "none";
-        if (btnVoid) btnVoid.style.display = showCA ? "inline-flex" : "none";
-
-
-        // Llenar datos (tu código existente...)
-        const tiempo_viaje_min = coalesce(
-          s.tiempo_viaje_min,
-          (s.tramo_base_origen_min && s.tramo_origen_destino_min)
-            ? Number(s.tramo_base_origen_min) + Number(s.tramo_origen_destino_min) + Number(s.tramo_destino_base_min || 0)
-            : null
-        );
-        const tiempo_servicio_min = coalesce(s.tiempo_servicio_min, null);
-        const tiempo_carga_desc_min = coalesce(s.tiempo_carga_descarga_min, s.tiempo_servicio_min);
-        const costo_tiempo = coalesce(
-          s.costo_tiempo,
-          (s.costo_tiempo_base != null && s.mantenimiento != null)
-            ? (Number(s.costo_tiempo_base) + Number(s.mantenimiento))
-            : null
-        );
-
-        const se = (id, val) => { const el = byId(id); if (el) el.textContent = val; };
-        se('m_cliente', s.nombre_cliente || '-');
-        se('m_tel', s.telefono || '-');
-        se('m_tipo', s.tipo_carga || '-');
-        se('m_fecha', s.fecha_turno || s.fecha || '-');
-        se('m_hora', s.hora_turno || '-');
-        se('m_ayudante', s.ayudante ? 'Sí' : 'No');
-        se('m_estado', s.estado || '-');
-        se('m_origen', s.origen || '-');
-        se('m_destino', s.destino || '-');
-
-        se('m_dist_km', (s.dist_km != null ? Number(s.dist_km).toFixed(3).replace('.', ',') : '-'));
-        se('m_tiempo_viaje', (tiempo_viaje_min != null ? `${tiempo_viaje_min} min` : '-'));
-        se('m_tiempo_servicio', (tiempo_servicio_min != null ? `${tiempo_servicio_min} min` : '-'));
-        se('m_tiempo_carga_desc', (tiempo_carga_desc_min != null ? `${tiempo_carga_desc_min} min` : '-'));
-
-        se('m_costo_tiempo', peso(costo_tiempo));
-        se('m_costo_combustible', peso(s.costo_combustible));
-        se('m_costo_ayudante', peso(s.costo_ayudante));
-        se('m_total', peso(s.monto_estimado));
-
-        byId('overlay')?.classList.add('open');
       }
+
+      function setupAutocompleteAdmin() {
+        if (!window.google?.maps?.places) return;
+
+        const options = {
+          componentRestrictions: { country: "ar" },
+          fields: ["formatted_address", "geometry"]
+        };
+
+        const ori = document.getElementById("m_origen_in");
+        const des = document.getElementById("m_destino_in");
+
+        const hidePac = () => {
+          document.querySelectorAll('.pac-container').forEach(el => el.style.display = 'none');
+        };
+
+        if (ori) {
+          const autoOri = new google.maps.places.Autocomplete(ori, options);
+          autoOri.addListener("place_changed", () => {
+            const place = autoOri.getPlace();
+            if (place.formatted_address) {
+              ori.value = place.formatted_address;
+              ori.dispatchEvent(new Event('input'));
+            }
+            ori.blur(); // ✅ Quitar foco para forzar cierre
+            hidePac();
+          });
+        }
+        if (des) {
+          const autoDes = new google.maps.places.Autocomplete(des, options);
+          autoDes.addListener("place_changed", () => {
+            const place = autoDes.getPlace();
+            if (place.formatted_address) {
+              des.value = place.formatted_address;
+              des.dispatchEvent(new Event('input'));
+            }
+            des.blur(); // ✅ Quitar foco para forzar cierre
+            hidePac();
+          });
+        }
+
+        // ✅ Ocultar sugerencias al scrollear CUALQUIER cosa (global)
+        window.addEventListener('scroll', hidePac, true);
+        
+        // También cerramos si se toca fuera
+        document.addEventListener('mousedown', (e) => {
+          if (!e.target.classList.contains('pac-target')) {
+            setTimeout(hidePac, 100);
+          }
+        }, true);
+      }
+
+      /* MODAL LOGIC UNIFICADA ARRIBA */
 
       (function initAdmin() {
         const NEED = ['tbody', 'loginForm'];
@@ -2175,6 +2396,10 @@
           const bdt = byId('newBlockDateTo'); if (bdt) { bdt.min = todayIso; bdt.value = todayIso; }
 
           document.querySelector('.container')?.classList.add('ready');
+
+          // ✅ Carga mapas y config en admin
+          initMapsAdmin();
+          loadConfigVars();
         }
 
         safeInit();
