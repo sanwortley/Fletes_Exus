@@ -1231,6 +1231,39 @@ def change_admin_creds(
 def health():
     return {"status": "ok", "service": "Fletes Javier API"}
 
+# === MIGRACIÓN: Descomentar, ejecutar en producción, volver a comentar ===
+@app.post("/api/admin/migrate-schema")
+def migrate_schema(
+    user=Depends(require_api_key),
+    session: Session = Depends(get_session)
+):
+    """
+    Endpoint de migración: agrega columnas faltantes a PostgreSQL.
+    Ejecutar UNA SOLA VEZ y luego borrar.
+    """
+    from sqlalchemy import text
+    
+    migrations = [
+        ("quotes", "is_deleted", "BOOLEAN DEFAULT FALSE"),
+        ("quotes", "voided_at", "TIMESTAMP"),
+        ("quotes", "notas_confirmacion", "TEXT"),
+        ("quotes", "fecha_hora_preferida", "TEXT"),
+        ("users", "failed_logins", "INTEGER DEFAULT 0"),
+        ("users", "lock_until", "TIMESTAMP"),
+    ]
+    
+    results = []
+    for table, col, definition in migrations:
+        try:
+            raw_sql = f"ALTER TABLE {table} ADD COLUMN IF NOT EXISTS {col} {definition}"
+            session.execute(text(raw_sql))
+            results.append(f"OK: {table}.{col}")
+        except Exception as e:
+            results.append(f"SKIP: {table}.{col} (puede que ya exista)")
+    
+    session.commit()
+    return {"ok": True, "results": results}
+
 def _calcular_desde_body(session: Session, body: QuoteIn) -> dict:
     # Normalizar
     nombre = body.nombre_cliente or body.__dict__.get("nombre_cliente") or "Consulta Admin"
