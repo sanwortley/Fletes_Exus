@@ -132,21 +132,24 @@
       <div class="modal-box modal-resultado-box">
         <div class="modal-res-header">
           <div class="modal-res-icon">🚛</div>
-          <div class="modal-title" style="margin-bottom:0">Tu presupuesto</div>
+          <div class="modal-title">Tu presupuesto</div>
         </div>
 
-        <div class="modal-res-route" id="resRoute"></div>
+        <div class="modal-res-body">
+          <div class="modal-res-route" id="resRoute"></div>
 
-        <div class="modal-res-total" id="resTotal"></div>
+          <div class="modal-res-total-label">Total estimado</div>
+          <div class="modal-res-total" id="resTotal"></div>
 
-        <p class="modal-res-note">Precio estimado fijo por el viaje. Un asesor confirmará los detalles y te contactará a la brevedad.</p>
+          <p class="modal-res-note">Precio estimado fijo por el viaje. Un asesor confirmará los detalles y te contactará a la brevedad.</p>
 
-        <div class="modal-res-actions">
-          <button class="btn btn-contactar" id="btnContactar" type="button">Contactar</button>
-          <button class="btn-ghost btn-cerrar" id="btnCerrarRes" type="button">Cancelar</button>
+          <div class="modal-res-actions">
+            <button class="btn btn-contactar" id="btnContactar" type="button">Contactar</button>
+            <button class="btn-ghost btn-cerrar" id="btnCerrarRes" type="button">Cancelar</button>
+          </div>
+
+          <div id="resMsg" class="help" style="margin-top:12px; text-align:center;"></div>
         </div>
-
-        <div id="resMsg" class="help" style="margin-top:12px; text-align:center;"></div>
       </div>
     </div>
   </main>
