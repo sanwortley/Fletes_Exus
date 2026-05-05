@@ -1,0 +1,48 @@
+# EXUS — Configuración para Plesk (Apache)
+RewriteEngine On
+
+# 1. Forzar HTTPS (Opcional pero recomendado)
+# RewriteCond %{HTTPS} off
+# RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+# 2. Quitar .html de la barra de direcciones (Redirección 301)
+# Si alguien entra a /index.html lo manda a /
+RewriteCond %{THE_REQUEST} ^[A-Z]{3,9}\ /index\.html\ HTTP/ [NC]
+RewriteRule ^index\.html$ / [R=301,L]
+
+RewriteCond %{THE_REQUEST} /([^.]+)\.html [NC]
+RewriteRule ^ /%1 [NC,L,R=301]
+
+# 3. Servir el archivo .html internamente si existe
+# Así /presupuesto carga presupuesto.html sin mostrar la extensión
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{REQUEST_FILENAME}\.html -f
+RewriteRule ^(.*)$ $1.html [NC,L]
+
+# 4. SPA Catch-all (Opcional)
+# Si querés que cualquier ruta no encontrada vaya al index (comportamiento SPA puro)
+# RewriteCond %{REQUEST_FILENAME} !-f
+# RewriteCond %{REQUEST_FILENAME} !-d
+# RewriteRule . /index.html [L]
+
+# 5. Optimización de Caché
+<IfModule mod_expires.c>
+    ExpiresActive On
+    ExpiresDefault "access plus 1 month"
+    
+    # El HTML no se cachea para que los cambios en SPA se vean al instante
+    ExpiresByType text/html "access plus 0 seconds"
+    
+    # Assets estáticos
+    ExpiresByType text/css "access plus 1 year"
+    ExpiresByType application/javascript "access plus 1 year"
+    ExpiresByType image/x-icon "access plus 1 year"
+    ExpiresByType image/jpeg "access plus 1 year"
+    ExpiresByType image/png "access plus 1 year"
+    ExpiresByType image/svg+xml "access plus 1 year"
+</IfModule>
+
+# 6. Compresión Gzip
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/html text/plain text/xml text/css text/javascript application/javascript
+</IfModule>

@@ -1,0 +1,2514 @@
+<!doctype html>
+<html lang="es">
+
+<head>
+  <!-- Google Tag Manager -->
+  <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+  new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+  j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+  'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+  })(window,document,'script','dataLayer','GTM-W8R9JWGM');</script>
+  <!-- End Google Tag Manager -->
+
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-WN4XP08H33"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'G-WN4XP08H33');
+  </script>
+
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Fletes y Mudanzas - Admin</title>
+  <link rel="icon" type="image/x-icon" href="/images/favicon.ico">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/favicon-180.png">
+
+  <meta http-equiv="Cache-Control" content="no-store" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+  <meta name="referrer" content="no-referrer" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Montserrat:wght@400;600;700;800&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="/static/css/admin.css?v=6">
+  <link rel="stylesheet" href="/static/css/header.css?v=6">
+
+  <style>
+    /* CRITICAL CSS - Prevent FOUC */
+    :root {
+      --primary: #D3A129;
+      --accent: #2F4858;
+      --bg: #F8FAFB;
+      --card: #FFFFFF;
+      --ink: #1A1A1B;
+      --muted: #64748B;
+      --stroke: #E2E8F0;
+      --radius: 12px;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: 'Inter', sans-serif;
+      /* Hide body content until basic layout is ready if needed, 
+         but here we just ensure critical sections are styled */
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 60px 4%;
+      opacity: 0;
+      /* Fade in once script runs */
+      transition: opacity 0.2s ease-in;
+    }
+
+    .container.ready {
+      opacity: 1;
+    }
+
+    h1 {
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 800;
+      color: var(--accent);
+      text-transform: uppercase;
+    }
+
+    .panel {
+      background: var(--card);
+      border: 1px solid var(--stroke);
+      border-radius: var(--radius);
+      padding: 30px;
+      display: none;
+      /* Hidden by default */
+    }
+
+    /* Critical Login Styles (Directly in HTML to avoid FOUC) */
+    .login-row {
+      max-width: 420px;
+      margin: 60px auto;
+      display: flex;
+      /* Force flex if shown */
+      flex-direction: column;
+      gap: 20px;
+      padding: 40px;
+      background: #fff;
+      border-radius: 20px;
+      border: 1px solid var(--stroke);
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.03);
+      align-items: center;
+    }
+
+    .input {
+      width: 100% !important;
+      padding: 16px 20px !important;
+      border: 1.5px solid var(--stroke) !important;
+      border-radius: 12px !important;
+      font-size: 1rem !important;
+      outline: none;
+      background: #fdfdfd;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-primary:hover {
+      background: var(--primary);
+    }
+
+    /* VARIABLES CONFIG PANEL - INJECTED TO BYPASS CACHE */
+    .vars-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 20px;
+      margin-top: 20px;
+    }
+
+    .vars-group {
+      background: #fff;
+      border: 1px solid var(--stroke);
+      border-radius: 12px;
+      padding: 20px;
+    }
+
+    .vars-group h3 {
+      margin-top: 0;
+      margin-bottom: 15px;
+      color: var(--accent);
+      font-size: 1rem;
+      border-bottom: 2px solid #f1f5f9;
+      padding-bottom: 8px;
+    }
+
+    .vars-group label {
+      display: flex !important;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--muted);
+    }
+
+    .vars-group input[type="number"] {
+      width: 100px !important;
+      padding: 6px 10px;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      text-align: right;
+      font-weight: 700;
+      color: var(--ink);
+    }
+
+    .vars-group.full {
+      grid-column: 1 / -1;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+    }
+
+    .chk-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: #f8fafb;
+      padding: 10px;
+      border-radius: 8px;
+    }
+
+    .chk-row input {
+      width: 18px !important;
+      height: 18px !important;
+      accent-color: var(--primary);
+    }
+
+    .chk-row label {
+      margin: 0 !important;
+      color: var(--ink);
+      display: inline-block !important;
+    }
+
+    .rule-card {
+      transition: all 0.2s ease;
+    }
+
+    .rule-card:hover {
+      border-color: var(--primary) !important;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+      transform: translateY(-2px);
+    }
+
+    /* Glass Toggle Switch (según imagen) */
+    .glass-toggle {
+      position: relative;
+      display: inline-block;
+      width: 72px;
+      height: 38px;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .glass-toggle input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .glass-toggle-slider {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(200, 203, 207, 0.4);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      border-radius: 40px;
+      transition: .4s;
+      border: 1.5px solid rgba(255, 255, 255, 0.3);
+      box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 8px;
+    }
+
+    .glass-toggle-slider:before {
+      position: absolute;
+      content: "";
+      height: 30px;
+      width: 30px;
+      left: 4px;
+      bottom: 2.5px;
+      background-color: white;
+      transition: .4s;
+      border-radius: 50%;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      z-index: 2;
+    }
+
+    .glass-toggle input:checked+.glass-toggle-slider:before {
+      transform: translateX(33px);
+    }
+
+    .glass-toggle-icon {
+      font-size: 16px;
+      z-index: 1;
+      opacity: 0.6;
+      transition: opacity 0.3s;
+    }
+
+    .glass-toggle input:checked+.glass-toggle-slider {
+      background: rgba(211, 161, 41, 0.4);
+      /* var(--primary) con alpha */
+    }
+
+    /* Grisar zona deshabilitada */
+    .disabled-zone {
+      opacity: 0.45;
+      pointer-events: none;
+      filter: grayscale(0.8);
+      transition: opacity 0.4s, filter 0.4s;
+    }
+
+    .rule-container {
+      transition: opacity 0.4s;
+    }
+
+    .tooltip-hint {
+      position: relative;
+      cursor: help;
+    }
+
+    .tooltip-hint:after {
+      content: attr(data-tooltip);
+      position: absolute;
+      bottom: 125%;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #1e293b;
+      color: #fff;
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      white-space: nowrap;
+      visibility: hidden;
+      opacity: 0;
+      transition: opacity 0.2s;
+      z-index: 100;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .tooltip-hint:hover:after {
+      visibility: visible;
+      opacity: 1;
+    }
+
+    /* --- RESPONSIVE MOBILE TABS & FIXES --- */
+    .hamburger-btn {
+      display: none;
+      align-items: center;
+      gap: 12px;
+      background: #fff;
+      border: 2.5px solid var(--stroke);
+      padding: 12px 18px;
+      border-radius: 14px;
+      cursor: pointer;
+      width: 100%;
+      color: var(--accent);
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+      margin-bottom: 12px;
+      outline: none;
+    }
+
+    .hamburger-btn:active {
+      transform: scale(0.98);
+      background: #f8fafb;
+    }
+
+    .hamburger-icon {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .hamburger-icon span {
+      display: block;
+      width: 22px;
+      height: 3px;
+      background: var(--primary);
+      border-radius: 4px;
+    }
+
+    .hamburger-text {
+      font-weight: 800;
+      font-size: 0.9rem;
+      letter-spacing: 0.5px;
+      font-family: 'Montserrat', sans-serif;
+      text-transform: uppercase;
+    }
+
+    @media (max-width: 768px) {
+      .container {
+        padding: 100px 15px 40px !important;
+      }
+
+      h1 {
+        font-size: 1.6rem;
+        line-height: 1.2;
+        margin-bottom: 25px;
+      }
+
+      .hamburger-btn {
+        display: inline-flex;
+      }
+
+      .view-switch {
+        display: none !important;
+        /* Toggle via JS class */
+        flex-direction: column !important;
+        width: 100% !important;
+        gap: 2px !important;
+        padding: 8px !important;
+        background: #fff !important;
+        border: 1.5px solid var(--stroke) !important;
+        border-radius: 12px !important;
+        margin-bottom: 25px !important;
+        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.12) !important;
+      }
+
+      .view-switch.open {
+        display: flex !important;
+      }
+
+      .view-tab {
+        width: 100% !important;
+        text-align: left !important;
+        padding: 14px 18px !important;
+        font-size: 0.95rem !important;
+        border-radius: 8px !important;
+      }
+
+      .view-tab.active {
+        background: #f1f5f9 !important;
+        color: var(--primary) !important;
+      }
+
+      /* Fix de cajas peligrosas y forms */
+      .danger-box-resp {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        text-align: center !important;
+        gap: 18px !important;
+        padding: 24px 18px !important;
+      }
+
+      .danger-box-resp button {
+        width: 100% !important;
+        white-space: normal !important;
+        padding: 14px !important;
+      }
+
+      .mini-btn {
+        padding: 12px 16px !important;
+        font-size: 0.95rem !important;
+      }
+
+      .top-bar {
+        padding: 15px !important;
+      }
+
+      /* Form de reglas de bloqueo */
+      .rules-form-grid {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 14px;
+        align-items: flex-end;
+      }
+
+      .rules-form-item {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+      }
+
+      .date-range-flex {
+        display: flex;
+        gap: 10px;
+        align-items: flex-end;
+      }
+
+      @media (max-width: 550px) {
+
+        .rules-form-grid>div,
+        .date-range-flex {
+          width: 100% !important;
+        }
+
+        .date-range-flex {
+          flex-direction: column !important;
+          align-items: stretch !important;
+        }
+
+        .date-input-full {
+          width: 100% !important;
+        }
+      }
+    }
+  </style>
+</head>
+
+<body data-page="admin">
+  <!-- Google Tag Manager (noscript) -->
+  <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-W8R9JWGM"
+  height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+  <!-- End Google Tag Manager (noscript) -->
+  <header class="nav">
+    <div class="nav-inner">
+      <div class="brand">
+        <img src="/images/logo_camion_nuevo.png" alt="Fletes y Mudanzas Logo">
+      </div>
+
+      <div class="nav-links">
+        <a href="/" data-view="inicio">Inicio</a>
+        <a href="/presupuesto.html" data-view="presupuesto">Presupuesto</a>
+        <a href="/admin.html" data-view="admin" class="active">Admin</a>
+      </div>
+
+      <!-- ✅ Botón de salida desplazado a la derecha fuera del flujo central -->
+      <button id="btnLogout" class="btn-out-icon" type="button" style="display:none" onclick="Admin.logout()" title="Cerrar sesión">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9" />
+          </svg>
+      </button>
+    </div>
+  </header>
+
+
+  <main class="container">
+    <h1>Panel de <span class="accent">Administración</span></h1>
+
+    <div id="tabsWrapper" style="display:none">
+      <button id="hamburgerTabs" class="hamburger-btn" type="button" onclick="Admin.toggleTabsMenu()">
+        <div class="hamburger-icon">
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
+        <span class="hamburger-text">Menú de Opciones</span>
+      </button>
+
+      <div class="view-switch" id="viewSwitch">
+        <button class="view-tab active" id="tabSolicitudes" type="button">Solicitudes</button>
+        <button class="view-tab" id="tabCalendario">Calendario</button>
+        <button class="view-tab" id="tabDisponibilidad" type="button">Disponibilidad</button>
+        <button class="view-tab" id="tabVariables" type="button">Variables</button>
+        <button class="view-tab" id="tabCredenciales" type="button">Credenciales</button>
+      </div>
+    </div>
+
+    <section class="panel" id="panelSolicitudes" style="display:none">
+      <div class="requests-tabs" id="reqSwitch" style="display:none">
+        <button id="tabReqPend" class="tab-btn active" type="button">Pendientes</button>
+        <button id="tabReqHist" class="tab-btn" type="button">Históricos</button>
+      </div>
+
+      <div class="hist-toolbar" id="histToolbar" style="display:none;">
+        <select id="histFilter" class="hist-select">
+          <option value="all">Mostrar: Todos</option>
+          <option value="completed">Completados</option>
+          <option value="voided">Anulados</option>
+        </select>
+
+        <div class="hist-search">
+          <svg class="hist-search-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+            stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+          <input type="text" id="histSearch" placeholder="Buscar por cliente, origen..." autocomplete="off">
+        </div>
+      </div>
+
+      <form id="loginForm" class="login-row" style="display:none" autocomplete="off">
+        <input class="input" id="usr" type="text" placeholder="Usuario" autocomplete="username" />
+        <input class="input" id="pwd" type="password" placeholder="Contraseña" autocomplete="current-password" />
+        <button class="btn btn-primary" type="submit">INGRESAR AL PANEL</button>
+      </form>
+
+      <table class="table" id="tabla" style="display:none">
+        <thead class="thead">
+          <tr>
+            <th>Cliente</th>
+            <th>Tipo</th>
+            <th>Fecha</th>
+            <th>Estado</th>
+            <th style="text-align:right">Acciones</th>
+          </tr>
+        </thead>
+        <tbody id="tbody">
+          <tr>
+            <td colspan="5" class="empty">Iniciá sesión para ver las solicitudes de presupuesto.</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- ====== PANEL CALENDARIO ====== -->
+    <section class="panel" id="panelCalendario" style="display:none">
+      <div class="cal-head">
+        <button class="mini-btn" id="calPrev" type="button">←</button>
+        <div class="cal-title" id="calTitle">Mes</div>
+        <button class="mini-btn" id="calNext" type="button">→</button>
+      </div>
+
+      <div class="cal-grid" id="calGrid"></div>
+
+      <div class="cal-detail" id="calDetail" style="display:none">
+        <div class="cal-detail-title" id="calDetailTitle"></div>
+        <div class="cal-detail-body" id="calDetailBody"></div>
+      </div>
+    </section>
+
+    <section class="panel" id="panelDisponibilidad" style="display:none">
+      <div class="top-bar">
+        <div class="disp-group">
+          <input id="dispFecha" type="date" class="date-input" />
+          <div id="dispEstado" class="disp-pill off">
+            ● Día deshabilitado
+          </div>
+        </div>
+
+        <div class="disp-actions" style="display:flex; gap:8px;">
+          <button id="btnToggleDia" class="mini-btn" type="button">Habilitar día</button>
+          <button id="btnLimpiarDia" class="mini-btn danger" type="button"
+            title="Borrar bloqueos manuales del día seleccionado">Resetear Día</button>
+          <button id="btnGuardarDia" class="mini-btn primary" type="button">Guardar cambios</button>
+        </div>
+      </div>
+
+      <!-- Zona de Reseteo Global -->
+      <div class="danger-box-resp"
+        style="background: #FFF5F5; border: 1px solid #FECACA; border-radius: 12px; padding: 16px 20px; margin-top: 24px; display: flex; align-items: center; justify-content: space-between; gap: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+        <div style="flex: 1;">
+          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+            <span style="font-size: 1.2rem;">⚠️</span>
+            <strong style="color: #991B1B; font-size: 0.95rem;">Zona Peligrosa: Limpieza Total</strong>
+          </div>
+          <p style="margin: 0; color: #7F1D1D; font-size: 0.85rem; line-height: 1.5; font-style: normal;">
+            Si usaste bloqueos manuales por fuera de las reglas y querés que <strong>todo</strong> el calendario vuelva
+            a los horarios estándar (08:00 a 22:00) de forma automática.
+          </p>
+        </div>
+        <button onclick="Admin.resetearTodo()" class="mini-btn danger"
+          style="background: #EF4444; color: white; border: none; padding: 10px 18px; font-weight: 700; border-radius: 8px; cursor: pointer; white-space: nowrap; transition: background 0.2s;">
+          Resetear TODO el Calendario
+        </button>
+      </div>
+
+      <div id="slots" class="slots"></div>
+      <div class="disp-hint">
+        Tip: tocá un horario para prender/apagar. Si el día está deshabilitado, los horarios quedan bloqueados.
+      </div>
+
+      <!-- ====== REGLAS DE BLOQUEO HORARIO ====== -->
+      <div id="blockRulesPanel" style="margin-top:28px; border-top:2px solid #f1f5f9; padding-top:24px;">
+
+        <!-- Encabezado con toggle global -->
+        <div
+          style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; margin-bottom:18px;">
+          <div>
+            <h3 style="margin:0 0 4px; font-size:1.1rem; color: #2F4858; display:flex; align-items:center; gap:8px;">
+              <span style="font-size:1.3rem;">🛡️</span> Reglas de bloqueo horario
+            </h3>
+            <p class="disp-hint" style="margin:0;">Bloqueá automáticamente franjas horarias en múltiples días.</p>
+          </div>
+
+          <div
+            style="display:flex; align-items:center; gap:14px; background: #f1f5f9; padding: 8px 16px; border-radius: 40px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.03);">
+            <span id="blockEnabledLabel"
+              style="font-size:.85rem; font-weight:700; color: #64748b; min-width: 140px; text-align:right;">—</span>
+            <label class="glass-toggle">
+              <input type="checkbox" id="checkToggleBlocks" onchange="Admin.toggleBlockRules()">
+              <span class="glass-toggle-slider">
+                <span class="glass-toggle-icon" style="margin-left: 2px;">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                  </svg>
+                </span>
+                <span class="glass-toggle-icon" style="margin-right: 2px;">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                    <path d="M7 11V7a5 5 0 0 1 9.9-1"></path>
+                  </svg>
+                </span>
+              </span>
+            </label>
+          </div>
+        </div>
+
+        <div id="blockingArea" class="rule-container">
+          <!-- Lista de reglas existentes -->
+          <div id="blockRulesList" style="margin-bottom:20px;">
+            <p class="disp-hint" style="font-style:italic;">Cargando reglas…</p>
+          </div>
+
+          <!-- Formulario para agregar nueva regla -->
+          <div
+            style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:20px; box-shadow: 0 2px 6px rgba(0,0,0,0.02);">
+            <p style="margin:0 0 16px; font-size:.9rem; font-weight:700; color:var(--dark);">➕ Agregar nueva regla de
+              bloqueo</p>
+
+            <div class="rules-form-grid">
+              <!-- Hora desde -->
+              <div class="rules-form-item">
+                <label style="font-size:.78rem; font-weight:600; color:var(--muted);">Desde</label>
+                <select id="newBlockFrom" class="date-input date-input-full" style="width:100px;">
+                  <option value="07:00">07:00</option>
+                  <option value="08:00">08:00</option>
+                  <option value="09:00">09:00</option>
+                  <option value="10:00">10:00</option>
+                  <option value="11:00">11:00</option>
+                  <option value="12:00">12:00</option>
+                  <option value="13:00">13:00</option>
+                  <option value="14:00">14:00</option>
+                  <option value="15:00">15:00</option>
+                  <option value="16:00">16:00</option>
+                  <option value="17:00">17:00</option>
+                  <option value="18:00">18:00</option>
+                  <option value="19:00">19:00</option>
+                  <option value="20:00">20:00</option>
+                  <option value="21:00">21:00</option>
+                  <option value="22:00">22:00</option>
+                </select>
+              </div>
+
+              <!-- Hora hasta -->
+              <div class="rules-form-item">
+                <label style="font-size:.78rem; font-weight:600; color:var(--muted);">Hasta</label>
+                <select id="newBlockTo" class="date-input date-input-full" style="width:100px;">
+                  <option value="07:00">07:00</option>
+                  <option value="08:00">08:00</option>
+                  <option value="09:00" selected>09:00</option>
+                  <option value="10:00">10:00</option>
+                  <option value="11:00">11:00</option>
+                  <option value="12:00">12:00</option>
+                  <option value="13:00">13:00</option>
+                  <option value="14:00">14:00</option>
+                  <option value="15:00">15:00</option>
+                  <option value="16:00">16:00</option>
+                  <option value="17:00">17:00</option>
+                  <option value="18:00">18:00</option>
+                  <option value="19:00">19:00</option>
+                  <option value="20:00">20:00</option>
+                  <option value="21:00">21:00</option>
+                  <option value="22:00">22:00</option>
+                </select>
+              </div>
+
+              <!-- Alcance -->
+              <div class="rules-form-item">
+                <label style="font-size:.78rem; font-weight:600; color:var(--muted);">Aplicar en</label>
+                <select id="newBlockMode" class="date-input date-input-full" style="width:190px;"
+                  onchange="Admin.onNewBlockModeChange()">
+                  <option value="range">Rango de fechas</option>
+                  <option value="all">Todos los días futuros</option>
+                </select>
+              </div>
+
+              <!-- Fechas (visible solo en modo range) -->
+              <div id="newBlockDateRange" class="date-range-flex">
+                <div class="rules-form-item">
+                  <label style="font-size:.78rem; font-weight:600; color:var(--muted);">Fecha desde</label>
+                  <input id="newBlockDateFrom" type="date" class="date-input date-input-full" style="width:145px;" />
+                </div>
+                <div class="rules-form-item">
+                  <label style="font-size:.78rem; font-weight:600; color:var(--muted);">Fecha hasta</label>
+                  <input id="newBlockDateTo" type="date" class="date-input date-input-full" style="width:145px;" />
+                </div>
+              </div>
+
+              <!-- Etiqueta opcional -->
+              <div class="rules-form-item">
+                <label style="font-size:.78rem; font-weight:600; color:var(--muted);">Etiqueta (opcional)</label>
+                <input id="newBlockLabel" type="text" class="date-input date-input-full" placeholder="Ej: Mañanas"
+                  style="width:140px;" />
+              </div>
+
+              <button id="btnAddBlockRule" class="mini-btn primary" type="button" style="height:38px; padding:0 18px;"
+                onclick="Admin.agregarReglaBloqueo()">
+                Agregar regla
+              </button>
+            </div>
+
+            <div id="blockAddMsg" style="margin-top:10px; font-size:.82rem;"></div>
+          </div>
+        </div>
+    </section>
+
+    <!-- ====== PANEL VARIABLES (Config) ====== -->
+    <section class="panel" id="panelVariables" style="display:none">
+      <div class="top-bar">
+        <h2>Variables de Presupuesto</h2>
+        <button id="btnGuardarVars" class="mini-btn primary" type="button">Guardar cambios</button>
+      </div>
+
+      <p class="help">Modificá los valores base para el cálculo automático.</p>
+
+      <form id="formVars" class="vars-grid">
+        <div class="vars-group">
+          <h3>Combustible y Vehículo</h3>
+          <label>Km por Litro <input type="number" step="0.1" name="KM_POR_LITRO" placeholder="Ej: 8"></label>
+          <label>Costo Litro ($) <input type="number" step="1" name="COSTO_LITRO"></label>
+          <label>% Mantenimiento <input type="number" step="0.1" name="MANTENIMIENTO_PCT" placeholder="Ej: 20"></label>
+        </div>
+
+        <div class="vars-group">
+          <h3>Tiempo y Labor</h3>
+          <label>Costo Hora (Cliente) <input type="number" step="1" name="COSTO_HORA"></label>
+          <label>Costo Hora Ayudante <input type="number" step="1" name="COSTO_HORA_AYUDANTE"></label>
+          <label>Costo Hora Chofer (Interno) <input type="number" step="1" name="COSTO_CHOFER_HORA"></label>
+          <label>Costo Hora Admin (Interno) <input type="number" step="1" name="COSTO_ADMIN_HORA"></label>
+        </div>
+
+        <div class="vars-group">
+          <h3>Factores y Ajustes</h3>
+          <label>Factor Ponderación (Tiempo) <input type="number" step="0.1" name="FACTOR_PONDERACION"
+              placeholder="Ej: 1.5"></label>
+          <label>Carga/Descarga (h) <input type="number" step="0.1" name="CARGA_DESC_H" placeholder="Ej: 0.5"></label>
+          <label>Redondeo Minutos <input type="number" step="1" name="REDONDEO_MIN"></label>
+        </div>
+
+        <div class="vars-group">
+          <h3>Precios Fijos</h3>
+          <label>Mínimo Total ($) <input type="number" step="1" name="MIN_TOTAL"></label>
+          <label>Costo Peaje ($) <input type="number" step="1" name="COSTO_PEAJE"></label>
+        </div>
+
+        <div class="vars-group full">
+          <h3>Opciones (Sí/No)</h3>
+          <div class="chk-row"><input type="checkbox" name="RETURN_TO_BASE_DEFAULT"> <label>Retorno a Base
+              (Default)</label></div>
+          <div class="chk-row"><input type="checkbox" name="INCLUIR_CHOFER_ADMIN_EN_TOTAL"> <label>Incluir Chofer/Admin
+              en Total</label></div>
+        </div>
+      </form>
+    </section>
+
+    <!-- ====== PANEL CREDENCIALES ====== -->
+    <section class="panel" id="panelCredenciales" style="display:none">
+      <div class="card" style="max-width: 600px; margin: 0 auto; padding: 30px;">
+        <h2 style="margin-top:0; color: var(--primary);">Seguridad del Acceso</h2>
+        <p class="disp-hint" style="margin-bottom: 25px;">Personalizá tu usuario y contraseña aquí. Recordá que se
+          aplicarán en tu próximo inicio de sesión.</p>
+
+        <div style="display:flex; flex-direction:column; gap:20px;">
+          <div style="display:flex; flex-direction:column; gap:8px;">
+            <label style="font-weight:600; color:var(--dark);">Nuevo Usuario / Email</label>
+            <input id="newAdminUser" type="text" class="input" placeholder="Ej: admin@ejemplo.com"
+              style="background:#f8fafc;" />
+          </div>
+
+          <div style="display:flex; flex-direction:column; gap:8px;">
+            <label style="font-weight:600; color:var(--dark);">Nueva Contraseña</label>
+            <input id="newAdminPass" type="password" class="input" placeholder="Nuevos caracteres..."
+              style="background:#f8fafc;" />
+          </div>
+
+          <div id="credsMsg" style="min-height: 24px; font-weight: 500;"></div>
+
+          <button class="btn btn-primary" type="button" style="width:100%;" onclick="Admin.cambiarCredenciales()">
+            GUARDAR NUEVAS CREDENCIALES
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <div class="overlay" id="overlay" style="display:none" onclick="if(event.target===this) Admin.closeModal()">
+      <div class="modal" role="dialog" aria-modal="true">
+        <div class="modal-head">
+          <h2 class="modal-title">Detalles del presupuesto</h2>
+          <button class="modal-close" onclick="Admin.closeModal()" type="button">✕</button>
+        </div>
+        <div class="modal-body">
+          <div class="grid-modal">
+            <div class="kv"><small>Cliente</small><input id="m_cliente_in" class="modal-input" placeholder="Nombre..."></div>
+            <div class="kv"><small>Teléfono</small><input id="m_tel_in" class="modal-input" placeholder="Tel..."></div>
+            <div class="kv"><small>Tipo de carga</small>
+              <select id="m_tipo_in" class="modal-input">
+                <option value="mudanza">Mudanza</option>
+                <option value="puntual">Algo puntual</option>
+              </select>
+            </div>
+
+            <div class="kv"><small>Fecha</small><input id="m_fecha_in" type="date" class="modal-input"></div>
+            <div class="kv"><small>Horario</small>
+              <select id="m_hora_in" class="modal-input"></select>
+            </div>
+
+            <div class="kv"><small>¿Ayudante?</small>
+              <div style="display:flex; align-items:center; gap:8px; height:40px;">
+                <input id="m_ayudante_in" type="checkbox" style="width:20px; height:20px;"> 
+                <label for="m_ayudante_in" style="margin:0; font-size:0.8rem;">Sí, requiere</label>
+              </div>
+            </div>
+            
+            <div class="kv"><small>Estado</small><strong id="m_estado" style="padding-top:10px">-</strong></div>
+            
+            <div class="kv full-modal"><small>Origen</small><input id="m_origen_in" class="modal-input"></div>
+            <div class="kv full-modal"><small>Destino</small><input id="m_destino_in" class="modal-input"></div>
+            
+            <div class="kv"><small>Distancia (km)</small><strong id="m_dist_km">-</strong></div>
+            <div class="kv"><small>T. Manejo (min)</small><strong id="m_tiempo_viaje">-</strong></div>
+            <div class="kv"><small>T. Servicio (min)</small><strong id="m_tiempo_servicio">-</strong></div>
+            
+            <div class="kv total" style="grid-column: 1 / -1; background: #fffcf0; border: 1px dashed var(--primary); padding: 15px; border-radius: 12px; margin-top: 10px;">
+              <small style="display:block; margin-bottom:5px;"><b>Total estimado (editable)</b> <span id="m_loading" style="display:none; color:var(--primary); font-size:0.7rem;"> (Recalculando...)</span></small>
+              <div style="display:flex; align-items:center; gap:8px;">
+                <span style="font-size:1.5rem; color:var(--primary); font-weight:800;">$</span>
+                <input type="number" id="m_total_in" class="modal-input" style="font-size:1.8rem; color:var(--primary); font-weight:800; border:none; background:transparent; width:100%; padding:0;" value="0">
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-foot" style="display:flex; justify-content:space-between; align-items:center; padding-top:20px; border-top:1px solid #f1f5f9; margin-top:20px;">
+          <div style="display:flex; align-items:center; gap:12px">
+            <button class="btn btn-reject btn-sm" onclick="Admin.rechazar()" type="button" style="display:none">Rechazar</button>
+            <button class="btn btn-primary btn-sm" id="btnGuardarCambios" onclick="Admin.guardarCambios()" type="button" title="Guardar cambios">
+              <svg viewBox="0 0 448 512" width="18" height="18"><path fill="currentColor" d="M433.941 129.941l-83.882-83.882A48 48 0 0 0 316.118 32H48C21.49 32 0 53.49 0 80v352c0 26.51 21.49 48 48 48h352c26.51 0 48-21.49 48-48V163.882a48 48 0 0 0-14.059-33.941zM352 80v64H128V80h224zM160 432c-26.51 0-48-21.49-48-48s21.49-48 48-48 48 21.49 48 48-21.49 48-48 48zm224-224H64V192h320v16z"/></svg>
+            </button>
+          </div>
+          <div style="display:flex; align-items:center; gap:12px">
+            <!-- Acciones Pendientes -->
+            <button class="btn btn-ok" onclick="Admin.aprobar()" type="button" style="display:none">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              <span class="btn-text">Confirmar</span>
+            </button>
+            
+            <div style="width:1px; height:24px; background:#e2e8f0; margin:0 4px"></div>
+            <button class="btn btn-danger" onclick="Admin.eliminar()" type="button" title="Eliminar definitivamente" style="font-size:0.85rem; padding:8px 16px; min-width:auto">
+              <svg viewBox="0 0 448 512" width="18" height="18"><path fill="currentColor" d="M135.2 17.7C140.6 6.8 151.7 0 163.8 0H284.2c12.1 0 23.2 6.8 28.6 17.7L320 32h96c17.7 0 32 14.3 32 32s-14.3 32-32 32H32C14.3 96 0 81.7 0 64S14.3 32 32 32h96l7.2-14.3zM32 128H416V448c0 35.3-28.7 64-64 64H96c-35.3 0-64-28.7-64-64V128zm96 64c-8.8 0-16 7.2-16 16V432c0 8.8 7.2 16 16 16s16-7.2 16-16V208c0-8.8-7.2-16-16-16zm96 0c-8.8 0-16 7.2-16 16V432c0 8.8 7.2 16 16 16s16-7.2 16-16V208c0-8.8-7.2-16-16-16zm96 0c-8.8 0-16 7.2-16 16V432c0 8.8 7.2 16 16 16s16-7.2 16-16V208c0-8.8-7.2-16-16-16z"/></svg>
+              <span class="btn-text">Eliminar</span>
+            </button>
+
+            <!-- Acciones Confirmados -->
+            <button class="btn btn-out btn-void" onclick="Admin.anular()" type="button" style="display:none; color:var(--muted)">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line></svg>
+              <span class="btn-text">Anular</span>
+            </button>
+            <button class="btn btn-ok btn-complete" onclick="Admin.completar()" type="button" style="display:none">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              <span class="btn-text">Completar</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+  </main>
+
+  <script>
+    (function () {
+      const byId = (id) => document.getElementById(id);
+
+      globalThis.API_BASE = globalThis.API_BASE || (
+        (location.hostname === 'localhost' || location.hostname === '127.0.0.1')
+          ? 'http://127.0.0.1:8000'
+          : 'https://fletes-exus.onrender.com'
+      );
+
+      const isAdminView = () => !!(byId('loginForm') && byId('tbody'));
+      const toast = (msg) => { const t = byId('toast'); if (!t) return; t.textContent = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 2200); };
+      const peso = (n) => (n != null ? ('$ ' + Number(n).toLocaleString('es-AR')) : '-');
+      const coalesce = (...vals) => { for (const v of vals) { if (v !== undefined && v !== null) return v; } return null; };
+
+      // ====== AUTH REAL (API KEY) ======
+      const API_KEY = localStorage.getItem("ADMIN_API_KEY") || "AdminFletesJavier20251110!!";
+      function adminHeaders(extra = {}) {
+        return { "X-API-Key": API_KEY, ...extra };
+      }
+
+      let configVars = null;
+      let isManualPriceMode = false;
+      let manualBasePrice = 0;
+
+      async function loadConfigVars() {
+        try {
+          const res = await fetch(`${API_BASE}/api/admin/config-vars`, { headers: adminHeaders() });
+          if (res.ok) configVars = await res.json();
+        } catch (e) { console.error("Error loading config vars:", e); }
+      }
+
+      const getId = (s) => {
+        if (!s) return null;
+        if (typeof s.id === "string" || typeof s.id === "number") return String(s.id);
+        if (s._id && typeof s._id === "object" && typeof s._id.$oid === "string") return s._id.$oid;
+        if (typeof s._id === "string" || typeof s._id === "number") return String(s._id);
+        if (typeof s.ID === "string" || typeof s.ID === "number") return String(s.ID);
+        return null;
+      };
+
+      let reqMode = "pending"; // "pending" | "historicos"
+
+      window.Admin = window.Admin || {};
+      let token = null, solicitudes = [], calendarSolicitudes = [], selected = null;
+
+
+      // ====== EXPIRACIÓN SESIÓN ADMIN (30 min) ======
+      const SESSION_MS = 30 * 60 * 1000;
+      const KEY_ON = "ADMIN_SESSION_ON";
+      const KEY_EXP = "ADMIN_SESSION_EXPIRES_AT";
+      let expTimer = null;
+
+      function setSessionExpiryFromNow() {
+        const exp = Date.now() + SESSION_MS;
+        sessionStorage.setItem(KEY_ON, "1");
+        sessionStorage.setItem(KEY_EXP, String(exp));
+        startExpiryTimer();
+      }
+
+      function isSessionValid() {
+        const on = sessionStorage.getItem(KEY_ON) === "1";
+        const exp = Number(sessionStorage.getItem(KEY_EXP) || "0");
+        return on && exp && Date.now() < exp;
+      }
+
+      function startExpiryTimer() {
+        if (expTimer) clearTimeout(expTimer);
+
+        const exp = Number(sessionStorage.getItem(KEY_EXP) || "0");
+        const remaining = exp - Date.now();
+
+        if (!exp || remaining <= 0) {
+          adminLogout("Sesión vencida (30 min). Volvé a iniciar sesión.");
+          return;
+        }
+
+        expTimer = setTimeout(() => {
+          adminLogout("Sesión vencida (30 min). Volvé a iniciar sesión.");
+        }, remaining);
+      }
+
+
+      /* ========= CALENDARIO ========= */
+      const DOW = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
+      let selectedDayKey = null; // YYYY-MM-DD
+      let calCursor = new Date();
+      calCursor.setDate(1);
+
+      function iso(d) { return d.toISOString().slice(0, 10); }
+      function monthTitle(d) { return d.toLocaleDateString("es-AR", { month: "long", year: "numeric" }); }
+
+      function groupByDay() {
+        const map = {};
+        (calendarSolicitudes || []).forEach(s => {
+          const f = (s.fecha_turno || s.fecha || "").slice(0, 10);
+          if (!f) return;
+          map[f] = map[f] || [];
+          map[f].push(s);
+        });
+        return map;
+      }
+
+
+
+      function renderCalendar() {
+        const grid = byId("calGrid");
+        const title = byId("calTitle");
+        if (!grid) return;
+
+        title.textContent = monthTitle(calCursor);
+        grid.innerHTML = "";
+
+        DOW.forEach(d => {
+          const e = document.createElement("div");
+          e.className = "cal-dow";
+          e.textContent = d;
+          grid.appendChild(e);
+        });
+
+        const first = new Date(calCursor.getFullYear(), calCursor.getMonth(), 1);
+        const last = new Date(calCursor.getFullYear(), calCursor.getMonth() + 1, 0);
+        const offset = (first.getDay() + 6) % 7;
+        const jobs = groupByDay();
+
+        for (let i = 0; i < offset; i++) {
+          grid.appendChild(document.createElement("div")).className = "cal-cell muted";
+        }
+
+        for (let d = 1; d <= last.getDate(); d++) {
+          const date = new Date(calCursor.getFullYear(), calCursor.getMonth(), d);
+          const key = iso(date);
+
+          const has = (jobs[key] && jobs[key].length > 0); // ✅ boolean real
+
+          const c = document.createElement("div");
+          c.className = "cal-cell";
+
+          // ✅ ACÁ se pinta el día (la celda)
+          if (has) c.classList.add("has-flete");
+
+          c.innerHTML = `
+        <div class="cal-day">
+          <span class="cal-num">${d}</span>
+        </div>
+      `;
+
+          c.onclick = () => selectDay(key);
+          grid.appendChild(c);
+        }
+
+      }
+
+      function renderSolicitudMini(q) {
+        return `
+    <div class="req-mini">
+      <div class="req-mini-top">
+        <div class="req-mini-name">${escapeHtml(q.nombre_cliente)}</div>
+        <span class="badge ${badgeClass(q.estado)}">${q.estado}</span>
+      </div>
+
+      <div class="req-mini-sub">
+        ${q.fecha_turno || q.fecha} • ${q.hora_turno || ""}
+      </div>
+
+      <button class="btn btn-ghost" data-id="${q.id}">Detalles</button>
+    </div>
+  `;
+      }
+
+
+      byId("calPrev")?.addEventListener("click", () => {
+        calCursor = new Date(calCursor.getFullYear(), calCursor.getMonth() - 1, 1);
+        renderCalendar();
+      });
+
+      byId("calNext")?.addEventListener("click", () => {
+        calCursor = new Date(calCursor.getFullYear(), calCursor.getMonth() + 1, 1);
+        renderCalendar();
+      });
+
+      function selectDay(date) {
+        selectedDayKey = date;
+        const list = groupByDay()[date] || [];
+
+        const detailWrap = byId("calDetail");
+        if (detailWrap) detailWrap.style.display = "block";
+
+        // Formatear fecha para el título (ej: 27 de Enero)
+        const dObj = new Date(date + "T12:00:00");
+        const fText = dObj.toLocaleDateString("es-AR", { day: 'numeric', month: 'long' });
+
+        byId("calDetailTitle").innerHTML = `<span>Día seleccionado:</span> <strong>${fText}</strong>`;
+
+        if (!list.length) {
+          byId("calDetailBody").innerHTML = "<div class='empty'>No hay fletes programados para este día.</div>";
+          return;
+        }
+
+        byId("calDetailBody").innerHTML = list.map((s, i) => `
+    <div class="cal-card">
+      <div class="cal-card-top">
+        <div class="cal-card-date">${date}</div>
+        <div class="cal-card-time"><i class="far fa-clock"></i> ${s.hora_turno || "Sin hora"}</div>
+      </div>
+
+      <div class="cal-card-title">${s.nombre_cliente || "Cliente sin nombre"}</div>
+      <div class="cal-card-route">
+        <div style="margin-bottom:4px"><b>Desde:</b> ${s.origen || "-"}</div>
+        <div><b>Hacia:</b> ${s.destino || "-"}</div>
+      </div>
+
+      <div class="cal-card-actions">
+        <button class="btn btn-ghost" onclick="Admin.openModal('${getId(s)}',${i})">
+          Ver detalles completo
+        </button>
+      </div>
+    </div>
+  `).join("");
+      }
+
+      /* ========= DISPONIBILIDAD ========= */
+      const DEFAULT_SLOTS = [
+        "08:00", "09:00", "10:00", "11:00", "12:00",
+        "13:00", "14:00", "15:00", "16:00", "17:00",
+        "18:00", "19:00", "20:00", "21:00", "22:00"
+      ];
+
+      let dispState = {
+        byDate: {},      // "YYYY-MM-DD": { enabled:boolean, slots: { "10:00": true } }
+        loadedMonth: "",  // "YYYY-MM"
+        lockedByDate: {} // "YYYY-MM-DD": Set( "10:00", "11:00" )
+      };
+
+      function ensureDateModel(dateStr) {
+        if (!dateStr) return null;
+        // ENABLED by default
+        dispState.byDate[dateStr] = dispState.byDate[dateStr] || { enabled: true, slots: {} };
+        return dispState.byDate[dateStr];
+      }
+
+      function monthOf(dateStr) {
+        if (!dateStr) return "";
+        return dateStr.slice(0, 7); // YYYY-MM
+      }
+
+      function setDispUIEnabled(dateStr) {
+        const model = ensureDateModel(dateStr);
+        const pill = byId('dispEstado');
+        const btn = byId('btnToggleDia');
+        const slotsWrap = byId('slots');
+        if (!model || !pill || !btn || !slotsWrap) return;
+
+        if (model.enabled) {
+          pill.classList.remove('off'); pill.classList.add('on');
+          pill.textContent = "● Día habilitado";
+          btn.textContent = "Deshabilitar día";
+          slotsWrap.style.opacity = "1";
+          slotsWrap.style.pointerEvents = "auto";
+        } else {
+          pill.classList.remove('on'); pill.classList.add('off');
+          pill.textContent = "● Día deshabilitado";
+          btn.textContent = "Habilitar día";
+          slotsWrap.style.opacity = ".55";
+          slotsWrap.style.pointerEvents = "none";
+        }
+      }
+
+      function renderSlots(dateStr) {
+        const model = ensureDateModel(dateStr);
+        const wrap = byId('slots');
+        if (!wrap || !model) return;
+        wrap.innerHTML = "";
+
+        const locked = dispState.lockedByDate?.[dateStr] || new Set();
+
+        DEFAULT_SLOTS.forEach(h => {
+          const isLocked = locked.has(h);
+          const on = true; // Por defecto ON en la vista admin para que se vean todos verdes y habilitados por defecto.
+
+          const b = document.createElement('div');
+          b.className = "slot " + (model.slots[h] === false ? "off" : "on") + (isLocked ? " locked" : "");
+          b.textContent = h;
+          b.dataset.hour = h;
+
+          b.addEventListener('click', () => {
+            if (isLocked) {
+              toast("Ese horario ya está en uso (reservado/confirmado).");
+              return;
+            }
+            // Si es undefined (default), pasamos a false (off). Si es false, a true (on).
+            model.slots[h] = (model.slots[h] === false) ? true : false;
+            renderSlots(dateStr);
+          });
+
+          wrap.appendChild(b);
+        });
+
+        setDispUIEnabled(dateStr);
+      }
+
+
+      async function fetchMonthAvailability(month) {
+        if (!month) return;
+        try {
+          const res = await fetch(`${API_BASE}/api/admin/availability?month=${encodeURIComponent(month)}`, {
+            headers: adminHeaders()
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.detail || "No se pudo cargar disponibilidad");
+
+          dispState.byDate = dispState.byDate || {};
+          const items = Array.isArray(data.items) ? data.items : [];
+          items.forEach(it => {
+            const d = it.date;
+            if (!d) return;
+            dispState.byDate[d] = {
+              enabled: (it.enabled !== undefined) ? !!it.enabled : true,
+              slots: (Array.isArray(it.slots) ? it.slots : []).reduce((acc, h) => { acc[h] = true; return acc; }, {})
+            };
+          });
+
+          dispState.loadedMonth = month;
+        } catch (e) {
+          toast(e.message || "Error cargando disponibilidad");
+        }
+      }
+
+      async function loadDisponibilidad(dateStr) {
+        if (!dateStr) return;
+        const m = monthOf(dateStr);
+
+        if (dispState.loadedMonth !== m) {
+          await fetchMonthAvailability(m);
+          dispState.lockedByDate = {}; // ✅ opcional: reset por cambio de mes
+        }
+
+        // ✅ traer ocupados del día
+        await fetchLockedSlots(dateStr);
+
+        ensureDateModel(dateStr);
+        renderSlots(dateStr);
+      }
+      async function loadCalendarConfirmed() {
+        try {
+          const res = await fetch(`${API_BASE}/api/requests?status=all`, {
+            headers: adminHeaders()
+          });
+
+          const ct = res.headers.get("content-type") || "";
+          if (!ct.includes("application/json")) {
+            throw new Error("La API devolvió HTML (ruta incorrecta o backend no respondió JSON).");
+          }
+
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.detail || "No se pudo cargar solicitudes");
+
+          calendarSolicitudes = (data.items || []).filter(
+            s => String(s.estado || '').toLowerCase() === 'confirmado'
+          );
+
+        } catch (e) {
+          calendarSolicitudes = [];
+          toast(e.message || "Error cargando confirmados");
+        }
+      }
+
+
+
+
+
+      function toggleDia(dateStr) {
+        if (!dateStr) return;
+        const model = ensureDateModel(dateStr);
+        model.enabled = !model.enabled;
+        setDispUIEnabled(dateStr);
+      }
+
+      async function limpiarHorarios(dateStr) {
+        if (!dateStr) return;
+        if (!confirm(`¿Resetear disponibilidad para el ${dateStr}? Se borrarán los bloqueos manuales y volverá al horario estándar.`)) return;
+
+        try {
+          const res = await fetch(`${API_BASE}/api/availability/day/${dateStr}`, {
+            method: 'DELETE', headers: adminHeaders()
+          });
+          if (!res.ok) throw new Error("Error al resetear");
+          toast("Día reseteado a valores default ✅");
+
+          // Forzar recarga total de ese mes para ver los DEFAULT_SLOTS
+          dispState.loadedMonth = "";
+          await loadDisponibilidad(dateStr);
+        } catch (e) {
+          toast(e.message || "Error al resetear");
+        }
+      }
+
+      async function guardarDisponibilidad(dateStr) {
+        if (!dateStr) return;
+        const model = ensureDateModel(dateStr);
+
+        // Si no hay slots configurados (está vacío), asumimos que todos los DEFAULT_SLOTS están activos (on)
+        // a menos que el día esté deshabilitado.
+        let slotsArr = [];
+        if (model.enabled) {
+          slotsArr = DEFAULT_SLOTS.filter(h => model.slots[h] !== false);
+        }
+
+        try {
+          const res = await fetch(`${API_BASE}/api/availability/day`, {
+            method: "POST",
+            headers: adminHeaders({ "Content-Type": "application/json" }),
+            body: JSON.stringify({ date: dateStr, enabled: !!model.enabled, slots: slotsArr })
+          });
+
+          const ct = res.headers.get("content-type") || "";
+
+          // ✅ si vuelve HTML, mostralo y cortá
+          if (!ct.includes("application/json")) {
+            const txt = await res.text();
+            throw new Error("La API devolvió HTML (ruta incorrecta o catch-all del SPA).");
+          }
+
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.detail || "Error guardando disponibilidad");
+
+          toast("Disponibilidad guardada ✅");
+          dispState.loadedMonth = "";
+          await loadDisponibilidad(dateStr);
+
+        } catch (e) {
+          toast(e.message || "Error guardando disponibilidad");
+        }
+      }
+
+      /* =================== VARIABLES LOGIC =================== */
+      async function loadVariables() {
+        if (!isAdminView()) return;
+        try {
+          const res = await fetch(`${API_BASE}/api/admin/config-vars`, { headers: adminHeaders() });
+          if (!res.ok) throw new Error("Error cargando variables");
+          const data = await res.json();
+
+          const form = byId('formVars');
+          if (!form) return;
+
+          form.reset();
+          Object.keys(data).forEach(key => {
+            const input = form.elements[key];
+            if (input) {
+              if (input.type === 'checkbox') {
+                input.checked = !!data[key];
+              } else {
+                input.value = data[key];
+              }
+            }
+          });
+        } catch (e) {
+          toast(e.message || "Error al cargar configuración");
+        }
+      }
+
+      async function guardarVariables() {
+        if (!isAdminView()) return;
+        const form = byId('formVars');
+        if (!form) return;
+
+        const payload = {};
+        Array.from(form.elements).forEach(el => {
+          if (!el.name) return;
+          if (el.type === 'checkbox') {
+            payload[el.name] = el.checked;
+          } else if (el.type === 'number') {
+            payload[el.name] = el.value === "" ? null : Number(el.value);
+          } else {
+            payload[el.name] = el.value;
+          }
+        });
+
+        try {
+          const res = await fetch(`${API_BASE}/api/admin/config-vars`, {
+            method: 'POST',
+            headers: adminHeaders({ 'Content-Type': 'application/json' }),
+            body: JSON.stringify(payload)
+          });
+          if (!res.ok) {
+            const err = await res.json();
+            throw new Error(err.detail || "Error al guardar");
+          }
+          toast("Variables guardadas correctamente ✅");
+        } catch (e) {
+          toast(e.message || "Error al guardar");
+        }
+      }
+      async function fetchLockedSlots(dateStr) {
+        try {
+          const res = await fetch(`${API_BASE}/api/admin/bookings/day?date=${encodeURIComponent(dateStr)}`, {
+            headers: adminHeaders()
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.detail || "No se pudo cargar ocupados");
+          dispState.lockedByDate[dateStr] = new Set((data.ocupados || []));
+        } catch (e) {
+          dispState.lockedByDate[dateStr] = new Set();
+        }
+      }
+
+
+
+
+
+      /* ========= UI AUTH (solo UI) ========= */
+      function setAuthUI(isOn) {
+        const loginForm = byId('loginForm');
+        const btnLogout = byId('btnLogout');
+        const flag = byId('authFlag');
+        const tabla = byId('tabla');
+        const thead = document.querySelector('.thead');
+        const viewSwitch = byId('viewSwitch');
+        const reqSwitch = byId('reqSwitch');
+
+        if (loginForm) {
+          loginForm.style.setProperty('display', isOn ? 'none' : 'flex', isOn ? 'important' : '');
+          loginForm.style.display = isOn ? 'none' : 'flex';
+        }
+        if (btnLogout) {
+          btnLogout.style.display = isOn ? 'flex' : 'none';
+        }
+
+        if (flag) {
+          flag.textContent = isOn ? 'Autenticado' : 'No autenticado';
+          flag.className = 'tag ' + (isOn ? 'ok' : 'muted');
+        }
+
+        const pSol = byId('panelSolicitudes');
+        const pDisp = byId('panelDisponibilidad');
+        const pCal = byId('panelCalendario');
+        const pVars = byId('panelVariables');
+        const tabsWrapper = byId('tabsWrapper');
+        const pCreds = byId('panelCredenciales');
+
+        if (tabsWrapper) tabsWrapper.style.display = isOn ? 'block' : 'none';
+        if (tabla) tabla.style.display = 'table'; // Siempre visible para mostrar el mensaje de "Iniciá sesión"
+        if (thead) thead.style.display = isOn ? 'table-header-group' : 'none';
+        if (reqSwitch) reqSwitch.style.display = isOn ? 'flex' : 'none';
+        if (histToolbar) histToolbar.style.display = isOn ? 'flex' : 'none';
+
+        // Asegurar que el panel principal se vea (contiene login o tabla)
+        if (pSol) pSol.style.display = 'block';
+
+        if (pDisp) pDisp.style.display = 'none';
+        if (pCal) pCal.style.display = 'none';
+        if (pVars) pVars.style.display = 'none';
+        if (pCreds) pCreds.style.display = 'none';
+
+        byId('tabSolicitudes')?.classList.add('active');
+        byId('tabCalendario')?.classList.remove('active');
+        byId('tabDisponibilidad')?.classList.remove('active');
+        byId('tabVariables')?.classList.remove('active');
+        byId('tabCredenciales')?.classList.remove('active');
+      }
+
+      function renderEmpty(msg) {
+        const tb = byId('tbody'); if (!tb) return;
+        tb.innerHTML = `<tr><td colspan="5" class="empty">${msg}</td></tr>`;
+      }
+
+      function adminLogout(reason) {
+
+        if (expTimer) clearTimeout(expTimer);
+        sessionStorage.removeItem(KEY_EXP);
+        sessionStorage.removeItem(KEY_ON); // ya lo hacías, pero dejalo así prolijo
+
+        token = null;
+        selected = null;
+        solicitudes = [];
+
+        if (!isAdminView()) return;
+
+        setAuthUI(false);
+        renderEmpty(reason || 'Iniciá sesión para ver las solicitudes de presupuesto.');
+
+        const usr = byId('usr'), pwd = byId('pwd');
+        if (usr) usr.value = '';
+        if (pwd) pwd.value = '';
+        usr?.focus();
+      }
+
+      async function login() {
+        if (!isAdminView()) return;
+
+        const usr = byId('usr'), pwd = byId('pwd');
+        const username = usr ? usr.value.trim() : '', password = pwd ? pwd.value.trim() : '';
+        if (!username || !password) { toast('Ingresá usuario y contraseña'); return; }
+
+        try {
+          const res = await fetch(`${API_BASE}/api/login`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email: username, password })
+          });
+
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok || !data.ok) {
+            throw new Error(data.detail || data.message || "Credenciales inválidas");
+          }
+
+          // ✅ si login OK (aunque tu seguridad real siga siendo X-API-Key)
+          token = "ui-session";
+          setSessionExpiryFromNow(); // ✅ guarda ON + EXPIRES y arranca el timer
+
+
+          setAuthUI(true);
+          toast("Sesión iniciada");
+          await loadSolicitudes();
+
+        } catch (e) {
+          adminLogout(e.message || "No se pudo iniciar sesión");
+        }
+      }
+
+
+      async function loadSolicitudes(mode = reqMode) {
+        if (!isAdminView()) return;
+        if (!token) { renderEmpty('Iniciá sesión para ver las solicitudes de presupuesto.'); return; }
+
+        reqMode = mode;
+
+        // ✅ lo que pide el backend
+        const apiStatus = (reqMode === "historicos") ? "historicos" : "pending";
+
+        try {
+          const url = `${API_BASE}/api/requests?status=${encodeURIComponent(apiStatus)}`;
+          const res = await fetch(url, { headers: adminHeaders() });
+
+          const ct = res.headers.get("content-type") || "";
+          if (!ct.includes("application/json")) throw new Error("La API devolvió HTML.");
+
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.detail || 'No se pudieron cargar las solicitudes');
+
+          solicitudes = Array.isArray(data.items) ? data.items : [];
+
+          // ✅ Si estamos en históricos, aplicar filtros de la UI si existen
+          if (reqMode === "historicos") {
+            const hFilter = document.getElementById('histFilter');
+            const hSearch = document.getElementById('histSearch');
+
+            const type = hFilter?.value || "all";
+            const term = (hSearch?.value || "").toLowerCase();
+
+            if (type !== "all" || term) {
+              solicitudes = solicitudes.filter(x => {
+                const st = String(x.estado || '').toLowerCase();
+                const matchType = (type === "all") ||
+                  (type === "completed" && st === "realizado") ||
+                  (type === "voided" && st === "anulado");
+                const matchTerm = !term ||
+                  (x.nombre_cliente || "").toLowerCase().includes(term) ||
+                  (x.origen || "").toLowerCase().includes(term) ||
+                  (x.destino || "").toLowerCase().includes(term);
+                return matchType && matchTerm;
+              });
+            }
+          }
+
+          render();
+
+          if (solicitudes.length === 0) {
+            renderEmpty(reqMode === "historicos" ? "No hay históricos que coincidan." : "No hay pendientes.");
+          }
+
+        } catch (e) {
+          renderEmpty(e.message || 'No se pudieron cargar las solicitudes.');
+        }
+      }
+
+
+
+
+      function render() {
+        if (!isAdminView()) return;
+        const tb = byId('tbody');
+        if (!tb) return;
+        tb.innerHTML = '';
+
+        solicitudes.forEach((s, i) => {
+          const estado = (s.estado || 'pendiente').toLowerCase();
+          const cls = estado === 'confirmado'
+            ? 'aprobado'
+            : (estado === 'rechazado' ? 'rechazado' : (estado === 'historico' ? 'rechazado' : 'pendiente'));
+          const texto = estado.charAt(0).toUpperCase() + estado.slice(1);
+          const rowId = getId(s);
+
+          const tr = document.createElement('tr');
+          tr.className = 'row';
+          tr.innerHTML = `
+        <td data-label="Cliente">
+          <div class="client">
+            <span class="name">${s.nombre_cliente || '-'}</span>
+            <span class="sub">${s.telefono || '-'}</span>
+          </div>
+        </td>
+        <td data-label="Carga">${s.tipo_carga || '-'}</td>
+        <td data-label="Fecha/Hora">
+          ${(() => {
+            const f = s.fecha_turno;
+            const h = s.hora_turno;
+            const isLead = !f || f === "1970-01-01" || !h || h === "00:00";
+            if (isLead && !f && !h) return "-";
+            if (f === "1970-01-01" || !f) return `<span style="color:var(--muted)">Sin fecha</span>`;
+            return `${f}${h && h !== "00:00" ? ` • ${h}` : ''}`;
+          })()}
+        </td>
+        <td data-label="Estado"><span class="badge ${cls}">${texto}</span></td>
+        <td data-label="Acciones">
+          <div class="actions">
+            <button class="btn btn-ghost" type="button"
+                    onclick="Admin.openModal('${rowId ?? ''}', ${i})">
+              Detalles
+            </button>
+          </div>
+        </td>`;
+          tb.appendChild(tr);
+        });
+      }
+
+      async function openModal(id, idx) {
+        if (!isAdminView()) return;
+        if (!token) { adminLogout(); return; }
+
+        let s = null;
+        if (id != null) {
+          const sid = String(id);
+          s = (solicitudes || []).find(x => String(getId(x)) === sid);
+          if (!s) s = (calendarSolicitudes || []).find(x => String(getId(x)) === sid);
+        }
+        if (!s && Number.isInteger(idx) && idx >= 0 && idx < (solicitudes || []).length) {
+          s = solicitudes[idx];
+        }
+        if (!s) { toast('No se encontró la solicitud'); return; }
+
+        selected = s;
+        const st = String(s.estado || "").toLowerCase();
+
+        // Visibilidad de botones de acción
+        const btnConfirm = document.querySelector(".btn-ok");
+        const btnReject = document.querySelector(".btn-reject");
+        const btnComplete = document.querySelector(".btn-complete");
+        const btnVoid = document.querySelector(".btn-void");
+
+        let showCR = (st === 'sent' || st === 'rechazado' || st === 'pending');
+        let showCA = (st === 'confirmado');
+
+        if (btnConfirm) btnConfirm.style.display = showCR ? "inline-flex" : "none";
+        if (btnReject) btnReject.style.display = showCR ? "inline-flex" : "none";
+        if (btnComplete) btnComplete.style.display = showCA ? "inline-flex" : "none";
+        if (btnVoid) btnVoid.style.display = showCA ? "inline-flex" : "none";
+
+        // Llenar inputs editables
+        const setVal = (id, val) => { const el = byId(id); if (el) el.value = val || ''; };
+        setVal('m_cliente_in', s.nombre_cliente);
+        setVal('m_tel_in', s.telefono);
+        setVal('m_tipo_in', s.tipo_carga);
+        
+        // Normalizar fecha para el modal (si es 1970 o null, mostrar vacío)
+        const fTurno = (s.fecha_turno && s.fecha_turno !== "1970-01-01") ? s.fecha_turno : "";
+        setVal('m_fecha_in', fTurno);
+        
+        setVal('m_origen_in', s.origen);
+        setVal('m_destino_in', s.destino);
+        
+        const chkAyudante = byId('m_ayudante_in');
+        if (chkAyudante) chkAyudante.checked = !!s.ayudante;
+
+        // Cargar horarios (slots)
+        await updateModalSlots(s.fecha_turno || s.fecha, s.hora_turno);
+
+        // Mostrar datos calculados actuales
+        updateModalCalculatedFields(s);
+
+        // Reset modo manual al abrir
+        isManualPriceMode = false;
+        // La base manual debe ser el flete solo, sin el ayudante que ya tenía el presupuesto guardado
+        const initialCostAyud = s.costo_ayudante || 0;
+        manualBasePrice = (s.monto_estimado || 0) - initialCostAyud;
+
+        // Agregar listeners para recalculación automática
+        setupModalListeners();
+
+        byId('overlay')?.classList.add('open');
+      }
+
+      async function updateModalSlots(dateStr, currentTime) {
+        const select = byId('m_hora_in');
+        if (!select) return;
+        select.innerHTML = '<option value="">Cargando...</option>';
+        
+        try {
+          const res = await fetch(`${API_BASE}/api/availability?month=${dateStr.slice(0,7)}`);
+          const data = await res.json();
+          const slots = (data.days && data.days[dateStr]) ? data.days[dateStr] : DEFAULT_SLOTS;
+          
+          select.innerHTML = '<option value="">Seleccioná hora</option>';
+          slots.sort().forEach(h => {
+             const opt = document.createElement('option');
+             opt.value = h;
+             opt.textContent = h;
+             if (h === currentTime) opt.selected = true;
+             select.appendChild(opt);
+          });
+          // Si el horario actual no está en la lista y no es el placeholder 00:00, agregarlo
+          const isPlaceholderTime = !currentTime || currentTime === "00:00";
+          if (!isPlaceholderTime && !slots.includes(currentTime)) {
+            const opt = document.createElement('option');
+            opt.value = currentTime;
+            opt.textContent = currentTime + " (Actual)";
+            opt.selected = true;
+            select.appendChild(opt);
+          }
+        } catch (e) {
+          select.innerHTML = '<option value="">Error al cargar slots</option>';
+        }
+      }
+
+      function updateModalCalculatedFields(s) {
+        if (!s) return;
+        const distElem = byId('m_dist_km');
+        const timeElem = byId('m_tiempo_viaje');
+        const servElem = byId('m_tiempo_servicio');
+        const totalIn = byId('m_total_in');
+
+        const dist_km = s.dist_km != null ? Number(s.dist_km) : null;
+        const tiempo_viaje_min = coalesce(
+           s.tiempo_viaje_min,
+           (s.tramo_base_origen_min && s.tramo_origen_destino_min)
+             ? Number(s.tramo_base_origen_min) + Number(s.tramo_origen_destino_min) + Number(s.tramo_destino_base_min || 0)
+             : null
+         );
+         const tiempo_servicio_min = coalesce(s.tiempo_servicio_min, null);
+
+         const set = (id, val) => { const el = byId(id); if (el) el.textContent = val; };
+         set('m_estado', s.estado || '-');
+         set('m_dist_km', (dist_km != null ? dist_km.toFixed(1).replace('.', ',') : '-'));
+         set('m_tiempo_viaje', (tiempo_viaje_min != null ? `${tiempo_viaje_min} min` : '-'));
+         set('m_tiempo_servicio', (tiempo_servicio_min != null ? `${tiempo_servicio_min} min` : '-'));
+
+         if (totalIn) {
+           if (isManualPriceMode) {
+             // Si el user editó manual, sumamos el costo del ayudante que viene del backend (o el local si no hay backend aún)
+             const costAyud = s.costo_ayudante || 0;
+             totalIn.value = manualBasePrice + costAyud;
+           } else {
+             totalIn.value = s.monto_estimado || 0;
+           }
+         }
+      }
+
+      let recalculateTimer = null;
+      function setupModalListeners() {
+        const editableIds = ['m_tipo_in', 'm_fecha_in', 'm_hora_in', 'm_ayudante_in', 'm_origen_in', 'm_destino_in'];
+        editableIds.forEach(id => {
+          const el = byId(id);
+          if (!el) return;
+          el.onchange = () => {
+             if (id === 'm_fecha_in') updateModalSlots(el.value);
+             triggerRecalculate();
+          };
+          if (el.tagName === 'INPUT' && el.type !== 'checkbox' && id !== 'm_fecha_in') {
+            el.oninput = triggerRecalculate;
+          }
+        });
+
+        // 🟢 Listener para el precio manual (Buscado por el USER)
+        const totalIn = byId('m_total_in');
+        if (totalIn) {
+          totalIn.oninput = () => {
+            isManualPriceMode = true;
+            const currentVal = parseFloat(totalIn.value) || 0;
+            const hasHelper = byId('m_ayudante_in')?.checked;
+            
+            // Calculamos la "Base del Jefe" restando el costo de ayudante actual del objeto seleccionado
+            const costAyud = (selected && selected.costo_ayudante) ? selected.costo_ayudante : 0;
+            manualBasePrice = currentVal - (hasHelper ? costAyud : 0);
+          };
+        }
+      }
+
+      function triggerRecalculate() {
+        if (recalculateTimer) clearTimeout(recalculateTimer);
+        const loader = byId('m_loading');
+        if (loader) loader.style.display = 'inline';
+        
+        recalculateTimer = setTimeout(async () => {
+          try {
+            const payload = {
+              origen: byId('m_origen_in').value,
+              destino: byId('m_destino_in').value,
+              tipo_carga: byId('m_tipo_in').value,
+              ayudante: byId('m_ayudante_in').checked,
+              fecha: byId('m_fecha_in').value,
+              fecha_turno: byId('m_fecha_in').value,
+              hora_turno: byId('m_hora_in').value
+            };
+            
+            // Usamos endpoint de preview para no guardar aún
+            const res = await fetch(`${API_BASE}/api/quote`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload)
+            });
+            const data = await res.json();
+            if (res.ok && data.quote) {
+              updateModalCalculatedFields(data.quote);
+            }
+          } catch (e) {
+            console.error("Recalculation error:", e);
+          } finally {
+            if (loader) loader.style.display = 'none';
+          }
+        }, 800);
+      }
+
+      async function guardarCambios() {
+        if (!selected || !token) return;
+        const btn = byId('btnGuardarCambios');
+        if (btn) { 
+          btn.disabled = true; 
+          btn.style.opacity = '0.5';
+          btn.style.cursor = 'not-allowed';
+        }
+        
+        try {
+          const payload = {
+            nombre: byId('m_cliente_in').value,
+            telefono: byId('m_tel_in').value,
+            tipo_carga: byId('m_tipo_in').value,
+            origen: byId('m_origen_in').value,
+            destino: byId('m_destino_in').value,
+            fecha_turno: byId('m_fecha_in').value,
+            hora_turno: byId('m_hora_in').value,
+            ayudante: byId('m_ayudante_in').checked,
+            monto_estimado: parseFloat(byId('m_total_in').value) || 0
+          };
+          
+          const res = await fetch(`${API_BASE}/api/requests/${getId(selected)}`, {
+            method: 'PATCH',
+            headers: adminHeaders({'Content-Type': 'application/json'}),
+            body: JSON.stringify(payload)
+          });
+          
+          if (res.ok) {
+            toast('Cambios guardados con éxito ✅');
+            // Mantenerse en la pestaña actual (reqMode)
+            const currentTab = (typeof reqMode !== 'undefined') ? reqMode : 'pending';
+            loadSolicitudes(currentTab);
+            closeModal();
+          } else {
+            const err = await res.json();
+            throw new Error(err.detail || 'Error al guardar');
+          }
+        } catch (e) {
+          toast(e.message);
+        } finally {
+          if (btn) { 
+            btn.disabled = false; 
+            btn.style.opacity = '1';
+            btn.style.cursor = 'pointer';
+          }
+        }
+      }
+
+
+      function closeModal() { byId('overlay')?.classList.remove('open'); selected = null; }
+
+
+      async function aprobar() {
+        if (reqMode === "historicos" && String(selected?.estado || "").toLowerCase() === "realizado") {
+          toast("Este flete ya está realizado. Solo se puede eliminar.");
+          return;
+        }
+        if (!selected || !token || !isAdminView()) return;
+        try {
+          const sid = getId(selected);
+          const res = await fetch(`${API_BASE}/api/requests/${sid}/confirm`, {
+            method: 'POST',
+            headers: adminHeaders()
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.detail || 'No se pudo confirmar');
+          toast('Solicitud confirmada ✅'); closeModal(); await loadSolicitudes();
+        } catch (e) { toast(e.message || 'Error al confirmar'); }
+      }
+
+      async function rechazar() {
+        if (reqMode === "historicos" && String(selected?.estado || "").toLowerCase() === "realizado") {
+          toast("Este flete ya está realizado. Solo se puede eliminar.");
+          return;
+        }
+        if (!selected || !token || !isAdminView()) return;
+        try {
+          const sid = getId(selected);
+          const res = await fetch(`${API_BASE}/api/requests/${sid}/reject`, {
+            method: 'POST',
+            headers: adminHeaders({ 'Content-Type': 'application/json' })
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.detail || 'No se pudo rechazar');
+          toast('Solicitud rechazada'); closeModal(); await loadSolicitudes();
+        } catch (e) { toast(e.message || 'Error al rechazar'); }
+      }
+
+      async function eliminar() {
+        if (!selected || !token || !isAdminView()) return;
+        if (!confirm(`¿Eliminar la solicitud de "${selected.nombre_cliente}"? Esta acción no se puede deshacer.`)) return;
+        try {
+          const sid = getId(selected);
+          const res = await fetch(`${API_BASE}/api/requests/${sid}`, {
+            method: 'DELETE',
+            headers: adminHeaders()
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.detail || 'No se pudo eliminar');
+          toast('Solicitud eliminada'); closeModal(); await loadSolicitudes();
+          if (typeof renderCalendar === "function") renderCalendar();
+          if (selectedDayKey) selectDay(selectedDayKey);
+        } catch (e) { toast(e.message || 'Error al eliminar'); }
+      }
+
+      /* =================== NUEVAS FUNCIONES COMPLETAR / ANULAR =================== */
+      async function completar() {
+        if (!selected || !token || !isAdminView()) return;
+        if (!confirm(`¿Marcar este trabajo como COMPLETADO? Se moverá a históricos.`)) return;
+        try {
+          const sid = getId(selected);
+          await fetch(`${API_BASE}/api/requests/${sid}/complete`, { method: 'POST', headers: adminHeaders() });
+          toast('Trabajo completado exitosamente 🚀');
+          closeModal();
+
+          if (byId('tabCalendario')?.classList.contains('active')) {
+            await loadCalendarConfirmed();
+            renderCalendar();
+            byId("calDetailBody").innerHTML = "<div class='empty'>Seleccioná un día para ver detalles.</div>";
+            byId("calDetailTitle").innerHTML = "";
+          } else {
+            await loadSolicitudes();
+          }
+
+        } catch (e) { toast(e.message || 'Error al completar'); }
+      }
+
+      async function anular() {
+        if (!selected || !token || !isAdminView()) return;
+        if (!confirm(`¿ANULAR este trabajo? El horario quedará libre.`)) return;
+        try {
+          const sid = getId(selected);
+          await fetch(`${API_BASE}/api/requests/${sid}/void`, { method: 'POST', headers: adminHeaders() });
+          toast('Trabajo anulado');
+          closeModal();
+
+          if (byId('tabCalendario')?.classList.contains('active')) {
+            await loadCalendarConfirmed();
+            renderCalendar();
+            byId("calDetailBody").innerHTML = "<div class='empty'>Seleccioná un día para ver detalles.</div>";
+            byId("calDetailTitle").innerHTML = "";
+          } else {
+            await loadSolicitudes();
+          }
+
+        } catch (e) { toast(e.message || 'Error al anular'); }
+      }
+
+      function escapeHtml(text) {
+        if (!text) return "";
+        const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+        return text.replace(/[&<>"']/g, m => map[m]);
+      }
+
+      // =================== REGLAS DE BLOQUEO HORARIO ===================
+
+      async function loadBlockRules() {
+        try {
+          const res = await fetch(`${API_BASE}/api/admin/block-rules`, { headers: adminHeaders() });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.detail || 'Error cargando reglas');
+          renderBlockRules(data.blocks_enabled, data.rules || []);
+        } catch (e) {
+          const list = byId('blockRulesList');
+          if (list) list.innerHTML = `<p class="disp-hint" style="color:#e74c3c;">⚠️ ${e.message}</p>`;
+        }
+      }
+
+      function renderBlockRules(blocksEnabled, rules) {
+        // Actualizar toggle glass
+        const label = byId('blockEnabledLabel');
+        const check = byId('checkToggleBlocks');
+        const area = byId('blockingArea');
+
+        if (label) {
+          label.textContent = blocksEnabled ? 'Bloqueos ACTIVOS' : 'Bloqueos INACTIVOS';
+          label.style.color = blocksEnabled ? '#27ae60' : '#e74c3c';
+        }
+        if (check) {
+          check.checked = blocksEnabled;
+        }
+        if (area) {
+          area.classList.toggle('disabled-zone', !blocksEnabled);
+        }
+
+        // Renderizar lista de reglas
+        const list = byId('blockRulesList');
+        if (!list) return;
+
+        if (!rules.length) {
+          list.innerHTML = `<p class="disp-hint" style="font-style:italic; color:var(--muted);">Sin reglas configuradas. Agregá una abajo.</p>`;
+          return;
+        }
+
+        list.innerHTML = rules.map(r => {
+          const scope = r.apply_all
+            ? '📅 Todos los días futuros'
+            : `📅 ${r.date_from || '?'} → ${r.date_to || '?'}`;
+          const rangeText = `🕐 ${r.hour_from} – ${r.hour_to}`;
+          const labelTxt = r.label ? ` · <em>${escapeHtml(r.label)}</em>` : '';
+          const disabledNote = !blocksEnabled ? ' <span style="opacity:.5;">(inactiva)</span>' : '';
+          return `
+            <div class="rule-card" style="display:flex; align-items:center; justify-content:space-between; gap:12px;
+              background:#fff; border:1px solid #e2e8f0; border-radius:8px; padding:10px 14px; margin-bottom:8px;">
+              <div style="font-size:.88rem; line-height:1.5;">
+                <strong>${rangeText}</strong>${labelTxt}${disabledNote}<br>
+                <span style="color:var(--muted); font-size:.8rem;">${scope}</span>
+              </div>
+              <button class="mini-btn danger" style="padding:4px 12px; font-size:.8rem; flex-shrink:0;"
+                onclick="Admin.eliminarReglaBloqueo('${r.id}')">Eliminar</button>
+            </div>`;
+        }).join('');
+      }
+
+      async function toggleBlockRules() {
+        const btn = byId('btnToggleBlocks');
+        if (btn) { btn.disabled = true; }
+        try {
+          const res = await fetch(`${API_BASE}/api/admin/block-rules/toggle`, {
+            method: 'POST', headers: adminHeaders()
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.detail || 'Error');
+          toast(data.blocks_enabled ? 'Bloqueos activados ✅' : 'Bloqueos desactivados ⛔');
+          await loadBlockRules();
+        } catch (e) {
+          toast(e.message || 'Error al cambiar estado');
+        } finally {
+          if (btn) btn.disabled = false;
+        }
+      }
+
+      function onNewBlockModeChange() {
+        const mode = byId('newBlockMode')?.value;
+        const rangeDiv = byId('newBlockDateRange');
+        if (rangeDiv) rangeDiv.style.display = (mode === 'range') ? 'flex' : 'none';
+      }
+
+      async function agregarReglaBloqueo() {
+        const hourFrom = byId('newBlockFrom')?.value;
+        const hourTo = byId('newBlockTo')?.value;
+        const mode = byId('newBlockMode')?.value;
+        const dateFrom = byId('newBlockDateFrom')?.value;
+        const dateTo = byId('newBlockDateTo')?.value;
+        const label = byId('newBlockLabel')?.value?.trim();
+        const msgEl = byId('blockAddMsg');
+
+        if (!hourFrom || !hourTo) {
+          if (msgEl) { msgEl.textContent = '❌ Seleccioná horario desde y hasta.'; msgEl.style.color = '#e74c3c'; }
+          return;
+        }
+        if (hourFrom > hourTo) {
+          if (msgEl) { msgEl.textContent = '❌ "Desde" debe ser menor o igual a "Hasta".'; msgEl.style.color = '#e74c3c'; }
+          return;
+        }
+        if (mode === 'range' && (!dateFrom || !dateTo)) {
+          if (msgEl) { msgEl.textContent = '❌ Elegí las fechas desde y hasta.'; msgEl.style.color = '#e74c3c'; }
+          return;
+        }
+
+        const applyAll = (mode === 'all');
+        const btn = byId('btnAddBlockRule');
+        if (btn) { btn.disabled = true; btn.textContent = 'Guardando…'; }
+        if (msgEl) msgEl.textContent = '';
+
+        try {
+          const payload = {
+            hour_from: hourFrom,
+            hour_to: hourTo,
+            apply_all: applyAll,
+            label: label || null,
+            ...(applyAll ? {} : { date_from: dateFrom, date_to: dateTo })
+          };
+          const res = await fetch(`${API_BASE}/api/admin/block-rules`, {
+            method: 'POST',
+            headers: adminHeaders({ 'Content-Type': 'application/json' }),
+            body: JSON.stringify(payload)
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.detail || 'Error al agregar regla');
+
+          const affected = (data.slots_affected || []).join(', ');
+          if (msgEl) {
+            msgEl.style.color = '#27ae60';
+            msgEl.textContent = `✅ Regla agregada. Horarios afectados: ${affected}`;
+          }
+          toast('Regla de bloqueo agregada ✅');
+
+          // Limpiar formulario
+          const lb = byId('newBlockLabel'); if (lb) lb.value = '';
+
+          await loadBlockRules();
+        } catch (e) {
+          if (msgEl) { msgEl.style.color = '#e74c3c'; msgEl.textContent = `❌ ${e.message}`; }
+          toast(e.message || 'Error al agregar regla');
+        } finally {
+          if (btn) { btn.disabled = false; btn.textContent = 'Agregar regla'; }
+        }
+      }
+
+      async function eliminarReglaBloqueo(ruleId) {
+        if (!confirm('¿Eliminar esta regla de bloqueo?')) return;
+        try {
+          const res = await fetch(`${API_BASE}/api/admin/block-rules/${ruleId}`, {
+            method: 'DELETE', headers: adminHeaders()
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.detail || 'Error al eliminar');
+          toast('Regla eliminada ✅');
+          await loadBlockRules();
+        } catch (e) {
+          toast(e.message || 'Error al eliminar regla');
+        }
+      }
+
+      async function cambiarCredenciales() {
+        const new_username = byId('newAdminUser')?.value?.trim();
+        const new_password = byId('newAdminPass')?.value?.trim();
+        const msgEl = byId('credsMsg');
+
+        if (!new_username || !new_password) {
+          if (msgEl) { msgEl.textContent = '❌ Usuario y contraseña son obligatorios.'; msgEl.style.color = '#e74c3c'; }
+          return;
+        }
+
+        if (!confirm('¿Estás seguro de cambiar el usuario y contraseña? Deberás usar los nuevos para entrar la próxima vez.')) return;
+
+        if (msgEl) msgEl.textContent = 'Guardando...';
+
+        try {
+          const res = await fetch(`${API_BASE}/api/admin/change-creds`, {
+            method: 'POST',
+            headers: adminHeaders({ 'Content-Type': 'application/json' }),
+            body: JSON.stringify({ new_username, new_password })
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.detail || 'Error al actualizar');
+
+          if (msgEl) { msgEl.textContent = '✅ Credenciales actualizadas correctamente.'; msgEl.style.color = '#27ae60'; }
+          toast('Usuario y clave actualizados ✅');
+
+          // Limpiar inputs
+          byId('newAdminUser').value = '';
+          byId('newAdminPass').value = '';
+
+        } catch (e) {
+          if (msgEl) { msgEl.textContent = `❌ ${e.message}`; msgEl.style.color = '#e74c3c'; }
+          toast(e.message || 'Error al actualizar credenciales');
+        }
+      }
+
+      async function resetearTodo() {
+        if (!confirm("⚠️ ¡ADVERTENCIA CRÍTICA!\n\nEsto borrará TODOS los bloqueos manuales que hayas hecho día por día en el pasado.\n\nTodo el calendario volverá a los horarios estándar por defecto. Esta acción no se puede deshacer.\n\n¿Estás absolutamente seguro?")) return;
+
+        try {
+          const res = await fetch(`${API_BASE}/api/availability/all`, {
+            method: 'DELETE', headers: adminHeaders()
+          });
+          if (!res.ok) throw new Error("Error al resetear todo");
+          toast("¡Calendario reseteado por completo! 🧹");
+
+          // Recargar vista actual
+          const df = byId('dispFecha');
+          if (df?.value) {
+            dispState.loadedMonth = "";
+            await loadDisponibilidad(df.value);
+          }
+        } catch (e) {
+          toast(e.message || "Error al resetear");
+        }
+      }
+
+      function toggleTabsMenu() {
+        const vs = byId('viewSwitch');
+        if (vs) vs.classList.toggle('open');
+      }
+
+      Object.assign(window.Admin, {
+        login,
+        logout: adminLogout,
+        openModal,
+        closeModal,
+        aprobar,
+        rechazar,
+        eliminar,
+        completar,
+        anular,
+        loadDisponibilidad,
+        guardarDisponibilidad,
+        toggleDia,
+        limpiarHorarios,
+        resetearTodo,
+        loadVariables,
+        guardarVariables,
+        // Reglas de bloqueo
+        loadBlockRules,
+        toggleBlockRules,
+        onNewBlockModeChange,
+        agregarReglaBloqueo,
+        eliminarReglaBloqueo,
+        cambiarCredenciales,
+        toggleTabsMenu,
+        guardarCambios,
+        // ✅ MAPS AUTOCOMPLETE
+        initMapsAdmin,
+      });
+
+      // --- AUTOCOMPLETE GOOGLE MAPS ADMIN ---
+      async function initMapsAdmin() {
+        if (window.google?.maps?.places) {
+          setupAutocompleteAdmin();
+          return;
+        }
+
+        try {
+          if (!globalThis.MAPS_CONFIG) {
+            const res = await fetch(`${API_BASE}/api/config`);
+            if (!res.ok) return;
+            globalThis.MAPS_CONFIG = await res.json();
+          }
+          const config = globalThis.MAPS_CONFIG;
+          if (!config.google_maps_api_key) return;
+
+          if (!document.getElementById('gmaps-script')) {
+            const script = document.createElement('script');
+            script.id = 'gmaps-script';
+            script.src = `https://maps.googleapis.com/maps/api/js?key=${config.google_maps_api_key}&libraries=places&language=${config.maps_language || 'es'}&region=${config.maps_region || 'AR'}`;
+            script.async = true;
+            script.onload = () => setupAutocompleteAdmin();
+            document.head.appendChild(script);
+          } else if (window.google?.maps) {
+            setupAutocompleteAdmin();
+          }
+        } catch (e) {
+          console.error("Error en initMapsAdmin:", e);
+        }
+      }
+
+      function setupAutocompleteAdmin() {
+        if (!window.google?.maps?.places) return;
+
+        const options = {
+          componentRestrictions: { country: "ar" },
+          fields: ["formatted_address", "geometry"]
+        };
+
+        const ori = document.getElementById("m_origen_in");
+        const des = document.getElementById("m_destino_in");
+
+        const hidePac = () => {
+          document.querySelectorAll('.pac-container').forEach(el => el.style.display = 'none');
+        };
+
+        if (ori) {
+          const autoOri = new google.maps.places.Autocomplete(ori, options);
+          autoOri.addListener("place_changed", () => {
+            const place = autoOri.getPlace();
+            if (place.formatted_address) {
+              ori.value = place.formatted_address;
+              ori.dispatchEvent(new Event('input'));
+            }
+            ori.blur(); // ✅ Quitar foco para forzar cierre
+            hidePac();
+          });
+        }
+        if (des) {
+          const autoDes = new google.maps.places.Autocomplete(des, options);
+          autoDes.addListener("place_changed", () => {
+            const place = autoDes.getPlace();
+            if (place.formatted_address) {
+              des.value = place.formatted_address;
+              des.dispatchEvent(new Event('input'));
+            }
+            des.blur(); // ✅ Quitar foco para forzar cierre
+            hidePac();
+          });
+        }
+
+        // ✅ Ocultar sugerencias al scrollear CUALQUIER cosa (global)
+        window.addEventListener('scroll', hidePac, true);
+        
+        // También cerramos si se toca fuera
+        document.addEventListener('mousedown', (e) => {
+          if (!e.target.classList.contains('pac-target')) {
+            setTimeout(hidePac, 100);
+          }
+        }, true);
+      }
+
+      /* MODAL LOGIC UNIFICADA ARRIBA */
+
+      (function initAdmin() {
+        const NEED = ['tbody', 'loginForm'];
+        const hasAdmin = () => NEED.every(id => document.getElementById(id));
+        let inited = false;
+
+        function safeInit() {
+          if (inited || !hasAdmin()) return;
+          inited = true;
+
+          // ✅ RESTAURA sesión LOCAL (solo pestaña) si existía
+          if (!isSessionValid()) {
+            adminLogout();
+          } else {
+            token = "ui-session";
+            setAuthUI(true);
+            startExpiryTimer();
+            loadSolicitudes();
+          }
+
+          document.getElementById('loginForm')
+            ?.addEventListener('submit', (e) => { e.preventDefault(); login(); });
+
+          byId('dispFecha')?.addEventListener('change', (e) => {
+            Admin.loadDisponibilidad(e.target.value);
+          });
+
+          byId('btnToggleDia')?.addEventListener('click', () => {
+            const d = byId('dispFecha')?.value;
+            if (!d) return toast("Elegí una fecha");
+            Admin.toggleDia(d);
+          });
+
+          byId('btnLimpiarDia')?.addEventListener('click', () => {
+            const d = byId('dispFecha')?.value;
+            if (!d) return toast("Elegí una fecha");
+            Admin.limpiarHorarios(d);
+          });
+
+          byId('btnGuardarDia')?.addEventListener('click', () => {
+            const d = byId('dispFecha')?.value;
+            if (!d) return toast("Elegí una fecha");
+            Admin.guardarDisponibilidad(d);
+          });
+
+          byId('btnGuardarVars')?.addEventListener('click', () => {
+            Admin.guardarVariables();
+          });
+
+          const todayIso = new Date().toISOString().split('T')[0];
+          const bdf = byId('newBlockDateFrom'); if (bdf) { bdf.min = todayIso; bdf.value = todayIso; }
+          const bdt = byId('newBlockDateTo'); if (bdt) { bdt.min = todayIso; bdt.value = todayIso; }
+
+          document.querySelector('.container')?.classList.add('ready');
+
+          // ✅ Carga mapas y config en admin
+          initMapsAdmin();
+          loadConfigVars();
+        }
+
+        safeInit();
+        requestAnimationFrame(safeInit);
+        const mo = new MutationObserver(() => safeInit());
+        mo.observe(document, { childList: true, subtree: true });
+        const stop = setInterval(() => { if (inited) { mo.disconnect(); clearInterval(stop); } }, 300);
+      })();
+
+
+      // ✅ LOGICA DE PESTAÑAS UNIFICADA
+
+      function switchTab(panelId, tabId) {
+        const panels = ['panelSolicitudes', 'panelCalendario', 'panelDisponibilidad', 'panelVariables', 'panelCredenciales'];
+        const tabs = ['tabSolicitudes', 'tabCalendario', 'tabDisponibilidad', 'tabVariables', 'tabCredenciales'];
+
+        panels.forEach(pId => {
+          const el = document.getElementById(pId);
+          if (el) el.style.display = (pId === panelId) ? 'block' : 'none';
+        });
+
+        tabs.forEach(tId => {
+          const el = document.getElementById(tId);
+          if (el) el.classList.toggle('active', tId === tabId);
+        });
+
+        // Cerrar menú mobile al elegir
+        const vs = byId('viewSwitch');
+        if (vs && vs.classList.contains('open')) vs.classList.remove('open');
+
+        // Asegurar que el contenedor sea visible
+        document.querySelector('.container')?.classList.add('ready');
+      }
+      (function initTabs() {
+        const tSol = byId('tabSolicitudes');
+        const tCal = byId('tabCalendario');
+        const tDisp = byId('tabDisponibilidad');
+        const tVars = byId('tabVariables');
+
+        tSol?.addEventListener('click', () => {
+          switchTab('panelSolicitudes', 'tabSolicitudes');
+          // Cargar datos si hace falta
+          loadSolicitudes();
+        });
+
+        tCal?.addEventListener('click', async () => {
+          switchTab('panelCalendario', 'tabCalendario');
+          await loadCalendarConfirmed();
+          renderCalendar();
+        });
+
+        tDisp?.addEventListener('click', async () => {
+          switchTab('panelDisponibilidad', 'tabDisponibilidad');
+          const df = byId('dispFecha');
+          if (df && !df.value) {
+            const now = new Date();
+            df.value = now.toISOString().slice(0, 10);
+          }
+          if (df?.value) loadDisponibilidad(df.value);
+          // Cargar reglas de bloqueo al entrar al panel
+          Admin.loadBlockRules();
+        });
+
+        tVars?.addEventListener('click', () => {
+          switchTab('panelVariables', 'tabVariables');
+          loadVariables();
+        });
+
+        byId('tabCredenciales')?.addEventListener('click', () => {
+          switchTab('panelCredenciales', 'tabCredenciales');
+        });
+
+        // Sub-tabs de solicitudes (Pendientes / Historicos)
+        const tPend = byId('tabReqPend');
+        const tHist = byId('tabReqHist');
+        const hTool = byId('histToolbar');
+
+        tPend?.addEventListener('click', () => {
+          tPend.classList.add('active');
+          tHist?.classList.remove('active');
+          if (hTool) hTool.style.display = 'none';
+          loadSolicitudes('pending');
+        });
+
+        tHist?.addEventListener('click', () => {
+          tHist.classList.add('active');
+          tPend?.classList.remove('active');
+          if (hTool) hTool.style.display = 'flex';
+          loadSolicitudes('historicos');
+        });
+
+      })();
+
+    })();
+  </script>
+
+  <script>
+    (function () {
+      const page = document.body.dataset.page; // "inicio" | "presupuesto" | "admin"
+
+      document.querySelectorAll(".nav-links a").forEach(a => {
+        a.classList.toggle("active", a.dataset.view === page);
+      });
+    })();
+  </script>
+
+
+
+  <!-- ✅ NO cargar spa.js acá. Dejalo solo en index -->
+</body>
+
+</html>

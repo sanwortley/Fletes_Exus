@@ -728,4 +728,132 @@ footer {
     align-items: center;
     gap: 15px;
   }
+}
+
+/* =========================================
+   MODAL RESULTADO (Presupuesto)
+   ========================================= */
+
+.modal-resultado-box {
+  width: min(480px, 92vw);
+  text-align: center;
+  padding: 48px 44px 40px;
+  border-radius: 28px;
+}
+
+.modal-res-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 28px;
+}
+
+.modal-res-icon {
+  font-size: 2.8rem;
+  line-height: 1;
+  animation: bounceIn 0.5s ease;
+}
+
+@keyframes bounceIn {
+  0%   { transform: scale(0.5); opacity: 0; }
+  70%  { transform: scale(1.1); opacity: 1; }
+  100% { transform: scale(1); }
+}
+
+.modal-res-route {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  font-size: 0.88rem;
+  color: var(--muted);
+  font-weight: 600;
+  background: #f8f9fa;
+  border-radius: 12px;
+  padding: 12px 18px;
+  margin-bottom: 24px;
+  line-height: 1.4;
+}
+
+.res-arrow {
+  color: var(--primary);
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+
+.modal-res-total {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 3.4rem;
+  font-weight: 800;
+  color: var(--primary);
+  letter-spacing: -2px;
+  line-height: 1.1;
+  margin-bottom: 18px;
+  animation: fadeUp 0.4s ease;
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.modal-res-note {
+  font-size: 0.84rem;
+  color: var(--muted);
+  line-height: 1.55;
+  margin: 0 0 28px;
+  padding: 0 8px;
+}
+
+.modal-res-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: center;
+}
+
+.btn-contactar {
+  width: 100%;
+  padding: 18px;
+  font-size: 1rem;
+  background: var(--primary) !important;
+  letter-spacing: 0.5px;
+  transition: background 0.2s, transform 0.2s, box-shadow 0.2s;
+}
+
+.btn-contactar:hover {
+  background: #b8891f !important;
+  transform: translateY(-2px);
+  box-shadow: 0 10px 24px rgba(211, 161, 41, 0.35) !important;
+}
+
+.btn-cerrar {
+  width: 100%;
+  padding: 14px;
+  font-size: 0.9rem;
+  border-color: #e0e0e0;
+  color: var(--muted) !important;
+}
+
+.btn-cerrar:hover {
+  border-color: var(--accent);
+  color: var(--accent) !important;
+}
+
+@media (max-width: 480px) {
+  .modal-resultado-box {
+    padding: 32px 20px 28px;
+  }
+
+  .modal-res-total {
+    font-size: 2.6rem;
+    letter-spacing: -1px;
+  }
+
+  .modal-res-route {
+    font-size: 0.82rem;
+    gap: 6px;
+  }
 }
