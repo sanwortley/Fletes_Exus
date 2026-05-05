@@ -1,0 +1,70 @@
+/* VARIABLES CONFIG PANEL */
+.vars-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.vars-group {
+    background: #fff;
+    border: 1px solid var(--stroke);
+    border-radius: 12px;
+    padding: 20px;
+}
+
+.vars-group h3 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    color: var(--accent);
+    font-size: 1rem;
+    border-bottom: 2px solid #f1f5f9;
+    padding-bottom: 8px;
+}
+
+.vars-group label {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--muted);
+}
+
+.vars-group input[type="number"] {
+    width: 100px;
+    padding: 6px 10px;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    text-align: right;
+    font-weight: 700;
+    color: var(--ink);
+}
+
+.vars-group.full {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+}
+
+.chk-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #f8fafb;
+    padding: 10px;
+    border-radius: 8px;
+}
+
+.chk-row input {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--primary);
+}
+
+.chk-row label {
+    margin: 0;
+    color: var(--ink);
+}
